@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Pocket Mirror · All screens</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="assets/images/icon-192.png">
+  <style>
+    @font-face { font-family: "Magistral"; src: url("assets/fonts/magistral-bold-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; }
+    @font-face { font-family: "Neue Haas Display"; src: url("assets/fonts/nhd-medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Neue Haas Display"; src: url("assets/fonts/nhd-bold.woff2") format("woff2"); font-weight: 700; }
+    :root { --s: .62; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 40px 32px 60px; background: #050505; color: #fff; font: 500 15px/1.45 "Neue Haas Display", Arial, sans-serif; }
+    header { max-width: 1200px; margin: 0 auto 8px; }
+    h1 { margin: 0; font: italic 700 34px/1 "Magistral", Arial, sans-serif; letter-spacing: .02em; }
+    h1 span { background: linear-gradient(110deg, #d8ad3e, #ffef9a 53%, #d8ad3e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    header p { margin: 12px 0 0; max-width: 720px; color: #9a9a96; }
+    header a { color: #e0b84c; }
+    h2 { display: flex; align-items: center; gap: 14px; max-width: 1200px; margin: 44px auto 20px; font: 700 12px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .24em; }
+    h2::after { content: ""; flex: 1; height: 1px; background: #262626; }
+    .row { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto; }
+    figure { margin: 0; }
+    .phone {
+      position: relative; width: calc(390px * var(--s)); height: calc(844px * var(--s)); overflow: hidden;
+      border-radius: calc(46px * var(--s)); box-shadow: 0 0 0 1px #2a2a2a, 0 0 0 calc(10px * var(--s)) #121212, 0 20px 40px rgba(0, 0, 0, .6);
+      background: #0a0a0a;
+    }
+    .phone iframe { position: absolute; left: 0; top: 0; width: 390px; height: 844px; border: 0; transform: scale(var(--s)); transform-origin: 0 0; }
+    figcaption { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; width: calc(390px * var(--s)); margin-top: 16px; }
+    figcaption b { font: italic 700 15px/1.2 "Magistral", Arial, sans-serif; }
+    figcaption b i { font-style: normal; color: #6f6f6c; margin-right: 6px; }
+    figcaption a { flex-shrink: 0; font-size: 12px; color: #9a9a96; }
+    figcaption a:hover { color: #e0b84c; }
+    .size { display: flex; gap: 8px; margin-top: 18px; }
+    .size button { padding: 8px 14px; border-radius: 20px; border: 1px solid #333; background: none; color: #ccc; font: 700 11px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .14em; cursor: pointer; }
+    .size button[aria-pressed="true"] { border-color: #e0b84c; color: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>THE POCKET MIRROR · <span>ALL SCREENS</span></h1>
+    <p>Every screen of the journey, live. You can tap and swipe inside each phone. Nothing here saves or sends an email.
+      To walk the real journey from the start, open <a href="index.html">index.html</a>.</p>
+    <div class="size" role="group" aria-label="Phone size">
+      <button type="button" data-s=".5">SMALL</button>
+      <button type="button" data-s=".62" aria-pressed="true">MEDIUM</button>
+      <button type="button" data-s=".8">LARGE</button>
+    </div>
+  </header>
+
+  <h2>BEFORE THE EMAIL</h2>
+  <div class="row" data-group="before"></div>
+
+  <h2>AFTER THE EMAIL</h2>
+  <div class="row" data-group="after"></div>
+
+  <script>
+    var SCREENS = {
+      before: [
+        ['1', 'Landing',                     'locked',   '#/'],
+        ['2', 'Change it · which one?',      'locked',   '#/path/change'],
+        ['2', 'See it · which one?',         'locked',   '#/path/see'],
+        ['2', 'Own it · which one?',         'locked',   '#/path/own'],
+        ['3', 'Kevin’s voice · captions',    'locked&t=18.4', '#/mirror/1'],
+        ['4', 'Pause at 0:40 · email',       'gate',     '#/mirror/1']
+      ],
+      after: [
+        ['5', 'Mirror unlocked',             'unlocked&t=51.6', '#/mirror/1'],
+        ['6', 'Take one with you',           'unlocked', '#/keep/1'],
+        ['7', 'Home · 12 Mirrors',           'unlocked&a2hs=ios', '#/home/mirrors'],
+        ['7', 'Home · 24 Nudges',            'unlocked', '#/home/nudges'],
+        ['7', 'Home · 12 Episodes',          'unlocked', '#/home/podcast'],
+        ['8', 'Podcast episode',             'unlocked', '#/episode/1'],
+        ['9', 'Mirror 21 · $99',             'unlocked', '#/mirror21']
+      ]
+    };
+    Object.keys(SCREENS).forEach(function (group) {
+      var row = document.querySelector('[data-group="' + group + '"]');
+      row.innerHTML = SCREENS[group].map(function (s) {
+        var url = 'index.html?demo=' + s[2] + s[3];
+        return '<figure><div class="phone"><iframe src="' + url + '" title="' + s[1] + '" loading="lazy"></iframe></div>' +
+          '<figcaption><b><i>' + s[0] + '</i>' + s[1] + '</b><a href="' + url + '" target="_blank" rel="noopener">Open ↗</a></figcaption></figure>';
+      }).join('');
+    });
+    document.querySelector('.size').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      document.documentElement.style.setProperty('--s', b.getAttribute('data-s'));
+      document.querySelectorAll('.size button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  </script>
+</body>
+</html>

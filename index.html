@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Pocket Mirror · Daily Xcellence</title>
+  <meta name="description" content="Take a 1-minute look in the mirror with Kevin Craggs. Pick where you are, hear your Mirror, take a nudge with you.">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="color-scheme" content="dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta property="og:title" content="The Pocket Mirror">
+  <meta property="og:description" content="The mirror never changes. You do.">
+  <meta property="og:image" content="assets/images/share.jpg">
+  <link rel="icon" href="assets/images/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="Pocket Mirror">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preload" href="assets/fonts/magistral-bold-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nhd-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- The app renders into #app (see js/app.js). -->
+  <main id="app" aria-live="polite"></main>
+
+  <!-- Unlock toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Netlify Forms: this hidden form lets Netlify detect the "pocket-mirror" form at deploy time.
+       The app submits to it with JavaScript. Keep the field names in sync with js/app.js. -->
+  <form name="pocket-mirror" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="pocket-mirror">
+    <input name="bot-field">
+    <input type="email" name="email">
+    <input name="mirror">
+    <input name="path">
+    <input name="source">
+    <input name="page">
+  </form>
+
+  <noscript><p style="padding:24px;color:#fff">The Pocket Mirror needs JavaScript turned on.</p></noscript>
+
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
