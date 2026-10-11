@@ -1098,7 +1098,6 @@
       body =
         homeTop() +
         markTitle(TITLES.nudges || [String(NUDGES.length), 'NUDGES'], NUDGES.length + ' Nudges') +
-        '<p class="tab-sub">Swipe the deck. Tap a card to flip it.</p>' +
         '<div class="deck-switch" role="group" aria-label="Choose a deck">' + PATHS.map(function (p) {
           return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.name) + '</button>';
         }).join('') + '</div>' +
