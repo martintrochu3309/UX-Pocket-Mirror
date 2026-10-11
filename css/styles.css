@@ -130,13 +130,13 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
   font: italic 700 clamp(28px, 8.4vw, 34px)/1.06 var(--display); letter-spacing: .03em;
 }
 .plates {
-  position: relative; height: clamp(190px, 31dvh, 250px); margin: clamp(18px, 4dvh, 40px) calc(-1 * var(--pad)) 0;
+  position: relative; height: clamp(160px, 26dvh, 212px); margin: clamp(18px, 4dvh, 40px) calc(-1 * var(--pad)) 0;
   touch-action: pan-y; user-select: none; -webkit-user-select: none;
 }
 /* the plates orbit frame by frame from app.js (they follow the finger), so no transform transition here */
 .plate {
-  position: absolute; left: 50%; top: 0; width: clamp(190px, 31dvh, 250px); height: 100%;
-  margin-left: calc(clamp(190px, 31dvh, 250px) / -2); will-change: transform, opacity;
+  position: absolute; left: 50%; top: 0; width: clamp(160px, 26dvh, 212px); height: 100%;
+  margin-left: calc(clamp(160px, 26dvh, 212px) / -2); will-change: transform, opacity;
 }
 .plate img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .7)) brightness(.55); pointer-events: none; transition: transform .3s ease, opacity .3s ease, filter .45s ease; }
 .plate.is-center img { filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .7)) drop-shadow(0 0 14px var(--glow)); animation: breathe 2.8s ease-in-out infinite; }
@@ -356,7 +356,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 
 .flip-hint { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 0; font: 700 10px/1 var(--text); letter-spacing: .22em; color: var(--muted); }
 .flip-hint svg { width: 15px; height: 15px; }
-.keep .actions { margin-top: auto; padding-top: 22px; }
+/* the deck sits centred up and down between the title and the buttons */
+.keep .deck-wrap { margin-block: auto; }
+.keep .actions { padding-top: 22px; }
 .keep .after { margin: 12px 0 0; font: 500 13px/1.4 var(--text); color: var(--muted-2); }
 .keep .link { display: inline-block; margin-top: 6px; }
 .keep .pill { margin-top: 14px; }
@@ -393,8 +395,7 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 }
 .deck-switch img { width: 46px; height: 46px; object-fit: contain; }
 .deck-switch button[aria-pressed="true"] { border-color: rgba(224, 184, 76, .6); color: var(--ink); }
-.today-tag { margin: 18px 0 0; text-align: center; font: 700 10px/1 var(--text); letter-spacing: .24em; color: var(--gold); min-height: 10px; }
-.home .deck { margin-top: 10px; }
+.home .deck { margin-top: 38px; }
 .home .btn-gold { margin-top: 16px; }
 
 .episode-list { margin: 18px 0 0; padding: 0; list-style: none; }
@@ -437,7 +438,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 /* =====================================================================
    BIG REFLECTED TITLES (12 MIRRORS · 24 NUDGES · 12 EPISODES · MIRROR 21)
    ===================================================================== */
-.mark-title { font-size: 58px; height: 1.3em; margin: 22px 0 0; overflow: hidden; }
+/* the tight .8 line height would clip the tops of the letters, so the box gets .14em of headroom
+   (taken back from the margin, so the title sits where it did) */
+.mark-title { font-size: 58px; height: 1.44em; margin: calc(22px - .14em) 0 0; padding-top: .14em; overflow: hidden; }
 .mark-title p {
   margin: 0; font: 700 1em/.8 var(--display); letter-spacing: -.03em; white-space: nowrap; color: #fff;
   -webkit-text-stroke: .012em currentColor;
@@ -472,7 +475,7 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 
 /* ---------- Mirror 21 screen ---------- */
 .m21 .m21-kicker { margin-top: 18px; color: var(--gold); }
-.m21 .mark-title { margin-top: 10px; }
+.m21 .mark-title { margin-top: calc(10px - .14em); }
 .m21-tag { margin: 0; font: italic 300 19px/1.35 var(--text); color: var(--ink-2); }
 .m21-weeks { display: grid; gap: 10px; margin-top: 22px; }
 .m21-weeks .wk { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; }

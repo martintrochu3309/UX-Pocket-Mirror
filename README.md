@@ -16,7 +16,7 @@ pocket-mirror/
 └── assets/
     ├── fonts/            Magistral + Neue Haas Display (woff2)
     ├── images/           3 path plates, 12 MIRRORS logo (original), Kevin (portrait + cap photo), Daily Xcellence logo, icons, share image
-    ├── cards/            the 24 nudges × white / black / gold (72 cards)
+    ├── cards/            the 21 nudges: 7 white (See it), 7 black (Own it), 7 gold (Change it)
     ├── mirrors/          Mirror audios 01–05 (mp3)
     └── podcast/          The Mirror episodes (mp3) + covers (jpg)
 ```
@@ -31,7 +31,7 @@ pocket-mirror/
 | 4 | Unlock | Sheet slides up: Kevin, "HEAR THE REST.", what unlocks, email field. "Not now" goes back to the list. |
 | 5 | Unlocked | Audio carries on from 0:40. Toast: "Unlocked · all Mirrors". |
 | 6 | Take one with you | 3 nudge cards matched to that Mirror, in the path's colour (See it = white, Own it = black, Change it = gold). "• TAP TO FLIP" shows for 2 seconds each time a card lands in the middle. The back says **IS THIS YOU?** and the 3 lines. Once flipped, "↑ SWIPE UP TO SAVE" shows for 2 seconds. **Swipe the card up** and it flies out of the deck, then the lock-screen sheet rises with **SAVE TO MY PHONE**; when you close it the card drops back with a gold glow and a tick. Tap = flip, sideways = next card, up = keep. |
-| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **24 NUDGES** (3 decks, today's nudge first, same tap-to-flip / swipe-up-to-save cards) · **12 EPISODES** (The Mirror podcast, opening one at a time, with a mini player). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
+| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **21 NUDGES** (3 decks of 7, one per path colour, today's nudge first, same tap-to-flip / swipe-up-to-save cards) · **12 EPISODES** (The Mirror podcast, opening one at a time, with a mini player). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
 | 8 | Mirror 21 | The $99 21-day training, the only white screen (see below). |
 
 No tab bar before the email. Returning visitors who already gave their email go straight to Home.
@@ -49,7 +49,7 @@ Never before the email, so the free part feels like a gift. After the email it i
 1. **MIRROR 21 button**, top right of every Home tab (always).
 2. **Big card on 12 MIRRORS** once someone has heard every available Mirror: "You've looked in every Mirror. Now live it for 21 days."
 3. **Card at the end of every podcast episode:** "Ready for more?"
-4. **Line after saving a nudge** from the 24 NUDGES tab: "Want Kevin with you for 21 days?"
+4. **Line after saving a nudge** from the 21 NUDGES tab: "Want Kevin with you for 21 days?"
 
 The MIRROR 21 button and cards are **white**, the only white things in the dark app. All four open the **Mirror 21 page**, which fades from black to white:
 
@@ -85,7 +85,7 @@ Never in the funnel. A small "KEEP IT ON YOUR PHONE" card appears once, on Home,
 - **iPhone:** "SHOW ME HOW" opens two steps: tap Share (in Safari it can sit under •••), then Add to Home Screen.
 - **Android:** a real one-tap "ADD TO HOME SCREEN".
 - **✕** or "Got it" hides it for good. It never shows if the app is already on the home screen, or inside Instagram / WhatsApp / Facebook (adding isn't possible there).
-- The icon opens the app full screen. iPhone gives home-screen apps their own memory, so before showing the steps the app adds `?pm=1` (plus what they've heard) to the address. The home-screen version opens **already unlocked**. Test this on a real iPhone before launch.
+- The icon opens the app full screen. iPhone gives home-screen apps their own memory, so from the moment the email is given the app keeps `?pm=1` (plus what they've heard) in the address. Whenever they add it (our steps or straight from Safari's Share menu), the home-screen version opens **already unlocked**. Test this on a real iPhone before launch.
 - Later (phase 2): notifications like "Episode 3 is unlocked" only work on iPhone once the app is on the home screen.
 
 Test it on a computer with `?demo=unlocked&a2hs=ios#/home` or `&a2hs=android`.
@@ -136,7 +136,7 @@ They combine: `?m=1&src=leeds-oct`.
 - **Podcast:** add Episode 7 by dropping `ep-07.mp3` in `assets/podcast/audio/`, a cover in `assets/podcast/covers/ep-07.jpg`, and filling in its title, audio, cover and duration.
 - **Path feelings:** the `line` of each path ("Something's off, and I can't name it.").
 - **Small print under the email:** `finePrint`.
-- **Big titles:** `TITLES` (`['24', 'NUDGES']` = gold part, white part). They're text, so they stay sharp and are easy to change.
+- **Big titles:** `TITLES` (`['21', 'NUDGES']` = gold part, white part). They're text, so they stay sharp and are easy to change.
 
 ## Measuring the funnel
 

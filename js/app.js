@@ -58,6 +58,7 @@
   function pathBy(k) { return PATHS.filter(function (p) { return p.key === k; })[0]; }
   function mirrorBy(n) { return MIRRORS.filter(function (m) { return m.n === +n; })[0]; }
   function nudgeBy(id) { return NUDGES.filter(function (x) { return x.id === id; })[0]; }
+  function nudgesOf(deck) { return NUDGES.filter(function (x) { return x.deck === deck; }); }
   function episodeBy(n) { return PODCAST.episodes.filter(function (e) { return e.n === +n; })[0]; }
   function pad2(n) { return String(n).padStart(2, '0'); }
   function fmt(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + pad2(s % 60); }
@@ -100,10 +101,14 @@
     if (!S.email) S.email = 'home-screen';
     (QS.get('h') || '').split(',').forEach(function (n) { if (+n) S.heard[+n] = true; });
     (QS.get('e') || '').split(',').forEach(function (n) { if (+n) S.eps[+n] = true; });
-    S.a2hsDone = true;
+    // only the home-screen app itself is "done"; a refresh in Safari keeps the add-to-home-screen card
+    if (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) {
+      S.a2hsDone = true;
+      try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (x) { /* ignore */ }
+    }
     try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
   }
-  function persist() { if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+  function persist() { stampInstallURL(); if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
   function unlocked() { return !!S.email; }
 
   /* ================================================================ big reflected titles (12 MIRRORS style) */
@@ -200,10 +205,15 @@
       '</section>';
   }
   // So the home-screen app opens already unlocked (iPhone gives it its own memory).
+  // Kept up to date from the moment the email is given, so adding to the home screen at ANY point
+  // (our "Show me how" or straight from Safari's Share menu) carries the unlock and progress over.
   function stampInstallURL() {
+    if (!unlocked() || STANDALONE || DEMO_STATE) return; // DEMO_STATE: preview.html pages keep their ?demo= address
     var h = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).join(',');
     var e = Object.keys(S.eps).filter(function (k) { return S.eps[k]; }).join(',');
-    try { history.replaceState(null, '', location.pathname + '?pm=1' + (h ? '&h=' + h : '') + (e ? '&e=' + e : '') + '#/home'); } catch (x) { /* ignore */ }
+    var url = location.pathname + '?pm=1' + (h ? '&h=' + h : '') + (e ? '&e=' + e : '') + location.hash;
+    if (url === location.pathname + location.search + location.hash) return;
+    try { history.replaceState(null, '', url); } catch (x) { /* ignore */ }
   }
   function hideA2hsCard() {
     S.a2hsDone = true; persist();
@@ -377,6 +387,7 @@
       fitTitles();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitles);
       syncUI();
+      stampInstallURL(); // keep the page address ready for "Add to Home Screen" on every screen
       return;
     }
     go('#/');
@@ -518,7 +529,7 @@
         // turn the ring to `to` (a whole number), then make that plate the chosen one
         function settle(to) {
           cancelAnimationFrame(anim);
-          var from = pos, t0 = performance.now(), dur = calm ? 0 : 420;
+          var from = pos, t0 = performance.now(), dur = calm ? 0 : 650;
           (function step(now) {
             var k = dur ? Math.min(1, (now - t0) / dur) : 1;
             pos = from + (to - from) * (1 - Math.pow(1 - k, 3));
@@ -542,23 +553,24 @@
         wrap.addEventListener('pointerdown', function (e) {
           if (opening || (e.pointerType === 'mouse' && e.button !== 0)) return;
           cancelAnimationFrame(anim);
-          drag = { x: e.clientX, pos: pos, t: performance.now(), id: e.pointerId, step: plates[0].offsetWidth * 0.52 };
+          // a whole plate width of finger travel turns the ring by one plate (calm, not twitchy)
+          drag = { x: e.clientX, pos: pos, t: performance.now(), id: e.pointerId, step: plates[0].offsetWidth };
           swiped = false;
         });
         wrap.addEventListener('pointermove', function (e) {
           if (!drag || e.pointerId !== drag.id) return;
           var dx = e.clientX - drag.x;
           if (!swiped && Math.abs(dx) > 6) { swiped = true; try { wrap.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } }
-          if (swiped) { pos = drag.pos - dx / drag.step; layout(); }
+          if (swiped) { pos = drag.pos - Math.max(-1, Math.min(1, dx / drag.step)); layout(); }
         });
         function release(e) {
           if (!drag || e.pointerId !== drag.id) return;
           var d = drag; drag = null;
           if (!swiped) return;
-          var dx = e.clientX - d.x, fast = Math.abs(dx) / Math.max(1, performance.now() - d.t) > 0.35;
-          var to = Math.round(pos);
-          if (to === Math.round(d.pos) && (fast || Math.abs(dx) > 30)) to += dx < 0 ? 1 : -1;
-          settle(to);
+          var dx = e.clientX - d.x, fast = Math.abs(dx) / Math.max(1, performance.now() - d.t) > 0.5;
+          var base = Math.round(d.pos), to = Math.round(pos);
+          if (to === base && (fast || Math.abs(dx) > 40)) to += dx < 0 ? 1 : -1;
+          settle(Math.max(base - 1, Math.min(base + 1, to))); // one plate per swipe, however hard the flick
         }
         wrap.addEventListener('pointerup', release);
         wrap.addEventListener('pointercancel', release);
@@ -783,7 +795,7 @@
         '<p class="tap-hint" data-flip-hint aria-hidden="true"><span class="tap-dot"></span>TAP TO FLIP</p>' +
         '<button type="button" class="tap-hint up-hint" data-up-hint data-action="keep-up" tabindex="-1"><span class="up-ico">' + I.up + '</span>SWIPE UP TO SAVE</button>' +
       '</div>' +
-      (list.length <= 6 ? '<div class="dots" aria-hidden="true">' + list.map(function () { return '<span></span>'; }).join('') + '</div>' : '') +
+      (list.length <= 7 ? '<div class="dots" aria-hidden="true">' + list.map(function () { return '<span></span>'; }).join('') + '</div>' : '') +
     '</div>';
   }
 
@@ -804,7 +816,8 @@
     }
     function showHint() { flash(flipHint, 2200); }
     function sync() {
-      if (cards[active].classList.contains('flipped')) flash(upHint, 2200);
+      // "SWIPE UP TO SAVE" stays for as long as the card is flipped: people flip, read, then still need to see it
+      if (cards[active].classList.contains('flipped')) { clearTimeout(flipT); clearTimeout(upT); flipHint.classList.remove('show'); upHint.classList.add('show'); }
       else upHint.classList.remove('show');
       dots.forEach(function (d, j) { d.classList.toggle('on', j === active); });
     }
@@ -1015,7 +1028,7 @@
     if (!m || !m.audio) { go('#/'); return null; }
     if (!unlocked()) { go('#/mirror/' + m.n); return null; }
     var p = pathBy(m.path), deck = p.deck;
-    var ids = m.nudges.length ? m.nudges : NUDGES.slice(0, 3).map(function (x) { return x.id; });
+    var ids = m.nudges.length ? m.nudges : nudgesOf(deck).slice(0, 3).map(function (x) { return x.id; });
     var cards = ids.map(nudgeBy).filter(Boolean);
     var html =
       '<section class="screen keep">' +
@@ -1057,7 +1070,6 @@
       (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-day training">MIRROR<span class="g">21</span></a>' : '') + '</div>';
   }
   function allMirrorsHeard() { return AVAILABLE.length > 0 && AVAILABLE.every(function (m) { return S.heard[m.n]; }); }
-  function dayOfYear() { var d = new Date(), s = new Date(d.getFullYear(), 0, 0); return Math.floor((d - s) / 864e5); }
 
   function homeScreen(tab) {
     if (!unlocked()) { go('#/'); return null; }
@@ -1083,27 +1095,24 @@
 
     if (tab === 'nudges') {
       var deckKey = S.deck || S.lastPath || 'change';
-      var start = dayOfYear() % NUDGES.length;
-      var order = NUDGES.slice(start).concat(NUDGES.slice(0, start));
       body =
         homeTop() +
-        markTitle(TITLES.nudges || ['24', 'NUDGES'], '24 Nudges') +
+        markTitle(TITLES.nudges || [String(NUDGES.length), 'NUDGES'], NUDGES.length + ' Nudges') +
         '<p class="tab-sub">Swipe the deck. Tap a card to flip it.</p>' +
         '<div class="deck-switch" role="group" aria-label="Choose a deck">' + PATHS.map(function (p) {
           return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.name) + '</button>';
         }).join('') + '</div>' +
-        '<p class="today-tag" data-today>TODAY’S NUDGE</p>' +
         '<div data-deck-wrap></div>';
       extra = nudgeSheetHTML(true);
       mount = function () {
         track('nudges_view');
-        var wrap = app.querySelector('[data-deck-wrap]'), today = app.querySelector('[data-today]');
+        var wrap = app.querySelector('[data-deck-wrap]');
         var deck = '';
         function build(key) {
           deck = pathBy(key).deck;
-          wrap.innerHTML = deckBlock(order, deck);
-          setupDeck(wrap.querySelector('[data-deck]'), function (card, i) {
-            today.style.visibility = i === 0 ? 'visible' : 'hidden';
+          // each deck shows its 7 nudges in the order they are listed in content.js
+          wrap.innerHTML = deckBlock(nudgesOf(deck), deck);
+          setupDeck(wrap.querySelector('[data-deck]'), function (card) {
             wallpaper(card.getAttribute('data-id'), deck).catch(function () {});
           });
         }
@@ -1323,6 +1332,7 @@
     'start-over': function () {
       audio.pause(); audio.removeAttribute('src'); now = null;
       S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.kept = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (x) { /* ignore */ } // drop the home-screen unlock
       go('#/');
     },
     'not-now': function () { track('gate_not_now', { mirror: now && now.n }); }

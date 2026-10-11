@@ -2,7 +2,7 @@
  * THE POCKET MIRROR · content
  * ---------------------------------------------------------------
  * Everything you will want to change lives in this file:
- * settings, the 3 paths, the 12 Mirrors, the 24 nudges and the podcast.
+ * settings, the 3 paths, the 12 Mirrors, the 21 nudges and the podcast.
  * Edit the text, save, refresh. No build step.
  */
 
@@ -58,20 +58,20 @@ window.PM_CONTENT = {
   /* ------------------------------------------------------------- the 12 Mirrors
    * audio: null  = not recorded yet, shows as "Coming soon".
    * after        = the line on the Mirror 21 page: "You said: <title>" → "In 21 days: <after>".
-   * nudges       = the 2-3 nudge cards offered after this Mirror (ids from NUDGES below).
+   * nudges       = the 2-3 nudge cards offered after this Mirror (ids from NUDGES below, from this path's deck).
    * duration     = seconds (shown as "1 min").
    */
   MIRRORS: [
     { n: 1,  path: 'change', title: 'I know what I need to do. I’m just not doing it.', after: 'I did it.', audio: 'assets/mirrors/mirror-01.mp3', duration: 66,
-      nudges: ['from-doing', 'follow-through', 'excuse-costs'] },
+      nudges: ['from-doing', 'follow-through', 'already-late'] },
     { n: 2,  path: 'own',    title: 'I need to have a difficult conversation.', after: 'I had it.',          audio: 'assets/mirrors/mirror-02.mp3', duration: 65,
-      nudges: ['start-responding', 'tolerate-teach', 'already-late'] },
+      nudges: ['start-responding', 'tolerate-teach', 'fix-your-standards'] },
     { n: 3,  path: 'see',    title: 'I feel stuck.', after: 'I’m moving.',                                     audio: 'assets/mirrors/mirror-03.mp3', duration: 68,
-      nudges: ['comfort-enemy', 'fix-your-standards', 'shift-your-lens'] },
+      nudges: ['face-the-reflection', 'believing-isnt-true', 'prepared-to-see'] },
     { n: 4,  path: 'see',    title: 'I’ve got too much going on.', after: 'I’m back in control.',                       audio: 'assets/mirrors/mirror-04.mp3', duration: 69,
-      nudges: ['more-focus', 'be-intentional', 'no-clarity'] },
+      nudges: ['more-focus', 'be-intentional', 'where-your-feet-are'] },
     { n: 5,  path: 'own',    title: 'I’ve had a wobble.', after: 'I bounced back.',                                audio: 'assets/mirrors/mirror-05.mp3', duration: 66,
-      nudges: ['train-your-mind', 'action-builds-belief', 'where-your-feet-are'] },
+      nudges: ['every-choice-costs', 'how-committed', 'excuse-costs'] },
     // 06-12: PLACEHOLDER titles so each path shows 4 Mirrors. They show as "Coming soon" until audio is added.
     { n: 6,  path: 'see',    title: 'I don’t know what I want anymore.', after: 'I know what I want.',    audio: null, duration: 0, nudges: [] },
     { n: 7,  path: 'see',    title: 'I’m busy, but nothing moves.', after: 'It’s moving.',          audio: null, duration: 0, nudges: [] },
@@ -82,59 +82,59 @@ window.PM_CONTENT = {
     { n: 12, path: 'change', title: 'I’m ready. I just need a push.', after: 'I’m on my way.',        audio: null, duration: 0, nudges: [] }
   ],
 
-  /* ------------------------------------------------------------- the 24 nudges
-   * Card images: assets/cards/<white|black|gold>/<id>.jpg
+  /* ------------------------------------------------------------- the 21 nudges
+   * 7 per deck, and each nudge belongs to ONE deck: white = SEE IT, black = OWN IT, gold = CHANGE IT.
+   * Card image: assets/cards/<deck>/<id>.jpg
    * pickIf = the 3 lines under "IS THIS YOU?" on the back of the card (DRAFTS, edit freely).
    */
   NUDGES: [
-    { id: 'more-focus', text: 'You don’t need more time. You need more focus.', why: 'Because wasted hours don’t come back, but results do.',
-      pickIf: ['You’re busy all day, but the big things don’t move.', 'You start the day without a priority.', 'Your phone gets your best hours.'] },
-    { id: 'start-driving', text: 'Stop drifting. Start driving.', why: 'If you don’t steer it, don’t complain where it goes.',
-      pickIf: ['Life feels like it’s happening to you.', 'You go along with plans you didn’t choose.', 'You can’t say where you’ll be in a year.'] },
-    { id: 'excuses-as-reasons', text: 'Stop dressing excuses up as reasons.', why: 'Accountability isn’t pressure, it’s power.',
-      pickIf: ['You always have a good reason why not.', 'You explain more than you act.', 'You know the real reason isn’t the one you say.'] },
-    { id: 'action-does', text: 'Opportunities don’t deliver results. Action does.', why: 'The gap between potential and progress is follow-through.',
-      pickIf: ['You spot chances but rarely take them.', 'You have the ideas, not the results.', 'You’re waiting for the right opportunity.'] },
-    { id: 'be-intentional', text: 'Stop being busy. Start being intentional.', why: 'Activity without aim just burns time.',
-      pickIf: ['Your to-do list never ends.', 'You mistake being busy for making progress.', 'You finish the day tired, not proud.'] },
-    { id: 'tolerate-teach', text: 'What you tolerate, you teach.', why: 'Boundaries build culture. Or break it.',
-      pickIf: ['You let things slide to avoid conflict.', 'People keep crossing the same line.', 'You say yes when you mean no.'] },
-    { id: 'already-late', text: 'If you’re waiting to feel ready, you’re already late.', why: 'Growth never feels safe. Go anyway.',
-      pickIf: ['You’re waiting until you feel ready.', 'You keep saying “next month”.', 'Fear of getting it wrong keeps you still.'] },
-    { id: 'shift-your-lens', text: 'If you can’t shift your lens, you’ll stay stuck in your limits.', why: 'Growth often hides in a view you haven’t considered.',
-      pickIf: ['You keep hitting the same wall.', 'You’re sure you’re right, and still stuck.', 'Other people’s views frustrate you.'] },
-    { id: 'excuse-costs', text: 'Every excuse costs you a result.', why: 'Justify it, repeat it. Own it, change it.',
-      pickIf: ['You justify the same miss every week.', '“It wasn’t my fault” comes easily.', 'You know what your excuse is costing you.'] },
-    { id: 'follow-through', text: 'Follow through, or fall short.', why: 'Anyone can start. Few finish.',
-      pickIf: ['You start things but don’t finish them.', 'You lose momentum when it gets difficult.', 'You set goals but struggle to stay consistent.'] },
-    { id: 'comfort-enemy', text: 'Comfort is the enemy of change.', why: 'Growth lives in the stretch. Not the sofa.',
-      pickIf: ['Things are fine, but not exciting.', 'You avoid what makes you uncomfortable.', 'You’ve stopped stretching yourself.'] },
-    { id: 'fix-your-standards', text: 'Don’t blame the system. Fix your standards.', why: 'You’re not stuck. You’re settling.',
-      pickIf: ['You blame the boss, the system, the timing.', 'You’ve accepted “good enough”.', 'You feel stuck but haven’t changed anything.'] },
-    { id: 'start-responding', text: 'Stop reacting. Start responding.', why: 'Own the moment, or the moment owns you.',
-      pickIf: ['You react before you think.', 'One comment can ruin your day.', 'You replay what you wish you’d said.'] },
-    { id: 'fall-to-systems', text: 'You don’t rise to your vision. You fall to your systems.', why: 'Goals don’t fail. Execution does.',
-      pickIf: ['You set big goals but have no plan.', 'You rely on motivation to get things done.', 'Your goals reset every January.'] },
-    { id: 'how-committed', text: 'Every obstacle is asking: how committed are you?', why: 'Pressure exposes priorities. Not potential.',
-      pickIf: ['You quit when it gets hard.', 'Setbacks make you doubt the goal.', 'You want it, but not on the hard days.'] },
-    { id: 'from-doing', text: 'Change doesn’t come from knowing. It comes from doing.', why: 'Insight without action is just a story you tell yourself.',
-      pickIf: ['You know exactly what to do.', 'You’ve read the books and heard the talks.', 'Nothing has changed yet.'] },
-    { id: 'start-now', text: 'Stop waiting for the perfect moment. Start now.', why: 'Progress beats perfection. Every time.',
-      pickIf: ['You’re waiting for the perfect moment.', 'You want it right before you start.', '“When things calm down” never comes.'] },
-    { id: 'where-your-feet-are', text: 'You are where your feet are. Show up fully.', why: 'The only place you lead from is now.',
+    // white · SEE IT
+    { id: 'where-your-feet-are', deck: 'white', text: 'You are where your feet are. Show up fully.', why: 'The only place you lead from is now.',
       pickIf: ['You’re there, but your mind isn’t.', 'You’re always thinking about what’s next.', 'People don’t get the best of you.'] },
-    { id: 'action-builds-belief', text: 'Action builds belief. Not the other way around.', why: 'You don’t need confidence. You need momentum.',
-      pickIf: ['You’re waiting to feel confident first.', 'Self-doubt talks you out of starting.', 'You need proof before you move.'] },
-    { id: 'track-it', text: 'If you don’t track it, you can’t trust it.', why: 'Data doesn’t lie. Denial does.',
-      pickIf: ['You think you’re doing better than you are.', 'You guess instead of measure.', 'You don’t know where your time goes.'] },
-    { id: 'right-habits', text: 'The right habits feel boring. Until they win.', why: 'Flash fades. Foundations last.',
-      pickIf: ['You chase quick wins.', 'You get bored of the basics.', 'You start strong, then fade.'] },
-    { id: 'no-clarity', text: 'No clarity? No results.', why: 'If you can’t define it, you can’t deliver it.',
-      pickIf: ['You’re not sure what you really want.', 'Your goals are vague.', 'You’re busy without a clear target.'] },
-    { id: 'prepared-to-see', text: 'You see the opportunities you’re prepared to see.', why: 'Your vision doesn’t reflect reality, it reflects readiness.',
+    { id: 'more-focus', deck: 'white', text: 'You don’t need more time. You need more focus.', why: 'Because wasted hours don’t come back, but results do.',
+      pickIf: ['You’re busy all day, but the big things don’t move.', 'You start the day without a priority.', 'Your phone gets your best hours.'] },
+    { id: 'be-intentional', deck: 'white', text: 'Stop being busy. Start being intentional.', why: 'Activity without aim just burns time.',
+      pickIf: ['Your to-do list never ends.', 'You mistake being busy for making progress.', 'You finish the day tired, not proud.'] },
+    { id: 'prepared-to-see', deck: 'white', text: 'You see the opportunities you’re prepared to see.', why: 'Your vision doesn’t reflect reality, it reflects readiness.',
       pickIf: ['Opportunities seem to pass you by.', 'Others seem to get the lucky breaks.', 'You mostly notice the problems.'] },
-    { id: 'train-your-mind', text: 'Train your mind to be stronger than your feelings.', why: 'Emotions pass. Discipline lasts.',
-      pickIf: ['Your mood decides your day.', 'You skip things when you don’t feel like it.', 'One wobble knocks you off course.'] }
+    { id: 'listen-with-your-eyes', deck: 'white', text: 'Listen with your eyes. Not just your ears.', why: 'What people do often tells you more than what they say.',
+      pickIf: ['You take people at their word.', 'You’re surprised when someone lets you down.', 'You hear the words but miss the signs.'] },
+    { id: 'believing-isnt-true', deck: 'white', text: 'Just because you believe it doesn’t make it true.', why: 'An assumption isn’t a fact, no matter how long you’ve believed it.',
+      pickIf: ['You’re sure you already know the answer.', 'You decide what people think before asking.', 'An old story still runs your choices.'] },
+    { id: 'face-the-reflection', deck: 'white', text: 'Stop admiring the reflection. Face who’s behind it.', why: 'You can’t change what you’re unwilling to face.',
+      pickIf: ['Things look fine from the outside.', 'You avoid the honest look in the mirror.', 'You know something needs facing.'] },
+
+    // black · OWN IT
+    { id: 'excuse-costs', deck: 'black', text: 'Every excuse costs you a result.', why: 'Justify it, repeat it. Own it, change it.',
+      pickIf: ['You justify the same miss every week.', '“It wasn’t my fault” comes easily.', 'You know what your excuse is costing you.'] },
+    { id: 'fix-your-standards', deck: 'black', text: 'Don’t blame the system. Fix your standards.', why: 'You’re not stuck. You’re settling.',
+      pickIf: ['You blame the boss, the system, the timing.', 'You’ve accepted “good enough”.', 'You feel stuck but haven’t changed anything.'] },
+    { id: 'tolerate-teach', deck: 'black', text: 'What you tolerate, you teach.', why: 'Boundaries build culture. Or break it.',
+      pickIf: ['You let things slide to avoid conflict.', 'People keep crossing the same line.', 'You say yes when you mean no.'] },
+    { id: 'how-committed', deck: 'black', text: 'Every obstacle is asking: how committed are you?', why: 'Pressure exposes priorities. Not potential.',
+      pickIf: ['You quit when it gets hard.', 'Setbacks make you doubt the goal.', 'You want it, but not on the hard days.'] },
+    { id: 'start-responding', deck: 'black', text: 'Stop reacting. Start responding.', why: 'Own the moment, or the moment owns you.',
+      pickIf: ['You react before you think.', 'One comment can ruin your day.', 'You replay what you wish you’d said.'] },
+    { id: 'every-choice-costs', deck: 'black', text: 'Every choice has a cost. Even the ones you avoid.', why: 'Not deciding is still a decision.',
+      pickIf: ['You’re putting off a decision.', 'You wait for it to sort itself out.', 'You second-guess choices you’ve already made.'] },
+    { id: 'own-your-time', deck: 'black', text: 'Own your time, or it owns you.', why: 'The watch on your wrist works for you, or you work for it.',
+      pickIf: ['Your diary runs your day.', 'Other people’s urgent becomes your priority.', 'You never get to what matters to you.'] },
+
+    // gold · CHANGE IT
+    { id: 'from-doing', deck: 'gold', text: 'Change doesn’t come from knowing. It comes from doing.', why: 'Insight without action is just a story you tell yourself.',
+      pickIf: ['You know exactly what to do.', 'You’ve read the books and heard the talks.', 'Nothing has changed yet.'] },
+    { id: 'already-late', deck: 'gold', text: 'If you’re waiting to feel ready, you’re already late.', why: 'Growth never feels safe. Go anyway.',
+      pickIf: ['You’re waiting until you feel ready.', 'You keep saying “next month”.', 'Fear of getting it wrong keeps you still.'] },
+    { id: 'follow-through', deck: 'gold', text: 'Follow through, or fall short.', why: 'Anyone can start. Few finish.',
+      pickIf: ['You start things but don’t finish them.', 'You lose momentum when it gets difficult.', 'You set goals but struggle to stay consistent.'] },
+    { id: 'comfort-enemy', deck: 'gold', text: 'Comfort is the enemy of change.', why: 'Growth lives in the stretch. Not the sofa.',
+      pickIf: ['Things are fine, but not exciting.', 'You avoid what makes you uncomfortable.', 'You’ve stopped stretching yourself.'] },
+    { id: 'fall-to-systems', deck: 'gold', text: 'You don’t rise to your vision. You fall to your systems.', why: 'Goals don’t fail. Execution does.',
+      pickIf: ['You set big goals but have no plan.', 'You rely on motivation to get things done.', 'Your goals reset every January.'] },
+    { id: 'train-your-mind', deck: 'gold', text: 'Train your mind to be stronger than your feelings.', why: 'Emotions pass. Discipline lasts.',
+      pickIf: ['Your mood decides your day.', 'You skip things when you don’t feel like it.', 'One wobble knocks you off course.'] },
+    { id: 'start-driving', deck: 'gold', text: 'Stop drifting. Start driving.', why: 'If you don’t steer it, don’t complain where it goes.',
+      pickIf: ['Life feels like it’s happening to you.', 'You go along with plans you didn’t choose.', 'You can’t say where you’ll be in a year.'] }
   ],
 
   /* ------------------------------------------------------------- The Mirror podcast
@@ -164,7 +164,7 @@ window.PM_CONTENT = {
    */
   TITLES: {
     mirrors: ['12', 'MIRRORS'],
-    nudges:  ['24', 'NUDGES'],
+    nudges:  ['21', 'NUDGES'],
     podcast: ['12', 'EPISODES']
   },
 
@@ -173,7 +173,7 @@ window.PM_CONTENT = {
    *   · the gold MIRROR 21 button, top right of every Home tab
    *   · a big card on 12 MIRRORS once every available Mirror has been heard
    *   · a card at the end of every podcast episode
-   *   · a line after someone keeps a nudge from the 24 NUDGES tab
+   *   · a line after someone keeps a nudge from the 21 NUDGES tab
    */
   MIRROR21: {
     // Where "START MIRROR 21" goes: your Mirror 21 page or a Stripe checkout link. '' = "Link coming soon".
