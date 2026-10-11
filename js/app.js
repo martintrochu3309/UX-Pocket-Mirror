@@ -619,7 +619,7 @@
     var soon = mine.length - ready.length;
     var html =
       '<section class="screen path">' +
-        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back to paths">' + I.back + '</a><p class="wordmark" style="font-size:11px">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
+        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back to paths">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
         '<h1 class="sr-only">' + esc(p.name) + '</h1>' +
         '<div class="reflect ' + p.key + '" aria-hidden="true"><p>' + esc(p.name) + '</p><p>' + esc(p.name) + '</p></div>' +
         '<p class="quote">“' + esc(p.line) + '”</p>' +
@@ -1032,7 +1032,7 @@
     var cards = ids.map(nudgeBy).filter(Boolean);
     var html =
       '<section class="screen keep">' +
-        '<div class="topbar"><a class="icon-btn" href="#/mirror/' + m.n + '" aria-label="Back to the Mirror">' + I.back + '</a><p class="wordmark" style="font-size:11px">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
+        '<div class="topbar"><a class="icon-btn" href="#/mirror/' + m.n + '" aria-label="Back to the Mirror">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
         '<h1>TAKE ONE WITH YOU</h1>' +
         deckBlock(cards, deck) +
         '<div class="actions">' +
@@ -1195,7 +1195,8 @@
     var heardList = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).map(Number);
     var m = mirrorBy(S.lastMirror) || mirrorBy(heardList[heardList.length - 1]) || MIRRORS[0];
     var after = m.after || 'I did it.';
-    var size = after.length <= 10 ? 74 : after.length <= 14 ? 60 : 50;
+    // Display XL for short lines, Tab title for longer ones (the vw cap below keeps it on one screen width)
+    var size = after.length <= 14 ? 56 : 48;
     var back = unlocked() ? '#/home' : '#/';
     var tick = I.check;
     var weekNames = [['SEE IT', ''], ['OWN IT', ''], ['CHANGE IT', ' gold']];
@@ -1218,9 +1219,7 @@
           (M21.benefits || []).map(function (b, i) { return '<li><span class="n">' + pad2(i + 1) + '</span><span><b>' + esc(b[0]) + '</b><span class="t">' + esc(b[1]) + '</span></span></li>'; }).join('') +
         '</ul></div>' +
         '<div class="blk"><p class="sec">YOUR 21 DAYS</p><div class="weeks">' + weekNames.map(function (w, wi) {
-          var steps = '';
-          for (var d = wi * 7 + 1; d <= wi * 7 + 7; d++) steps += '<span class="st ' + (d === 1 ? 'today' : d === 21 ? 'fin' : 'lock') + '">' + pad2(d) + '</span>';
-          return '<div class="wk"><span class="lab"><b>WEEK ' + (wi + 1) + '</b><i class="' + w[1] + '">' + w[0] + '</i></span><span class="row">' + steps + '</span>' +
+          return '<div class="wk"><span class="lab"><b>WEEK ' + (wi + 1) + '</b><i class="' + w[1] + '">' + w[0] + '</i></span>' +
             '<span class="say">' + esc((M21.weeks || [])[wi] || '') + '</span></div>';
         }).join('') + '</div></div>' +
         '<div class="blk"><p class="sec">EVERY DAY · ABOUT 3 MINUTES</p><div class="daily">' +
