@@ -44,51 +44,45 @@ window.PM_CONTENT = {
   },
 
   /* ------------------------------------------------------------- the 3 paths
-   * deck = which colour of nudge cards this path gives (white / black / gold)
+   * deck     = which colour of nudge cards this path gives (white / black / gold)
+   * deckName = the deck's name on the 21 NUDGES tab
    */
   PATHS: [
-    { key: 'see',    num: '01', name: 'SEE IT',    plate: 'assets/images/plate-see.png',    deck: 'white',
+    { key: 'see',    num: '01', name: 'SEE IT',    deckName: 'AWARENESS',  plate: 'assets/images/plate-see.png',    deck: 'white',
       line: 'Something’s off, and I can’t name it.' },
-    { key: 'own',    num: '02', name: 'OWN IT',    plate: 'assets/images/plate-own.png',    deck: 'black',
+    { key: 'own',    num: '02', name: 'OWN IT',    deckName: 'ACCEPTANCE', plate: 'assets/images/plate-own.png',    deck: 'black',
       line: 'I know what it is. I keep explaining it away.' },
-    { key: 'change', num: '03', name: 'CHANGE IT', plate: 'assets/images/plate-change.png', deck: 'gold',
+    { key: 'change', num: '03', name: 'CHANGE IT', deckName: 'ACTION',     plate: 'assets/images/plate-change.png', deck: 'gold',
       line: 'I’m ready to stop talking and start doing.' }
   ],
 
   /* ------------------------------------------------------------- the 12 Mirrors
    * audio: null  = not recorded yet, shows as "Coming soon".
    * after        = the line on the Mirror 21 page: "You said: <title>" → "In 21 days: <after>".
-   * nudges       = the 2-3 nudge cards offered after this Mirror (ids from NUDGES below, from this path's deck).
+   * card         = the nudge card this Mirror unlocks the first time it is finished (an id from NUDGES below).
+   *                Every card has exactly one Mirror or podcast episode that unlocks it.
    * duration     = seconds (shown as "1 min").
    */
   MIRRORS: [
-    { n: 1,  path: 'change', title: 'I know what I need to do. I’m just not doing it.', after: 'I did it.', audio: 'assets/mirrors/mirror-01.mp3', duration: 66,
-      nudges: ['from-doing', 'follow-through', 'already-late'] },
-    { n: 2,  path: 'own',    title: 'I need to have a difficult conversation.', after: 'I had it.',          audio: 'assets/mirrors/mirror-02.mp3', duration: 65,
-      nudges: ['start-responding', 'tolerate-teach', 'fix-your-standards'] },
-    { n: 3,  path: 'see',    title: 'I feel stuck.', after: 'I’m moving.',                                     audio: 'assets/mirrors/mirror-03.mp3', duration: 68,
-      nudges: ['face-the-reflection', 'believing-isnt-true', 'prepared-to-see'] },
-    { n: 4,  path: 'see',    title: 'I’ve got too much going on.', after: 'I’m back in control.',                       audio: 'assets/mirrors/mirror-04.mp3', duration: 69,
-      nudges: ['more-focus', 'be-intentional', 'where-your-feet-are'] },
-    { n: 5,  path: 'own',    title: 'I’ve had a wobble.', after: 'I bounced back.',                                audio: 'assets/mirrors/mirror-05.mp3', duration: 66,
-      nudges: ['every-choice-costs', 'how-committed', 'excuse-costs'] },
-    { n: 6,  path: 'see',    title: 'I’m doubting myself.', after: 'I backed myself.',                           audio: 'assets/mirrors/mirror-06.mp3', duration: 69,
-      nudges: ['believing-isnt-true', 'prepared-to-see', 'face-the-reflection'] },
-    { n: 7,  path: 'see',    title: 'Change is happening and I’m struggling.', after: 'I’m moving with it.',     audio: 'assets/mirrors/mirror-07.mp3', duration: 70,
-      nudges: ['be-intentional', 'believing-isnt-true', 'prepared-to-see'] },
-    { n: 8,  path: 'own',    title: 'I’ve lost direction.', after: 'I know where I’m going.',                    audio: 'assets/mirrors/mirror-08.mp3', duration: 66,
-      nudges: ['own-your-time', 'every-choice-costs', 'fix-your-standards'] },
-    { n: 9,  path: 'own',    title: 'My team isn’t pulling together.', after: 'We’re pulling together.',        audio: 'assets/mirrors/mirror-09.mp3', duration: 70,
-      nudges: ['tolerate-teach', 'start-responding', 'how-committed'] },
+    { n: 1,  path: 'change', title: 'I know what I need to do. I’m just not doing it.', after: 'I did it.',     audio: 'assets/mirrors/mirror-01.mp3', duration: 66, card: 'from-doing' },
+    { n: 2,  path: 'own',    title: 'I need to have a difficult conversation.', after: 'I had it.',               audio: 'assets/mirrors/mirror-02.mp3', duration: 65, card: 'tolerate-teach' },
+    { n: 3,  path: 'see',    title: 'I feel stuck.', after: 'I’m moving.',                                          audio: 'assets/mirrors/mirror-03.mp3', duration: 68, card: 'face-the-reflection' },
+    { n: 4,  path: 'see',    title: 'I’ve got too much going on.', after: 'I’m back in control.',                   audio: 'assets/mirrors/mirror-04.mp3', duration: 69, card: 'more-focus' },
+    { n: 5,  path: 'own',    title: 'I’ve had a wobble.', after: 'I bounced back.',                                 audio: 'assets/mirrors/mirror-05.mp3', duration: 66, card: 'every-choice-costs' },
+    { n: 6,  path: 'see',    title: 'I’m doubting myself.', after: 'I backed myself.',                              audio: 'assets/mirrors/mirror-06.mp3', duration: 69, card: 'believing-isnt-true' },
+    { n: 7,  path: 'see',    title: 'Change is happening and I’m struggling.', after: 'I’m moving with it.',        audio: 'assets/mirrors/mirror-07.mp3', duration: 70, card: 'prepared-to-see' },
+    { n: 8,  path: 'own',    title: 'I’ve lost direction.', after: 'I know where I’m going.',                       audio: 'assets/mirrors/mirror-08.mp3', duration: 66, card: 'own-your-time' },
+    { n: 9,  path: 'own',    title: 'My team isn’t pulling together.', after: 'We’re pulling together.',           audio: 'assets/mirrors/mirror-09.mp3', duration: 70, card: 'fix-your-standards' },
     // 10-12: PLACEHOLDER titles so each path shows 4 Mirrors. They show as "Coming soon" until audio is added.
-    { n: 10, path: 'change', title: 'I keep waiting for the right moment.', after: 'I didn’t wait.',  audio: null, duration: 0, nudges: [] },
-    { n: 11, path: 'change', title: 'I start strong, then I stop.', after: 'I kept going.',          audio: null, duration: 0, nudges: [] },
-    { n: 12, path: 'change', title: 'I’m ready. I just need a push.', after: 'I’m on my way.',        audio: null, duration: 0, nudges: [] }
+    { n: 10, path: 'change', title: 'I keep waiting for the right moment.', after: 'I didn’t wait.',  audio: null, duration: 0, card: 'already-late' },
+    { n: 11, path: 'change', title: 'I start strong, then I stop.', after: 'I kept going.',          audio: null, duration: 0, card: 'follow-through' },
+    { n: 12, path: 'change', title: 'I’m ready. I just need a push.', after: 'I’m on my way.',        audio: null, duration: 0, card: 'comfort-enemy' }
   ],
 
   /* ------------------------------------------------------------- the 21 nudges
    * 7 per deck, and each nudge belongs to ONE deck: white = SEE IT, black = OWN IT, gold = CHANGE IT.
-   * Card image: assets/cards/<deck>/<id>.jpg
+   * Card image: assets/cards/<deck>/<id>.jpg · face-down back: assets/cards/back.jpg
+   * Each card is unlocked by the Mirror or episode that names it as its `card`.
    * pickIf = the 3 lines under "IS THIS YOU?" on the back of the card (DRAFTS, edit freely).
    */
   NUDGES: [
@@ -143,23 +137,24 @@ window.PM_CONTENT = {
 
   /* ------------------------------------------------------------- The Mirror podcast
    * audio: null = not uploaded yet, shows as "Coming soon".
+   * card        = the nudge card this episode unlocks the first time it is finished (episodes 6, 8 and 10 unlock none).
    */
   PODCAST: {
     name: 'THE MIRROR',
     tagline: 'Turning knowing into doing.',
     episodes: [
-      { n: 1,  title: 'Look at yourself.',              audio: 'assets/podcast/audio/ep-01.mp3', cover: 'assets/podcast/covers/ep-01.jpg', duration: 243 },
-      { n: 2,  title: 'What are you waiting for?',      audio: 'assets/podcast/audio/ep-02.mp3', cover: 'assets/podcast/covers/ep-02.jpg', duration: 204 },
-      { n: 3,  title: 'What do you need to see?',       audio: 'assets/podcast/audio/ep-03.mp3', cover: 'assets/podcast/covers/ep-03.jpg', duration: 245 },
-      { n: 4,  title: 'Who shows up?',                  audio: 'assets/podcast/audio/ep-04.mp3', cover: 'assets/podcast/covers/ep-04.jpg', duration: 193 },
-      { n: 5,  title: 'Do you accept it?',              audio: 'assets/podcast/audio/ep-05.mp3', cover: 'assets/podcast/covers/ep-05.jpg', duration: 244 },
+      { n: 1,  title: 'Look at yourself.',              audio: 'assets/podcast/audio/ep-01.mp3', cover: 'assets/podcast/covers/ep-01.jpg', duration: 243, card: 'where-your-feet-are' },
+      { n: 2,  title: 'What are you waiting for?',      audio: 'assets/podcast/audio/ep-02.mp3', cover: 'assets/podcast/covers/ep-02.jpg', duration: 204, card: 'train-your-mind' },
+      { n: 3,  title: 'What do you need to see?',       audio: 'assets/podcast/audio/ep-03.mp3', cover: 'assets/podcast/covers/ep-03.jpg', duration: 245, card: 'listen-with-your-eyes' },
+      { n: 4,  title: 'Who shows up?',                  audio: 'assets/podcast/audio/ep-04.mp3', cover: 'assets/podcast/covers/ep-04.jpg', duration: 193, card: 'how-committed' },
+      { n: 5,  title: 'Do you accept it?',              audio: 'assets/podcast/audio/ep-05.mp3', cover: 'assets/podcast/covers/ep-05.jpg', duration: 244, card: 'excuse-costs' },
       { n: 6,  title: 'Why aren’t you doing it?',       audio: 'assets/podcast/audio/ep-06.mp3', cover: 'assets/podcast/covers/ep-06.jpg', duration: 215 },
-      { n: 7,  title: 'What are you covering?',         audio: 'assets/podcast/audio/ep-07.mp3', cover: 'assets/podcast/covers/ep-07.jpg', duration: 227 },
+      { n: 7,  title: 'What are you covering?',         audio: 'assets/podcast/audio/ep-07.mp3', cover: 'assets/podcast/covers/ep-07.jpg', duration: 227, card: 'be-intentional' },
       { n: 8,  title: 'The excuse you call a reason.',  audio: 'assets/podcast/audio/ep-08.mp3', cover: 'assets/podcast/covers/ep-08.jpg', duration: 215 },
-      { n: 9,  title: 'Are we there yet?',              audio: 'assets/podcast/audio/ep-09.mp3', cover: 'assets/podcast/covers/ep-09.jpg', duration: 220 },
+      { n: 9,  title: 'Are we there yet?',              audio: 'assets/podcast/audio/ep-09.mp3', cover: 'assets/podcast/covers/ep-09.jpg', duration: 220, card: 'fall-to-systems' },
       { n: 10, title: 'Yesterday on repeat.',           audio: 'assets/podcast/audio/ep-10.mp3', cover: 'assets/podcast/covers/ep-10.jpg', duration: 201 },
-      { n: 11, title: 'Will you still be there?',       audio: 'assets/podcast/audio/ep-11.mp3', cover: 'assets/podcast/covers/ep-11.jpg', duration: 203 },
-      { n: 12, title: 'Who are you becoming?',          audio: 'assets/podcast/audio/ep-12.mp3', cover: 'assets/podcast/covers/ep-12.jpg', duration: 228 }
+      { n: 11, title: 'Will you still be there?',       audio: 'assets/podcast/audio/ep-11.mp3', cover: 'assets/podcast/covers/ep-11.jpg', duration: 203, card: 'start-responding' },
+      { n: 12, title: 'Who are you becoming?',          audio: 'assets/podcast/audio/ep-12.mp3', cover: 'assets/podcast/covers/ep-12.jpg', duration: 228, card: 'start-driving' }
     ]
   },
 

@@ -8,7 +8,7 @@
  *   #/                 1 · Landing: swipe a path
  *   #/path/<key>       2 · Which one is you? (Mirrors of that path)
  *   #/mirror/<n>       3 · Kevin's voice. Pauses at CONFIG.previewSeconds until an email is given
- *   #/keep/<n>         4 · Take one with you (nudge card reward)
+ *   #/unlocked/<kind>/<n>  4 · Card unlocked (straight after a Mirror or episode is finished for the first time)
  *   #/home[/tab]       5 · Home after email: mirrors | nudges | podcast
  *   #/episode/<n>      6 · Podcast episode player
  *   #/mirror21         7 · Mirror 21, the $99 training (white)
@@ -65,8 +65,22 @@
   function mins(s) { return Math.max(1, Math.round((s || 0) / 60)) + ' min'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function cardSrc(id, deck) { return 'assets/cards/' + deck + '/' + id + '.jpg'; }
+  var CARD_BACK = 'assets/cards/back.jpg';
   var AVAILABLE = MIRRORS.filter(function (m) { return !!m.audio; });
   var EPISODES = PODCAST.episodes.filter(function (e) { return !!e.audio; });
+
+  /* ================================================================ the card collection
+   * Every card has one source: the Mirror or episode whose `card` names it.
+   * A card is collected once its source has been finished, so the collection is read from S.heard / S.eps.
+   */
+  var SOURCES = {};
+  MIRRORS.forEach(function (m) { if (m.card) SOURCES[m.card] = { kind: 'mirror', n: m.n, item: m }; });
+  PODCAST.episodes.forEach(function (e) { if (e.card) SOURCES[e.card] = { kind: 'episode', n: e.n, item: e }; });
+  function sourceOf(id) { return SOURCES[id] || null; }
+  function sourceDone(kind, n) { return kind === 'mirror' ? !!S.heard[n] : !!S.eps[n]; }
+  function isCollected(id) { var s = sourceOf(id); return !!s && sourceDone(s.kind, s.n); }
+  function collectedCount(deck) { return NUDGES.filter(function (x) { return (!deck || x.deck === deck) && isCollected(x.id); }).length; }
+  function sourceName(s) { return (s.kind === 'mirror' ? 'MIRROR ' : 'EPISODE ') + pad2(s.n); }
   var CIRC = 2 * Math.PI * 115; // ring radius 115 in a 250 viewBox
 
   /* ================================================================ saved state (this device) */
@@ -86,7 +100,7 @@
   var DEMO_STATE = QS.get('demo') || '';
   var DEMO = !!CONFIG.demoMode || !!DEMO_STATE;
 
-  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, kept: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
+  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
   if (!DEMO) {
     try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { /* private mode */ }
   } else if (CONFIG.demoMode) {
@@ -299,6 +313,9 @@
   ['play', 'pause', 'loadedmetadata', 'seeked'].forEach(function (ev) { audio.addEventListener(ev, syncUI); });
   audio.addEventListener('ended', function () {
     if (!now) return;
+    var item = now.kind === 'mirror' ? mirrorBy(now.n) : episodeBy(now.n);
+    var newCard = !!(item && item.card && unlocked() && !sourceDone(now.kind, now.n));
+    var onPlayer = location.hash === '#/' + now.kind + '/' + now.n;
     if (now.kind === 'mirror') {
       S.heard[now.n] = true; persist();
       track('mirror_complete', { mirror: now.n });
@@ -313,6 +330,12 @@
       }
     }
     syncUI();
+    // first time through: the card it unlocks. On the player, straight to the reward; elsewhere (mini player), a toast.
+    if (newCard) {
+      track('card_unlocked', { nudge: item.card, from: now.kind, n: now.n });
+      if (onPlayer) go('#/unlocked/' + now.kind + '/' + now.n);
+      else toast('NEW CARD UNLOCKED');
+    }
   });
 
   /* ================================================================ emails
@@ -366,7 +389,8 @@
     [/^#?\/?$/, landing],
     [/^#\/path\/(\w+)$/, pathScreen],
     [/^#\/mirror\/(\d+)$/, mirrorScreen],
-    [/^#\/keep\/(\d+)$/, keepScreen],
+    [/^#\/unlocked\/(mirror|episode)\/(\d+)$/, rewardScreen],
+    [/^#\/keep\/\d+$/, function () { go('#/home/nudges'); return null; }], // old links
     [/^#\/home(?:\/(mirrors|nudges|podcast))?$/, homeScreen],
     [/^#\/episode\/(\d+)$/, episodeScreen],
     [/^#\/mirror21$/, mirror21Screen]
@@ -671,7 +695,7 @@
         ((CAPTIONS[m.n] || []).length ? '<p class="caption" data-caption aria-hidden="true"></p>' : '') +
         '<div class="spacer"></div>' +
         '<p class="sound-hint" data-hint>' + I.phones + 'Best with sound</p>' +
-        '<a class="pill wide" data-cta hidden href="#/keep/' + m.n + '"><span>TAKE ONE WITH YOU</span><span class="dot">' + I.arrow + '</span></a>' +
+        '<a class="pill wide" data-cta hidden href="#/home"><span>ENTER THE POCKET MIRROR</span><span class="dot">' + I.arrow + '</span></a>' +
       '</section>' +
       // unlock sheet (outside .screen so position:fixed works)
       '<div class="dim" id="dim" data-action="close-gate"></div>' +
@@ -772,149 +796,59 @@
     if (audio.readyState >= 1) set(); else audio.addEventListener('loadedmetadata', set, { once: true });
   }
 
-  /* ================================================================ nudge decks (shared) */
-  function cardHTML(nudge, deck, i) {
-    var kept = S.kept[nudge.id] ? ' kept' : '';
-    return '<div class="card' + (i === 0 ? ' active' : '') + kept + '" data-id="' + nudge.id + '" data-deck="' + deck + '">' +
+  /* ================================================================ the collection (21 NUDGES tab) */
+  // One deck as a 3-across grid: collected cards face up, the rest face down saying how to unlock them.
+  function collectionHTML(deck) {
+    return '<ul class="collection">' + nudgesOf(deck).map(function (x) {
+      var s = sourceOf(x.id);
+      if (isCollected(x.id)) {
+        return '<li><button type="button" class="slot got" data-action="view-card" data-id="' + x.id + '" aria-label="' + esc(x.text) + '">' +
+            '<img src="' + cardSrc(x.id, deck) + '" alt="" loading="lazy" draggable="false"></button>' +
+          '<span class="cap">' + I.check + sourceName(s) + '</span></li>';
+      }
+      var soon = !s || !s.item.audio;
+      var how = !s ? '' : soon ? sourceName(s) + ' · COMING SOON' : 'LISTEN TO ' + sourceName(s);
+      var act = soon ? 'soon-card' : s.kind === 'mirror' ? 'play-mirror' : 'play-episode';
+      return '<li><button type="button" class="slot locked' + (soon ? ' soon' : '') + '" data-action="' + act + '"' + (s ? ' data-n="' + s.n + '"' : '') + ' aria-label="Locked card. ' + esc(how) + '">' +
+          '<img src="' + CARD_BACK + '" alt="" loading="lazy" draggable="false">' +
+          (s ? '<span class="how"><small>' + (soon ? 'Coming soon' : 'Listen to') + '</small><b>' + sourceName(s) + '</b></span>' : '') +
+        '</button><span class="cap"></span></li>';
+    }).join('') + '</ul>';
+  }
+
+  // A collected card, big: tap to flip to "IS THIS YOU?", then make it the lock screen.
+  function viewerHTML() {
+    return '<div class="dim" id="cv-dim" data-action="cv-close"></div>' +
+      '<section class="viewer" id="cv" role="dialog" aria-modal="true" aria-label="Your card" inert>' +
+        '<div class="card active" data-cv></div>' +
+        '<p class="tap-hint show" aria-hidden="true"><span class="tap-dot"></span>TAP TO FLIP</p>' +
+        '<button type="button" class="btn-gold" data-action="cv-lock">' + I.download + '<span>MAKE IT MY LOCK SCREEN</span></button>' +
+        '<button type="button" class="link" data-action="cv-close">Close</button>' +
+      '</section>';
+  }
+  var cvCur = null;
+  function openViewer(id) {
+    var x = nudgeBy(id), sheet = document.getElementById('cv'); if (!x || !sheet) return;
+    cvCur = x;
+    sheet.querySelector('[data-cv]').innerHTML =
       '<div class="card-inner">' +
-        '<button type="button" class="face front" data-action="flip" aria-label="' + esc(nudge.text) + ' Tap to flip.">' +
-          '<img src="' + cardSrc(nudge.id, deck) + '" alt="" ' + (i > 2 ? 'loading="lazy" ' : '') + 'draggable="false">' +
-          '<span class="kept-badge" aria-hidden="true">' + I.check + '</span>' +
-        '</button>' +
-        '<button type="button" class="face back ' + deck + '" data-action="flip" aria-label="Is this you? ' + esc(nudge.pickIf.join(' ')) + '"><span class="frame">' +
+        '<button type="button" class="face front" data-action="cv-flip" aria-label="' + esc(x.text) + ' Tap to flip.">' +
+          '<img src="' + cardSrc(x.id, x.deck) + '" alt="" draggable="false"></button>' +
+        '<button type="button" class="face back ' + x.deck + '" data-action="cv-flip" aria-label="Is this you? ' + esc(x.pickIf.join(' ')) + '"><span class="frame">' +
           '<span class="head"><span>IS THIS YOU?</span></span>' +
-          '<span class="lines">' + nudge.pickIf.map(function (l) { return '<span class="line">' + esc(l) + '</span>'; }).join('') + '</span>' +
+          '<span class="lines">' + x.pickIf.map(function (l) { return '<span class="line">' + esc(l) + '</span>'; }).join('') + '</span>' +
         '</span></button>' +
-      '</div></div>';
+      '</div>';
+    sheet.querySelector('[data-cv]').classList.remove('flipped');
+    wallpaper(x.id, x.deck).catch(function () {}); // ready before the tap, so phones allow the share
+    sheet.removeAttribute('inert');
+    sheet.classList.add('open'); document.getElementById('cv-dim').classList.add('open');
+    track('card_view', { nudge: x.id });
   }
-  // the deck + one hint slot under it: "TAP TO FLIP", then "SWIPE UP TO SAVE" once flipped
-  function deckBlock(list, deck, extraClass) {
-    return '<div class="deck-wrap">' +
-      '<div class="deck ' + deck + (extraClass ? ' ' + extraClass : '') + '" data-deck>' + list.map(function (x, i) { return cardHTML(x, deck, i); }).join('') + '</div>' +
-      '<div class="deck-ctl">' +
-        '<p class="tap-hint" data-flip-hint aria-hidden="true"><span class="tap-dot"></span>TAP TO FLIP</p>' +
-        '<button type="button" class="tap-hint up-hint" data-up-hint data-action="keep-up" tabindex="-1"><span class="up-ico">' + I.up + '</span>SWIPE UP TO SAVE</button>' +
-      '</div>' +
-      (list.length <= 7 ? '<div class="dots" aria-hidden="true">' + list.map(function () { return '<span></span>'; }).join('') + '</div>' : '') +
-    '</div>';
-  }
-
-  // Scroll-snap carousel: tracks the centred card, unflips the others, drives the hints and swipe-up-to-save.
-  function setupDeck(el, onActive) {
-    var cards = [].slice.call(el.querySelectorAll('.card'));
-    var wrap = el.closest('.deck-wrap');
-    var flipHint = wrap.querySelector('[data-flip-hint]'), upHint = wrap.querySelector('[data-up-hint]');
-    var dots = [].slice.call(wrap.querySelectorAll('.dots span'));
-    var active = 0, raf = 0, flipT = 0, upT = 0, firstT = 0;
-    function flash(h, ms) {
-      var other = h === flipHint ? upHint : flipHint;
-      other.classList.remove('show');
-      h.classList.add('show');
-      clearTimeout(flipT); clearTimeout(upT);
-      var t = setTimeout(function () { h.classList.remove('show'); }, ms);
-      if (h === flipHint) flipT = t; else upT = t;
-    }
-    function showHint() { flash(flipHint, 2200); }
-    function sync() {
-      // "SWIPE UP TO SAVE" stays for as long as the card is flipped: people flip, read, then still need to see it
-      if (cards[active].classList.contains('flipped')) { clearTimeout(flipT); clearTimeout(upT); flipHint.classList.remove('show'); upHint.classList.add('show'); }
-      else upHint.classList.remove('show');
-      dots.forEach(function (d, j) { d.classList.toggle('on', j === active); });
-    }
-    function measure() {
-      raf = 0;
-      var mid = el.scrollLeft + el.clientWidth / 2, best = 0, bestD = Infinity;
-      cards.forEach(function (c, i) {
-        var d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid);
-        if (d < bestD) { bestD = d; best = i; }
-      });
-      if (best !== active) {
-        cards[active].classList.remove('active', 'flipped');
-        active = best;
-        cards[active].classList.add('active');
-        sync(); showHint();
-        if (onActive) onActive(cards[active], active);
-      }
-    }
-    el.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(measure); }, { passive: true });
-    cards.forEach(function (card) { liftable(card); });
-    el.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowUp' && e.target.closest('.card') === cards[active]) { e.preventDefault(); keepCard(cards[active]); }
-    });
-    var api = {
-      active: function () { return cards[active]; },
-      index: function () { return active; },
-      sync: sync,
-      showHint: showHint
-    };
-    wrap.pmDeck = api;
-    sync();
-    firstT = setTimeout(showHint, 600);
-    if (onActive) onActive(cards[0], 0);
-    return api;
-  }
-
-  // Drag the centred card up to keep it. Sideways stays the deck's own scroll.
-  function liftable(card) {
-    var x0 = null, y0 = 0, dy = 0, pid = null, dragging = false;
-    function reset() {
-      card.classList.remove('dragging');
-      card.style.transform = ''; card.style.removeProperty('--lift');
-    }
-    card.addEventListener('pointerdown', function (e) {
-      if (!card.classList.contains('active') || card.classList.contains('away')) return;
-      x0 = e.clientX; y0 = e.clientY; dy = 0; pid = e.pointerId; dragging = false;
-    });
-    card.addEventListener('pointermove', function (e) {
-      if (x0 === null || e.pointerId !== pid) return;
-      var dx = e.clientX - x0, d = e.clientY - y0;
-      if (!dragging) {
-        if (d < -8 && -d > Math.abs(dx) * 1.2) {
-          dragging = true; card.classList.add('dragging');
-          try { card.setPointerCapture(pid); } catch (err) { /* ignore */ }
-        } else if (Math.abs(dx) > 10 || d > 10) { x0 = null; return; }
-        else return;
-      }
-      e.preventDefault();
-      dy = Math.min(0, d);
-      var lift = Math.min(1, -dy / 90);
-      card.style.transform = 'translateY(' + Math.max(-36, dy * 0.45).toFixed(1) + 'px) scale(' + (1 + lift * 0.03).toFixed(3) + ')';
-      card.style.setProperty('--lift', lift.toFixed(2));
-    });
-    function end(e) {
-      if (x0 === null || (e && e.pointerId !== pid)) return;
-      x0 = null;
-      if (!dragging) return;
-      dragging = false;
-      card._dragged = true; setTimeout(function () { card._dragged = false; }, 80);
-      if (dy < -60) keepCard(card); else reset();
-    }
-    card.addEventListener('pointerup', end);
-    card.addEventListener('pointercancel', function (e) { if (dragging) { dragging = false; reset(); } end(e); });
-    card._resetLift = reset;
-  }
-
-  // The card flies up out of the deck, then the lock-screen sheet rises with it.
-  function keepCard(card) {
-    if (!card || card.classList.contains('away')) return;
-    var id = card.getAttribute('data-id'), deck = card.getAttribute('data-deck');
-    var wrap = card.closest('.deck-wrap');
-    var r = card.getBoundingClientRect();
-    var img = card.querySelector('.face.front img');
-    var fly = document.createElement('div');
-    fly.className = 'fly-card';
-    fly.style.left = r.left + 'px'; fly.style.top = r.top + 'px'; fly.style.width = r.width + 'px'; fly.style.height = r.height + 'px';
-    fly.innerHTML = '<img src="' + img.src + '" alt="">';
-    document.body.appendChild(fly);
-    card.classList.add('away');
-    card.classList.remove('flipped');
-    if (card._resetLift) card._resetLift();
-    if (wrap && wrap.pmDeck) wrap.pmDeck.sync();
-    requestAnimationFrame(function () { requestAnimationFrame(function () { fly.classList.add('go'); }); });
-    S.kept[id] = deck; persist();
-    track('nudge_keep', { nudge: id, deck: deck });
-    setTimeout(function () { if (fly.parentNode) fly.parentNode.removeChild(fly); }, 700);
-    setTimeout(function () { openNudgeSheet(id, deck, card); }, 380);
+  function closeViewer() {
+    var sheet = document.getElementById('cv'); if (!sheet) return;
+    sheet.classList.remove('open'); sheet.setAttribute('inert', '');
+    document.getElementById('cv-dim').classList.remove('open');
   }
 
   // Phone wallpaper: the card centred on black, ready for the lock screen.
@@ -994,9 +928,9 @@
         '<button type="button" class="link" data-action="ns-close">Done</button>' +
       '</section>';
   }
-  function openNudgeSheet(id, deck, card) {
+  function openNudgeSheet(id, deck) {
     var sheet = document.getElementById('ns'); if (!sheet) return;
-    nsCur = { id: id, deck: deck, card: card };
+    nsCur = { id: id, deck: deck };
     var img = sheet.querySelector('[data-ns-img]');
     img.src = cardSrc(id, deck);
     wallpaper(id, deck).then(function (f) { if (nsCur && nsCur.id === id) img.src = URL.createObjectURL(f); }).catch(function () {});
@@ -1012,42 +946,41 @@
     var sheet = document.getElementById('ns'); if (!sheet) return;
     sheet.classList.remove('open'); sheet.setAttribute('inert', '');
     document.getElementById('ns-dim').classList.remove('open');
-    var card = nsCur && nsCur.card;
-    if (card) {
-      card.classList.remove('away');
-      card.classList.add('kept', 'back-in');
-      setTimeout(function () { card.classList.remove('back-in'); }, 900);
-    }
-    var next = app.querySelector('[data-keep-next]');
-    if (next) { next.hidden = false; var skip = app.querySelector('[data-skip]'); if (skip) skip.hidden = true; }
   }
 
-  /* ================================================================ 4 · TAKE ONE WITH YOU */
-  function keepScreen(n) {
-    var m = mirrorBy(n);
-    if (!m || !m.audio) { go('#/'); return null; }
-    if (!unlocked()) { go('#/mirror/' + m.n); return null; }
-    var p = pathBy(m.path), deck = p.deck;
-    var ids = m.nudges.length ? m.nudges : nudgesOf(deck).slice(0, 3).map(function (x) { return x.id; });
-    var cards = ids.map(nudgeBy).filter(Boolean);
+  /* ================================================================ 4 · CARD UNLOCKED */
+  function rewardScreen(kind, n) {
+    var item = kind === 'mirror' ? mirrorBy(n) : episodeBy(n);
+    var x = item && item.card && nudgeBy(item.card);
+    if (!x || !unlocked() || !sourceDone(kind, item.n)) { go('#/home'); return null; }
+    var count = collectedCount(), total = NUDGES.length;
+    var segs = '';
+    for (var i = 0; i < total; i++) segs += '<span' + (i < count ? ' class="on' + (i === count - 1 ? ' new' : '') + '"' : '') + '></span>';
+    // after a Mirror: into the app. After an episode: you are already in, so to the collection.
+    var next = kind === 'mirror'
+      ? '<a class="pill wide" href="#/home"><span>ENTER THE POCKET MIRROR</span><span class="dot">' + I.arrow + '</span></a>'
+      : '<a class="pill wide" href="#/home/nudges" data-action="see-deck" data-deck="' + x.deck + '"><span>SEE MY COLLECTION</span><span class="dot">' + I.arrow + '</span></a>';
     var html =
-      '<section class="screen keep">' +
-        '<div class="topbar"><a class="icon-btn" href="#/mirror/' + m.n + '" aria-label="Back to the Mirror">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
-        '<h1>TAKE ONE WITH YOU</h1>' +
-        deckBlock(cards, deck) +
-        '<div class="actions">' +
-          '<a class="pill" data-keep-next hidden href="#/home"><span>MY MIRRORS</span><span class="dot">' + I.arrow + '</span></a>' +
-          '<a class="link" data-skip href="#/home">Skip for now</a>' +
+      '<section class="screen reward">' +
+        '<p class="eyebrow">' + (kind === 'mirror' ? 'MIRROR ' : 'EPISODE ') + pad2(item.n) + ' · COMPLETE</p>' +
+        '<h1>' + (count === 1 ? 'FIRST' : 'NEW') + ' CARD<br>UNLOCKED.</h1>' +
+        '<div class="reward-stage">' +
+          '<div class="reward-card">' +
+            '<div class="rc-inner">' +
+              '<img class="rc-face rc-front" src="' + cardSrc(x.id, x.deck) + '" alt="' + esc(x.text) + '">' +
+              '<img class="rc-face rc-back" src="' + CARD_BACK + '" alt="">' +
+            '</div>' +
+            '<span class="rc-sheen" aria-hidden="true"></span>' +
+          '</div>' +
         '</div>' +
-      '</section>' + nudgeSheetHTML(false);
+        '<p class="collected">' + count + ' OF ' + total + ' COLLECTED</p>' +
+        '<div class="segs" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + count + '">' + segs + '</div>' +
+        '<div class="spacer"></div>' +
+        next +
+      '</section>';
     return {
       html: html,
-      mount: function () {
-        track('keep_view', { mirror: m.n });
-        setupDeck(app.querySelector('[data-deck]'), function (card) {
-          wallpaper(card.getAttribute('data-id'), deck).catch(function () {});
-        });
-      }
+      mount: function () { track('reward_view', { nudge: x.id, from: kind, n: item.n, collected: count }); }
     };
   }
 
@@ -1095,26 +1028,22 @@
 
     if (tab === 'nudges') {
       var deckKey = S.deck || S.lastPath || 'change';
+      var got = collectedCount(), total = NUDGES.length;
       body =
         homeTop() +
-        markTitle(TITLES.nudges || [String(NUDGES.length), 'NUDGES'], NUDGES.length + ' Nudges') +
+        markTitle(TITLES.nudges || [String(total), 'NUDGES'], total + ' Nudges') +
+        '<div class="progress"><span>' + got + ' OF ' + total + ' COLLECTED</span><span class="bar" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + got + '"><span style="width:' + (100 * got / total).toFixed(1) + '%"></span></span></div>' +
         '<div class="deck-switch" role="group" aria-label="Choose a deck">' + PATHS.map(function (p) {
-          return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.name) + '</button>';
+          return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.deckName || p.name) +
+            '<small>' + collectedCount(p.deck) + '/' + nudgesOf(p.deck).length + '</small></button>';
         }).join('') + '</div>' +
-        '<div data-deck-wrap></div>';
-      extra = nudgeSheetHTML(true);
+        '<div data-collection></div>';
+      extra = viewerHTML() + nudgeSheetHTML(true);
       mount = function () {
-        track('nudges_view');
-        var wrap = app.querySelector('[data-deck-wrap]');
-        var deck = '';
-        function build(key) {
-          deck = pathBy(key).deck;
-          // each deck shows its 7 nudges in the order they are listed in content.js
-          wrap.innerHTML = deckBlock(nudgesOf(deck), deck);
-          setupDeck(wrap.querySelector('[data-deck]'), function (card) {
-            wallpaper(card.getAttribute('data-id'), deck).catch(function () {});
-          });
-        }
+        track('nudges_view', { collected: got });
+        var wrap = app.querySelector('[data-collection]');
+        // each deck shows its 7 cards in the order they are listed in content.js
+        function build(key) { wrap.innerHTML = collectionHTML(pathBy(key).deck); }
         app.querySelector('.deck-switch').addEventListener('click', function (e) {
           var b = e.target.closest('[data-deck-key]'); if (!b) return;
           S.deck = b.getAttribute('data-deck-key'); persist();
@@ -1269,21 +1198,22 @@
       var d = (isFinite(audio.duration) && audio.duration) || 0;
       audio.currentTime = Math.max(0, Math.min(d || Infinity, audio.currentTime + (+el.getAttribute('data-by'))));
     },
-    'flip': function (el) {
-      var card = el.closest('.card'), wrap = el.closest('.deck-wrap');
-      if (card._dragged || card.classList.contains('away')) return;
-      if (!card.classList.contains('active')) {
-        var deck = card.parentElement;
-        deck.scrollTo({ left: card.offsetLeft - (deck.clientWidth - card.offsetWidth) / 2, behavior: 'smooth' });
-        return;
-      }
-      var on = card.classList.toggle('flipped');
-      if (wrap && wrap.pmDeck) { wrap.pmDeck.sync(); if (!on) wrap.pmDeck.showHint(); }
-      if (on) track('nudge_flip', { nudge: card.getAttribute('data-id') });
+    'view-card': function (el) { openViewer(el.getAttribute('data-id')); },
+    'cv-flip': function (el) {
+      var on = el.closest('.card').classList.toggle('flipped');
+      if (on && cvCur) track('nudge_flip', { nudge: cvCur.id });
     },
-    'keep-up': function (el) {
-      var wrap = el.closest('.deck-wrap');
-      keepCard(wrap.querySelector('.card.active'));
+    'cv-close': function () { closeViewer(); },
+    'cv-lock': function () {
+      if (!cvCur) return;
+      var x = cvCur;
+      closeViewer();
+      setTimeout(function () { openNudgeSheet(x.id, x.deck); }, 200);
+    },
+    'soon-card': function () { toast('COMING SOON'); },
+    'see-deck': function (el) {
+      var p = PATHS.filter(function (x) { return x.deck === el.getAttribute('data-deck'); })[0];
+      if (p) { S.deck = p.key; persist(); }
     },
     'ns-save': function (el) {
       if (!nsCur) return;
@@ -1329,7 +1259,7 @@
     },
     'start-over': function () {
       audio.pause(); audio.removeAttribute('src'); now = null;
-      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.kept = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
+      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
       try { history.replaceState(null, '', location.pathname + location.hash); } catch (x) { /* ignore */ } // drop the home-screen unlock
       go('#/');
     },
