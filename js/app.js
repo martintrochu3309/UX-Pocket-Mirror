@@ -333,8 +333,13 @@
     // first time through: the card it unlocks. On the player, straight to the reward; elsewhere (mini player), a toast.
     if (newCard) {
       track('card_unlocked', { nudge: item.card, from: now.kind, n: now.n });
-      if (onPlayer) go('#/unlocked/' + now.kind + '/' + now.n);
-      else toast('NEW CARD UNLOCKED');
+      if (onPlayer) {
+        // a short fade so the player hands over to the card in one motion
+        var from = location.hash, target = '#/unlocked/' + now.kind + '/' + now.n;
+        var screen = app.querySelector('[data-player]');
+        if (screen) screen.classList.add('leaving');
+        setTimeout(function () { if (location.hash === from) go(target); }, 320);
+      } else toast('NEW CARD UNLOCKED');
     }
   });
 
@@ -441,8 +446,7 @@
       if (prog) prog.style.strokeDashoffset = (CIRC * (1 - Math.min(1, t / d))).toFixed(2);
       if (kind === 'mirror') {
         var done = unlocked() && (S.heard[n] || (mine && t >= d - 0.6));
-        var cta = root.querySelector('[data-cta]'), hint = root.querySelector('[data-hint]');
-        if (cta) cta.hidden = !done;
+        var hint = root.querySelector('[data-hint]');
         if (hint) hint.hidden = !!done;
       }
       var m21 = root.querySelector('[data-m21-end]');
@@ -695,7 +699,6 @@
         ((CAPTIONS[m.n] || []).length ? '<p class="caption" data-caption aria-hidden="true"></p>' : '') +
         '<div class="spacer"></div>' +
         '<p class="sound-hint" data-hint>' + I.phones + 'Best with sound</p>' +
-        '<a class="pill wide" data-cta hidden href="#/home"><span>ENTER THE POCKET MIRROR</span><span class="dot">' + I.arrow + '</span></a>' +
       '</section>' +
       // unlock sheet (outside .screen so position:fixed works)
       '<div class="dim" id="dim" data-action="close-gate"></div>' +
@@ -1012,14 +1015,12 @@
 
     if (tab === 'mirrors') {
       var heard = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).length;
-      var next = nextEpisode();
       body =
         homeTop() +
         markTitle(TITLES.mirrors || ['12', 'MIRRORS'], '12 Mirrors') +
         '<div class="progress"><span>' + heard + ' OF ' + CONFIG.totalMirrors + ' HEARD</span><span class="bar" role="progressbar" aria-label="Mirrors heard" aria-valuemin="0" aria-valuemax="' + CONFIG.totalMirrors + '" aria-valuenow="' + heard + '"><span style="width:' + (100 * heard / CONFIG.totalMirrors).toFixed(1) + '%"></span></span></div>' +
         a2hsCardHTML() +
         (allMirrorsHeard() && M21 ? m21Card(((M21.cards || {}).allMirrors || [])[0], ((M21.cards || {}).allMirrors || [])[1]) : '') +
-        (next ? '<button type="button" class="feature" data-action="play-episode" data-n="' + next.n + '"><img src="' + next.cover + '" alt=""><span class="body"><small>' + (S.eps[next.n] ? 'THE MIRROR' : 'UP NEXT') + ' · EPISODE ' + pad2(next.n) + '</small><b>' + esc(next.title) + '</b></span><span class="play-ring">' + I.play + '</span></button>' : '') +
         '<ul class="mirror-list">' + MIRRORS.map(mirrorRow).join('') + '</ul>' +
         (DEMO ? '<button type="button" class="link demo-reset" data-action="start-over">Start over (demo)</button>' : '');
       extra = a2hsSheetHTML();

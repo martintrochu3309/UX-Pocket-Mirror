@@ -73,10 +73,9 @@ window.PM_CONTENT = {
     { n: 7,  path: 'see',    title: 'Change is happening and I’m struggling.', after: 'I’m moving with it.',        audio: 'assets/mirrors/mirror-07.mp3', duration: 70, card: 'prepared-to-see' },
     { n: 8,  path: 'own',    title: 'I’ve lost direction.', after: 'I know where I’m going.',                       audio: 'assets/mirrors/mirror-08.mp3', duration: 66, card: 'own-your-time' },
     { n: 9,  path: 'own',    title: 'My team isn’t pulling together.', after: 'We’re pulling together.',           audio: 'assets/mirrors/mirror-09.mp3', duration: 70, card: 'fix-your-standards' },
-    // 10-12: PLACEHOLDER titles so each path shows 4 Mirrors. They show as "Coming soon" until audio is added.
-    { n: 10, path: 'change', title: 'I keep waiting for the right moment.', after: 'I didn’t wait.',  audio: null, duration: 0, card: 'already-late' },
-    { n: 11, path: 'change', title: 'I start strong, then I stop.', after: 'I kept going.',          audio: null, duration: 0, card: 'follow-through' },
-    { n: 12, path: 'change', title: 'I’m ready. I just need a push.', after: 'I’m on my way.',        audio: null, duration: 0, card: 'comfort-enemy' }
+    { n: 10, path: 'change', title: 'I need to make a decision.', after: 'I made the call.',                           audio: 'assets/mirrors/mirror-10.mp3', duration: 62, card: 'already-late' },
+    { n: 11, path: 'change', title: 'I’m feeling the pressure.', after: 'I was ready.',                                 audio: 'assets/mirrors/mirror-11.mp3', duration: 67, card: 'follow-through' },
+    { n: 12, path: 'change', title: 'I’m playing it too safe.', after: 'I made my move.',                              audio: 'assets/mirrors/mirror-12.mp3', duration: 71, card: 'comfort-enemy' }
   ],
 
   /* ------------------------------------------------------------- the 21 nudges
@@ -198,7 +197,7 @@ window.PM_CONTENT = {
     finePrint: 'One payment · yours to keep · start when you’re ready'
   },
 
-  /* ------------------------------------------------------------- captions (Mirrors 01–09)
+  /* ------------------------------------------------------------- captions (Mirrors 01–12)
    * [start second, end second, 'line'] — the words light up one by one as Kevin says them.
    * Lines marked 'CHECK' have a word the speech-to-text wasn't sure about: listen and correct.
    */
@@ -452,6 +451,83 @@ window.PM_CONTENT = {
       [63.1, 63.9, 'Take this with you.'],
       [65.2, 66.7, 'People don’t need your answer,'],
       [67.5, 68.5, 'they need your attention.']
+    ],
+    10: [
+      [1.0, 2.1, 'I need to make a decision.'],
+      [3.4, 4.7, 'One option makes sense,'],
+      [5.4, 8.1, 'then you look at the other, and that makes sense too.'],
+      [9.1, 12.1, 'You talk it through with someone, and they see it differently.'],
+      [13.0, 16.1, 'And the more you think about it, the harder it gets.'],
+      [17.1, 18.8, 'But no option is going to give you everything.'],
+      [19.6, 22.9, 'And sometimes the hardest part isn’t making the decision.'],
+      [23.9, 25.9, 'It’s accepting what you’ll have to give up.'],
+      [26.5, 28.2, 'So you keep going round in circles,'],
+      [28.9, 30.7, 'because as long as you don’t choose,'],
+      [31.4, 34.1, 'you don’t lose anything. Except time.'],
+      [35.5, 36.1, 'Your move.'],
+      [37.1, 38.6, 'Think about the decision in front of you.'],
+      [39.3, 41.5, 'What’s the one thing you won’t compromise on?'],
+      [42.4, 43.7, 'Which option protects it?'],
+      [44.6, 46.7, 'Now say what that choice will cost you, out loud.'],
+      [47.1, 47.8, 'Accept it.'],
+      [48.6, 52.4, 'Then make the call today.'],
+      [54.0, 54.7, 'Take this with you.'],
+      [55.4, 57.8, 'You won’t always know if it’s the right decision,'],
+      [58.9, 60.3, 'but you can make sure it’s yours.']
+    ],
+    11: [
+      [0.9, 2.1, 'I’m feeling the pressure.'],
+      [3.2, 5.2, 'Whatever’s putting you under pressure right now,'],
+      [5.7, 7.9, 'you’ve probably already pictured it going wrong.'],
+      [8.8, 10.4, 'The question you can’t answer,'],
+      [11.0, 12.4, 'the mistake you might make,'],
+      [13.1, 15.0, 'the people you don’t want to let down.'],
+      [15.8, 17.7, 'And it hasn’t even happened yet.'],
+      [18.4, 21.5, 'You’ve gone over the worst possible outcome so many times.'],
+      [22.2, 25.9, 'Yet how much thought have you given to what you’ll actually do if it happens?'],
+      [26.1, 30.3, 'Because if the first time you face that moment'],
+      [30.5, 34.0, 'is when it arrives, it’s already got the upper hand.'],
+      [34.7, 35.7, 'So right now,'],
+      [36.2, 37.3, 'which one are you doing?'],
+      [38.1, 38.9, 'Worrying about it,'],
+      [39.7, 40.7, 'or getting ready for it?'],
+      [42.4, 42.9, 'Your move.'],
+      [43.9, 46.4, 'Pick the one moment you’re most concerned about.'],
+      [47.6, 49.9, 'Decide what you’ll do if it happens.'],
+      [50.9, 53.5, 'Rehearse that response while you’re calm,'],
+      [53.8, 55.0, 'until it’s boring.'],
+      [55.5, 58.6, 'Then take one practical step today to prepare.'],
+      [60.3, 61.0, 'Take this with you.'],
+      [61.9, 63.6, 'Worry rehearses the problem.', 'CHECK'],
+      [64.4, 66.7, 'Preparation rehearses the answer.']
+    ],
+    12: [
+      [1.1, 2.3, 'I’m playing it too safe.'],
+      [3.5, 5.4, 'There’s nothing wrong with being comfortable,'],
+      [5.8, 9.7, 'until comfortable starts keeping you somewhere you no longer want to be.'],
+      [10.8, 12.6, 'There was a time you’d have just gone for it.'],
+      [12.8, 15.7, 'Said yes before you worked out every reason not to.'],
+      [16.6, 19.1, 'Somewhere along the way, that changed.'],
+      [20.1, 21.3, 'Now you weigh everything up.'],
+      [21.8, 22.9, 'You keep things steady.'],
+      [23.5, 24.5, 'You stay where it’s safe.'],
+      [25.5, 26.9, 'And safe can protect you,'],
+      [27.9, 29.4, 'but it can also shrink you.'],
+      [30.3, 34.6, 'Safe inside the walls, while the walls get a little closer every year.'],
+      [35.8, 38.4, 'So if that earlier version of you could see you now,'],
+      [39.7, 40.5, 'what would they say?'],
+      [42.0, 42.5, 'Your move.'],
+      [43.8, 45.8, 'You don’t have to do anything reckless.'],
+      [46.6, 48.7, 'Just find the door you keep walking past.'],
+      [49.3, 53.4, 'The idea, the change, the thing you’ve been talking about for years.'],
+      [54.1, 56.4, 'Today, do one thing that opens it.'],
+      [56.8, 57.7, 'Send the message.'],
+      [58.1, 59.1, 'Make the enquiry.'],
+      [59.4, 60.1, 'Book the time.'],
+      [60.7, 61.9, 'You don’t have to leap,'],
+      [62.7, 63.9, 'but you do have to move.'],
+      [65.7, 66.4, 'Take this with you.'],
+      [67.9, 70.0, 'The bigger risk is staying where you are.']
     ]
   },
 

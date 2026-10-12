@@ -265,7 +265,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .player .spacer { flex: 1; min-height: 20px; }
 .sound-hint { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); }
 .sound-hint svg { width: 14px; height: 14px; }
-.player .pill.wide { margin-top: 8px; }
+/* the player fades out as it hands over to the card unlocked screen */
+.player.leaving { animation: leave .3s ease forwards; }
+@keyframes leave { to { opacity: 0; transform: scale(.98); } }
 
 /* podcast player */
 .cover { width: min(280px, 70vw, 36dvh); aspect-ratio: 1; margin-top: clamp(16px, 4dvh, 36px); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
@@ -462,16 +464,6 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .progress { display: flex; align-items: center; gap: 12px; margin: 20px 0 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
 .progress .bar { position: relative; flex: 1; height: 4px; border-radius: var(--r-full); background: var(--line); overflow: hidden; }
 .progress .bar span { position: absolute; inset: 0 auto 0 0; border-radius: var(--r-full); background: var(--gold); }
-.feature {
-  display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 12px 14px 12px 12px;
-  border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); text-align: left; width: 100%;
-}
-.feature img { width: 48px; height: 48px; border-radius: var(--r-sm); object-fit: cover; }
-.feature .body { flex: 1; min-width: 0; }
-.feature small { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold); }
-.feature b { display: block; margin-top: 8px; font: italic 700 var(--fs-20)/1.2 var(--display); }
-.feature .play-ring { border: 0; background: var(--gold-metal); color: var(--on-gold); width: 36px; height: 36px; }
-.feature .play-ring svg { width: 13px; height: 13px; }
 .home .mirror-list { margin-top: 10px; }
 .home .mirror-row { padding: 15px 0; }
 
