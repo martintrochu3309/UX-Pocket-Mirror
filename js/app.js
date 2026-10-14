@@ -382,7 +382,7 @@
       }
     }
     syncUI();
-    // first time through: the card it unlocks. On the player, straight to the reward; elsewhere (mini player), a toast.
+    // first time through: the card it unlocks. On the player, straight to the reward; if they left the player while it played on, a toast.
     if (newCard) {
       track('card_unlocked', { nudge: item.card, from: now.kind, n: now.n });
       if (onPlayer) {
@@ -968,13 +968,6 @@
     };
     return '<nav class="tabbar" aria-label="The Pocket Mirror">' + t('mirrors', 'MIRRORS', I.tabMirrors) + t('nudges', 'NUDGES', I.tabNudges) + t('podcast', 'PODCAST', I.tabPodcast) + '</nav>';
   }
-  function miniPlayer() {
-    if (!now || now.kind !== 'episode') return '';
-    var e = episodeBy(now.n);
-    return '<div class="mini"><a href="#/episode/' + e.n + '" style="display:contents"><span class="ep-tile">' + pad2(e.n) + '</span>' +
-      '<span class="body"><small>EPISODE ' + pad2(e.n) + '</small><b>' + esc(e.title) + '</b></span></a>' +
-      '<button type="button" class="play-ring" data-toggle data-action="toggle" data-kind="episode" data-n="' + e.n + '" aria-label="Play">' + PLAYPAUSE + '</button></div>';
-  }
   function homeTop() {
     return '<div class="home-top"><p class="wordmark">THE POCKET<br>MIRROR</p>' +
       (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-step training">MIRROR<span class="g">21</span></a>' : '') + '</div>';
@@ -984,7 +977,6 @@
   function homeScreen(tab) {
     if (!unlocked()) { go('#/'); return null; }
     tab = tab || 'mirrors';
-    var mini = miniPlayer();
     var body = '', mount = null, extra = '';
 
     if (tab === 'mirrors') {
@@ -1067,7 +1059,8 @@
     }
 
     return {
-      html: '<section class="screen home' + (mini ? ' has-mini' : '') + '">' + body + '</section>' + mini + tabbar(tab) + extra,
+      // no mini player: an episode keeps playing after you leave it (lock screen controls still work), with no bar on these tabs
+      html: '<section class="screen home">' + body + '</section>' + tabbar(tab) + extra,
       mount: mount
     };
   }

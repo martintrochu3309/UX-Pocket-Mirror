@@ -31,7 +31,7 @@ pocket-mirror/
 | 4 | Unlock | Sheet slides up: Kevin, "HEAR THE REST.", what unlocks, email field. "Not now" goes back to the list. |
 | 5 | Unlocked | Audio carries on from 0:40. Toast: "Unlocked · all Mirrors". |
 | 6 | Take one with you | 3 nudge cards matched to that Mirror, in the path's colour (See it = white, Own it = black, Change it = gold). "• TAP TO FLIP" shows for 2 seconds each time a card lands in the middle. The back says **IS THIS YOU?** and the 3 lines. Once flipped, "↑ SWIPE UP TO SAVE" shows for 2 seconds. **Swipe the card up** and it flies out of the deck, then the lock-screen sheet rises with **SAVE TO MY PHONE**; when you close it the card drops back with a gold glow and a tick. Tap = flip, sideways = next card, up = keep. |
-| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **21 NUDGES** (3 decks of 7, one per path colour, today's nudge first, same tap-to-flip / swipe-up-to-save cards) · **12 EPISODES** (The Mirror podcast, opening one at a time, with a mini player). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
+| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **21 NUDGES** (your collection: 3 decks of 7, each card unlocked by one Mirror or episode) · **12 EPISODES** (The Mirror podcast, opening one at a time; an episode keeps playing if you leave it, with no bar on the tabs). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
 | 8 | Mirror 21 | The $99 21-day training, the only white screen (see below). |
 
 No tab bar before the email. Returning visitors who already gave their email go straight to Home.

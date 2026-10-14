@@ -499,21 +499,6 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .tabbar a svg { width: 26px; height: 26px; }
 .tabbar a[aria-current="page"] { color: var(--gold); }
 
-/* mini player (podcast keeps playing while you browse) */
-.mini {
-  position: fixed; left: 50%; bottom: calc(var(--tabbar) + var(--safe-bottom) + 10px); z-index: 11;
-  width: calc(min(100%, var(--frame)) - 24px); transform: translateX(-50%);
-  display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: var(--r-md);
-  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
-}
-.mini .ep-tile { width: 44px; height: 44px; font-size: var(--fs-body); background: var(--ink); color: var(--bg); }
-.mini .body { flex: 1; min-width: 0; text-align: left; }
-.mini small { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold); }
-.mini b { display: block; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-body)/1.2 var(--display); }
-.mini .play-ring { width: 40px; height: 40px; border: 0; background: var(--ink); color: var(--bg); }
-.mini .play-ring svg { width: 14px; height: 14px; }
-.home.has-mini { padding-bottom: calc(var(--tabbar) + var(--safe-bottom) + 90px); }
-
 /* =====================================================================
    BIG REFLECTED TITLES (12 MIRRORS · 21 NUDGES · 12 EPISODES · MIRROR 21)
    ===================================================================== */
