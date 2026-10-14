@@ -47,18 +47,20 @@ Prefer a weekly drip? Set `podcastUnlock: 'weekly'` (one new episode every `podc
 Never before the email, so the free part feels like a gift. After the email it is always one tap away:
 
 1. **MIRROR 21 button**, top right of every Home tab (always).
-2. **Big card on 12 MIRRORS** once someone has heard every available Mirror: "You've looked in every Mirror. Now live it for 21 days."
+2. **Big card on 12 MIRRORS** once someone has heard every available Mirror: "You've looked in every Mirror. Now live it in 21 steps."
 3. **Card at the end of every podcast episode:** "Ready for more?"
-4. **Line after saving a nudge** from the 21 NUDGES tab: "Want Kevin with you for 21 days?"
+4. **Line after saving a nudge** from the 21 NUDGES tab: "Want Kevin with you for 21 steps?"
+5. **Milestone pop-ups** on the 21 NUDGES tab (3, 7, 14, 21 cards and each finished deck): `MIRROR21.milestones`.
 
-The MIRROR 21 button and cards are **white**, the only white things in the dark app. All four open the **Mirror 21 page**, which fades from black to white:
+The MIRROR 21 button and cards are **white**, the only white things in the dark app. They open the **Mirror 21 page**: one white screen that never scrolls, on any phone (the photo of Kevin shrinks on short phones so the rest always fits):
 
-- **MIRROR 21**, then **YOU SAID** with the Mirror they last listened to, crossed out in gold,
-- **IN 21 DAYS** and that Mirror's "after" line in big letters ("I DID IT.", "I'M BACK IN CONTROL."…), next to Kevin's photo,
-- the price card, What's in it for you, Your 21 days (See it, Own it, Change it), Every day (Listen, Act, Check in),
-- a gold **START MIRROR 21 · $99** button pinned to the bottom.
+- **MIRROR 21** and a ✕ (back to Home), Kevin's photo (`photo`),
+- **YOU SAID** with the Mirror they last listened to, in gold and crossed out,
+- **IN 21 STEPS** and that Mirror's "after" line in big letters, its last word in gold ("I'M BACK IN CONTROL."),
+- three short points (`points`), the gold **START MIRROR 21 · $99** button, and **See how it works**,
+- which slides up a sheet: the three stages (`stages`: steps 01–07 SEE IT, 08–14 OWN IT, 15–21 CHANGE IT) and each step (`eachStep`: Listen, Learn, Act, Check).
 
-Each Mirror's "after" line is `after` in `MIRRORS` (06–12 are drafts). The rest of the page copy is in `MIRROR21`.
+Each Mirror's "after" line is `after` in `MIRRORS`. The rest of the page copy is in `MIRROR21`.
 Put your Mirror 21 page or Stripe checkout link in `MIRROR21.url`. Until then the button says "Link coming soon". The card wording is in `MIRROR21.cards`.
 Events: `pm_m21_open` (with where it was tapped), `pm_m21_view`, `pm_m21_click`. People who click are your A list.
 
@@ -92,11 +94,17 @@ Test it on a computer with `?demo=unlocked&a2hs=ios#/home` or `&a2hs=android`.
 
 ## Demo mode, starting over, and seeing every screen
 
-- **Demo mode is ON** in this version (`demoMode: true` at the top of `js/content.js`).
-  Emails are not saved or sent, and refreshing the page starts the journey again from the landing.
-  The landing shows a small gold "DEMO MODE · NOTHING IS SAVED" line, and Home has a **Start over (demo)** button.
-  **Set `demoMode: false` before you launch.**
-- **Start over on any version:** add `?reset` to the address (e.g. `yoursite.com/?reset`). It wipes the saved email and progress on that phone or computer.
+- **Demo mode is OFF** (`demoMode: false` at the top of `js/content.js`): progress is saved on the phone and emails are sent to Netlify Forms.
+  Setting it back to `true` stops saving and sending, makes a refresh start the journey again, and adds a **Start over (demo)** button on Home.
+- **Start over:** add `?reset` to the address (e.g. `yoursite.com/?reset`). It wipes the saved email and progress on that phone or computer.
+- **Home-screen carry-over:** besides the unlock and what they've heard (so their collected cards too), the address carries the last Mirror played (`l=`), the Mirror 21 pop-ups already seen (`s=`) and the sign-up day (`j=`).
+
+## Email collection (Netlify Forms)
+
+- The hidden `pocket-mirror` form in `index.html` lets Netlify find the form when the site deploys. The app sends each email to it with: `email`, `mirror`, `path`, `source` (the `?src=` tag) and `page`.
+- **One-time setup:** Netlify → Site configuration → Forms → **Enable form detection**, then redeploy. Submissions appear under Forms → **pocket-mirror** (download as CSV). Form notifications can email you each sign-up.
+- Netlify only stores the emails. Sending the weekly email needs an email tool (Mailchimp, ConvertKit…), connected through Zapier or `webhookUrl` in `js/content.js`.
+- It only sends from the live site (not when `index.html` is opened from your computer). If a phone is offline, the email waits on the phone and is sent on the next visit.
 - **See every screen at once:** open **`preview.html`**. It shows all 13 screens side by side (the player ones are paused mid-caption) in phone frames, before and after the email, and you can tap inside each one. Nothing there saves or sends anything.
 
 ## Try it on your computer
@@ -105,7 +113,7 @@ Open the folder in VS Code and use the **Live Server** extension (right-click `i
 Or in a terminal inside the folder: `python3 -m http.server 8000`, then open http://localhost:8000.
 
 Double-clicking `index.html` mostly works, but "Save to my phone" needs a server.
-To test the unlock again: just refresh (demo mode), or add `?reset` to the address (live mode).
+To test the unlock again: add `?reset` to the address (or refresh, if demo mode is on).
 
 ## Put it live (Netlify)
 

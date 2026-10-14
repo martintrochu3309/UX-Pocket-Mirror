@@ -6,7 +6,7 @@
  *
  * Screens (hash routes):
  *   #/                 1 · Landing: swipe a path
- *   #/path/<key>       2 · Which one is you? (Mirrors of that path)
+ *   #/mirrors          2 · Which one is you? (all 12 Mirrors, the first 4 until "See all")
  *   #/mirror/<n>       3 · Kevin's voice. Pauses at CONFIG.previewSeconds until an email is given
  *   #/unlocked/<kind>/<n>  4 · Card unlocked (straight after a Mirror or episode is finished for the first time)
  *   #/home[/tab]       5 · Home after email: mirrors | nudges | podcast
@@ -16,7 +16,7 @@
  * Deep links (for QR codes):
  *   ?src=london-talk   tags every email captured from that link
  *   ?m=3               opens Mirror 03 directly
- *   ?path=own          opens a path directly
+ *   ?path=own          old path links: open the landing page
  */
 (function () {
   'use strict';
@@ -50,6 +50,10 @@
     close: svg('<path d="M6 6l12 12M18 6 6 18"/>', ' stroke-width="2"'),
     target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', ' stroke-width="1.8"'),
     checkCircle: svg('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>', ' stroke-width="1.8"'),
+    pen: svg('<path d="M16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1 1-4Z"/>', ' stroke-width="1.8"'),
+    bolt: svg('<path d="M13 3 5 13.5h6L10 21l8-10.5h-6Z"/>', ' stroke-width="1.8"'),
+    video: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/>', ' stroke-width="1.8"'),
+    chevUp: svg('<path d="m6 15 6-6 6 6"/>', ' stroke-width="2.2"'),
     tabPodcast: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>', ' stroke-width="1.6"')
   };
   var PLAYPAUSE = I.play + I.pause;
@@ -81,6 +85,16 @@
   function isCollected(id) { var s = sourceOf(id); return !!s && sourceDone(s.kind, s.n); }
   function collectedCount(deck) { return NUDGES.filter(function (x) { return (!deck || x.deck === deck) && isCollected(x.id); }).length; }
   function sourceName(s) { return (s.kind === 'mirror' ? 'MIRROR ' : 'EPISODE ') + pad2(s.n); }
+
+  // Collection milestones (MIRROR21.milestones): reached and not shown yet, in priority order.
+  function milestoneKey(ms) { return ms.cards ? 'c' + ms.cards : 'd' + ms.deck; }
+  function milestonesDue() {
+    var list = (M21 && M21.milestones) || [], count = collectedCount();
+    return list.filter(function (ms) {
+      if (S.m21Shown[milestoneKey(ms)]) return false;
+      return ms.cards ? count >= ms.cards : collectedCount(ms.deck) === nudgesOf(ms.deck).length;
+    });
+  }
   var CIRC = 2 * Math.PI * 115; // ring radius 115 in a 250 viewBox
 
   /* ================================================================ saved state (this device) */
@@ -100,7 +114,7 @@
   var DEMO_STATE = QS.get('demo') || '';
   var DEMO = !!CONFIG.demoMode || !!DEMO_STATE;
 
-  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
+  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, m21Shown: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
   if (!DEMO) {
     try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { /* private mode */ }
   } else if (CONFIG.demoMode) {
@@ -115,6 +129,13 @@
     if (!S.email) S.email = 'home-screen';
     (QS.get('h') || '').split(',').forEach(function (n) { if (+n) S.heard[+n] = true; });
     (QS.get('e') || '').split(',').forEach(function (n) { if (+n) S.eps[+n] = true; });
+    (QS.get('s') || '').split(',').forEach(function (k) { if (/^(c\d+|d[a-z]+)$/.test(k)) S.m21Shown[k] = true; });
+    if (+QS.get('l') && !S.lastMirror) {
+      S.lastMirror = +QS.get('l');
+      var lm = MIRRORS.filter(function (m) { return m.n === S.lastMirror; })[0];
+      if (lm && !S.lastPath) S.lastPath = lm.path;
+    }
+    if (+QS.get('j') && !S.joinedAt) S.joinedAt = +QS.get('j') * 864e5;
     // only the home-screen app itself is "done"; a refresh in Safari keeps the add-to-home-screen card
     if (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) {
       S.a2hsDone = true;
@@ -156,7 +177,8 @@
     }
     return !!S.eps[EPISODES[i - 1].n]; // 'listen': finish the previous one
   }
-  function lockHint(e) {
+  // short = the podcast list ("Finish 04 to open"); otherwise the toast ("Finish Episode 04 to open")
+  function lockHint(e, short) {
     var i = EPISODES.indexOf(e);
     if ((CONFIG.podcastUnlock || 'listen') === 'weekly') {
       var every = CONFIG.podcastEveryDays || 7;
@@ -164,7 +186,7 @@
       var d = Math.max(1, Math.ceil((at - Date.now()) / 864e5));
       return 'Opens in ' + d + (d === 1 ? ' day' : ' days');
     }
-    return 'Finish Episode ' + pad2(EPISODES[i - 1].n) + ' to open';
+    return 'Finish ' + (short ? '' : 'Episode ') + pad2(EPISODES[i - 1].n) + ' to open';
   }
   function nextEpisode() {
     var open = EPISODES.filter(episodeOpen);
@@ -225,7 +247,12 @@
     if (!unlocked() || STANDALONE || DEMO_STATE) return; // DEMO_STATE: preview.html pages keep their ?demo= address
     var h = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).join(',');
     var e = Object.keys(S.eps).filter(function (k) { return S.eps[k]; }).join(',');
-    var url = location.pathname + '?pm=1' + (h ? '&h=' + h : '') + (e ? '&e=' + e : '') + location.hash;
+    var s = Object.keys(S.m21Shown).filter(function (k) { return S.m21Shown[k]; }).join(',');
+    // h = Mirrors heard, e = episodes heard (the collection follows from both), l = last Mirror played,
+    // s = Mirror 21 pop-ups already seen, j = sign-up day
+    var url = location.pathname + '?pm=1' + (h ? '&h=' + h : '') + (e ? '&e=' + e : '') +
+      (S.lastMirror ? '&l=' + S.lastMirror : '') + (s ? '&s=' + s : '') + (S.joinedAt ? '&j=' + Math.floor(S.joinedAt / 864e5) : '') +
+      location.hash;
     if (url === location.pathname + location.search + location.hash) return;
     try { history.replaceState(null, '', url); } catch (x) { /* ignore */ }
   }
@@ -254,7 +281,7 @@
     if (qs.get('src')) { S.source = qs.get('src').slice(0, 80); persist(); changed = true; }
     var m = mirrorBy(qs.get('m'));
     if (m && m.audio) { target = '#/mirror/' + m.n; changed = true; }
-    else if (qs.get('path') && pathBy(qs.get('path'))) { target = '#/path/' + qs.get('path'); changed = true; }
+    else if (qs.get('path')) { target = '#/'; changed = true; }
     if (changed) {
       history.replaceState(null, '', location.pathname + (target || location.hash || ''));
       if (target) track('deep_link', { target: target });
@@ -278,17 +305,42 @@
     return item;
   }
 
+  // Lock screen / control centre. Episodes show their number tile (white, black number), drawn here once the font is ready.
   function setMediaSession(kind, item) {
     if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
-    var art = kind === 'episode' ? item.cover : HOST.photo;
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: kind === 'episode' ? item.title : 'Mirror ' + pad2(item.n) + ' · ' + item.title,
-        artist: 'Kevin Craggs',
-        album: kind === 'episode' ? PODCAST.name : 'The Pocket Mirror',
-        artwork: [{ src: art, sizes: '512x512', type: 'image/jpeg' }]
-      });
-    } catch (e) { /* ignore */ }
+    var meta = function (art) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: kind === 'episode' ? item.title : 'Mirror ' + pad2(item.n) + ' · ' + item.title,
+          artist: 'Kevin Craggs',
+          album: kind === 'episode' ? PODCAST.name : 'The Pocket Mirror',
+          artwork: [art]
+        });
+      } catch (e) { /* ignore */ }
+    };
+    if (kind !== 'episode') { meta({ src: HOST.photo, sizes: '512x512', type: 'image/jpeg' }); return; }
+    var n = item.n;
+    episodeTile(n).then(function (src) {
+      if (now && now.kind === 'episode' && now.n === n) meta({ src: src, sizes: '512x512', type: 'image/png' });
+    }).catch(function () {});
+  }
+  var tiles = {};
+  function episodeTile(n) {
+    if (tiles[n]) return tiles[n];
+    var fontReady = document.fonts && document.fonts.load ? document.fonts.load('700 240px Magistral') : Promise.resolve();
+    tiles[n] = fontReady.catch(function () {}).then(function () {
+      var W = 512, cv = document.createElement('canvas'), x = cv.getContext('2d');
+      cv.width = W; cv.height = W;
+      x.fillStyle = '#0a0a0a'; x.fillRect(0, 0, W, W);
+      x.fillStyle = '#ffffff';
+      x.beginPath(); x.moveTo(64, 32); x.arcTo(480, 32, 480, 480, 32); x.arcTo(480, 480, 32, 480, 32); x.arcTo(32, 480, 32, 32, 32); x.arcTo(32, 32, 480, 32, 32); x.closePath(); x.fill();
+      x.fillStyle = '#0a0a0a';
+      x.font = '700 240px Magistral, "Arial Narrow", Arial, sans-serif';
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(pad2(n), W / 2, W / 2 + 12);
+      return cv.toDataURL('image/png');
+    });
+    return tiles[n];
   }
 
   function atPreviewLimit() {
@@ -392,7 +444,8 @@
   var cleanup = null;
   var routes = [
     [/^#?\/?$/, landing],
-    [/^#\/path\/(\w+)$/, pathScreen],
+    [/^#\/mirrors$/, mirrorsScreen],
+    [/^#\/path\/\w+$/, function () { go('#/mirrors'); return null; }], // old links
     [/^#\/mirror\/(\d+)$/, mirrorScreen],
     [/^#\/unlocked\/(mirror|episode)\/(\d+)$/, rewardScreen],
     [/^#\/keep\/\d+$/, function () { go('#/home/nudges'); return null; }], // old links
@@ -451,10 +504,19 @@
       }
       var m21 = root.querySelector('[data-m21-end]');
       if (m21) m21.hidden = !(S.eps[n] && unlocked());
-      var range = root.querySelector('[data-scrub]');
-      if (range && !range.matches(':active')) range.value = Math.round(1000 * t / d);
+      // podcast ring: the countdown, the dot at the end of the progress, and the lock note for the next episode
       var left = root.querySelector('[data-left]');
-      if (left) left.textContent = '−' + fmt(d - t);
+      if (left) left.textContent = fmt(d - t);
+      var knob = root.querySelector('[data-knob]');
+      if (knob) {
+        var ang = 2 * Math.PI * Math.min(1, t / d);
+        knob.setAttribute('cx', (125 + 115 * Math.sin(ang)).toFixed(1));
+        knob.setAttribute('cy', (125 - 115 * Math.cos(ang)).toFixed(1));
+      }
+      var dialEl = root.querySelector('[data-dial]');
+      if (dialEl) { dialEl.setAttribute('aria-valuenow', Math.round(t)); dialEl.setAttribute('aria-valuetext', fmt(d - t) + ' left'); }
+      var nextLock = root.querySelector('[data-next-lock]');
+      if (nextLock) nextLock.hidden = !!S.eps[n];
     }
     var remain = document.querySelector('[data-remaining]');
     if (remain && now) {
@@ -495,134 +557,25 @@
   /* ================================================================ 1 · LANDING */
   function landing() {
     if (unlocked()) { go('#/home'); return null; }
-    var c = 0; // SEE IT in the middle, OWN IT right, CHANGE IT left: the plates orbit an endless circle
     var html =
       '<section class="screen landing">' +
-        '<div class="mid">' +
-          '<h1>THE MIRROR<br>NEVER CHANGES.<br><span class="gold-text">YOU DO.</span></h1>' +
-          '<div class="plates" data-plates>' +
-            PATHS.map(function (p, i) {
-              return '<button type="button" class="plate" data-i="' + i + '" data-key="' + p.key + '">' +
-                '<img src="' + p.plate + '" alt="" draggable="false"></button>';
-            }).join('') +
-          '</div>' +
-          '<p class="feeling" data-feeling aria-live="polite"></p>' +
-          '<p class="tap-hint" data-tap-hint aria-hidden="true"><span class="tap-dot"></span>TAP TO OPEN</p>' +
+        '<p class="wordmark">THE POCKET<br>MIRROR</p>' +
+        '<div class="landing-mid">' +
+          '<h1>ONE MINUTE<br>WITH <span class="gold-text">YOURSELF.</span></h1>' +
+          '<div class="host"><img src="' + HOST.photo + '" alt=""><b>' + esc(HOST.name) + '</b></div>' +
         '</div>' +
-        '<footer><img src="assets/images/daily-xcellence.png" alt="Daily Xcellence · it starts with you">' +
-          (CONFIG.demoMode ? '<p class="demo-flag">DEMO MODE · NOTHING IS SAVED</p>' : '') + '</footer>' +
+        '<div class="landing-foot">' +
+          '<a class="pill" href="#/mirrors"><span>FIND MY MIRROR</span><span class="dot">' + I.arrow + '</span></a>' +
+          '<p class="fine">1-minute audio · free</p>' +
+        '</div>' +
       '</section>';
-
     return {
       html: html,
-      mount: function () {
-        track('landing_view');
-        var wrap = app.querySelector('[data-plates]');
-        var plates = [].slice.call(wrap.querySelectorAll('.plate'));
-        var hint = app.querySelector('[data-tap-hint]');
-        var feeling = app.querySelector('[data-feeling]');
-        var N = PATHS.length, pos = c, drag = null, swiped = false, opening = false, anim = 0, hintT = 0, firstT = 0, feelT = 0;
-        var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-        function setFeeling(instant) {
-          var text = '“' + PATHS[c].line + '”';
-          if (instant) { feeling.textContent = text; return; }
-          feeling.style.opacity = 0;
-          clearTimeout(feelT);
-          feelT = setTimeout(function () { feeling.textContent = text; feeling.style.opacity = 1; }, 180);
-        }
-
-        // "TAP TO OPEN" shows each time a plate lands in the middle, then fades
-        function showHint() {
-          hint.classList.add('show');
-          clearTimeout(hintT);
-          hintT = setTimeout(function () { hint.classList.remove('show'); }, 2600);
-        }
-        // where plate i sits on the ring right now: 0 = middle, ±1 = sides, ±1.5 = straight behind the middle one
-        function relOf(i) { var r = ((i - pos) % N + N) % N; return r > N / 2 ? r - N : r; }
-        // the plates orbit a circle seen from the front: a plate leaving one side swings round behind
-        // the middle plate and comes back in on the other side, so all three stay on screen
-        function layout() {
-          var w = plates[0].offsetWidth;
-          plates.forEach(function (el, i) {
-            var rel = relOf(i), a = Math.abs(rel), ang = rel * 2 * Math.PI / N;
-            var x = Math.sin(ang) * w * 0.6;          // sides land at ±0.52 plate widths
-            var d = (Math.cos(ang) + 1) / 2;          // 1 = front, 0.25 = sides, 0 = back
-            el.style.transform = 'translateX(' + x.toFixed(1) + 'px) scale(' + (0.42 + 0.58 * d).toFixed(3) + ')';
-            el.style.opacity = (0.6 + 0.4 * Math.sqrt(d)).toFixed(3);
-            el.style.zIndex = Math.round(d * 10);
-            el.classList.toggle('is-center', a < 0.5);
-            el.setAttribute('aria-label', (a < 0.5 ? 'Open ' : 'Show ') + PATHS[i].name);
-          });
-        }
-        // turn the ring to `to` (a whole number), then make that plate the chosen one
-        function settle(to) {
-          cancelAnimationFrame(anim);
-          var from = pos, t0 = performance.now(), dur = calm ? 0 : 650;
-          (function step(now) {
-            var k = dur ? Math.min(1, (now - t0) / dur) : 1;
-            pos = from + (to - from) * (1 - Math.pow(1 - k, 3));
-            layout();
-            if (k < 1) { anim = requestAnimationFrame(step); return; }
-            pos = to;
-            var n = ((to % N) + N) % N;
-            if (n !== c) { c = n; setFeeling(); showHint(); track('path_swipe', { path: PATHS[c].key }); }
-          })(t0);
-        }
-        function move(dir) { settle(Math.round(pos) + dir); }
-        function open() {
-          if (opening) return; opening = true;
-          var el = plates[c];
-          el.classList.add('opening');
-          track('path_open', { path: PATHS[c].key });
-          setTimeout(function () { go('#/path/' + PATHS[c].key); }, 280);
-        }
-
-        // the ring follows the finger, then settles on the nearest plate (a quick flick always turns one)
-        wrap.addEventListener('pointerdown', function (e) {
-          if (opening || (e.pointerType === 'mouse' && e.button !== 0)) return;
-          cancelAnimationFrame(anim);
-          // a whole plate width of finger travel turns the ring by one plate (calm, not twitchy)
-          drag = { x: e.clientX, pos: pos, t: performance.now(), id: e.pointerId, step: plates[0].offsetWidth };
-          swiped = false;
-        });
-        wrap.addEventListener('pointermove', function (e) {
-          if (!drag || e.pointerId !== drag.id) return;
-          var dx = e.clientX - drag.x;
-          if (!swiped && Math.abs(dx) > 6) { swiped = true; try { wrap.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } }
-          if (swiped) { pos = drag.pos - Math.max(-1, Math.min(1, dx / drag.step)); layout(); }
-        });
-        function release(e) {
-          if (!drag || e.pointerId !== drag.id) return;
-          var d = drag; drag = null;
-          if (!swiped) return;
-          var dx = e.clientX - d.x, fast = Math.abs(dx) / Math.max(1, performance.now() - d.t) > 0.5;
-          var base = Math.round(d.pos), to = Math.round(pos);
-          if (to === base && (fast || Math.abs(dx) > 40)) to += dx < 0 ? 1 : -1;
-          settle(Math.max(base - 1, Math.min(base + 1, to))); // one plate per swipe, however hard the flick
-        }
-        wrap.addEventListener('pointerup', release);
-        wrap.addEventListener('pointercancel', release);
-        wrap.addEventListener('click', function (e) {
-          var b = e.target.closest('.plate'); if (!b) return;
-          if (swiped) { swiped = false; return; }
-          var i = +b.getAttribute('data-i'), rel = Math.round(relOf(i));
-          if (rel === 0) open(); else move(rel);
-        });
-        wrap.addEventListener('keydown', function (e) {
-          if (e.key === 'ArrowRight') { move(1); plates[((Math.round(pos) % N) + N) % N].focus(); }
-          if (e.key === 'ArrowLeft') { move(-1); plates[((Math.round(pos) % N) + N) % N].focus(); }
-        });
-        var onResize = function () { layout(); };
-        window.addEventListener('resize', onResize);
-        requestAnimationFrame(layout);
-        setFeeling(true);
-        firstT = setTimeout(showHint, 700);
-        return function () { window.removeEventListener('resize', onResize); cancelAnimationFrame(anim); clearTimeout(hintT); clearTimeout(firstT); clearTimeout(feelT); };
-      }
+      mount: function () { track('landing_view'); }
     };
   }
 
-  /* ================================================================ 2 · PATH */
+  /* ================================================================ 2 · WHICH ONE IS YOU? (all 12 Mirrors) */
   function mirrorRow(m) {
     if (!m.audio) {
       return '<li><div class="mirror-row soon"><span class="num">' + pad2(m.n) + '</span>' +
@@ -639,35 +592,30 @@
       '<span class="play-ring' + (heard ? ' heard' : '') + '">' + (heard ? I.check : I.play) + '</span></button></li>';
   }
 
-  function pathScreen(key) {
-    var p = pathBy(key);
-    if (!p) { go('#/'); return null; }
-    var mine = MIRRORS.filter(function (m) { return m.path === key; });
-    var ready = mine.filter(function (m) { return m.audio; });
-    var soon = mine.length - ready.length;
+  var FIRST_SHOWN = 4;
+  function mirrorsScreen() {
+    var p = pathBy('see');
     var html =
       '<section class="screen path">' +
-        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back to paths">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
+        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
         '<h1 class="sr-only">' + esc(p.name) + '</h1>' +
         '<div class="reflect ' + p.key + '" aria-hidden="true"><p>' + esc(p.name) + '</p><p>' + esc(p.name) + '</p></div>' +
         '<p class="quote">“' + esc(p.line) + '”</p>' +
         '<p class="section-label">WHICH ONE IS YOU?</p>' +
-        '<ul class="mirror-list" data-list>' + mine.map(mirrorRow).join('') + '</ul>' +
-        '<button type="button" class="link" data-all>See all ' + CONFIG.totalMirrors + ' Mirrors</button>' +
+        '<ul class="mirror-list">' + MIRRORS.map(function (m, i) {
+          return mirrorRow(m).replace('<li>', i < FIRST_SHOWN ? '<li>' : '<li data-more hidden>');
+        }).join('') + '</ul>' +
+        (MIRRORS.length > FIRST_SHOWN ? '<button type="button" class="link" data-all>See all ' + MIRRORS.length + ' Mirrors</button>' : '') +
       '</section>';
     return {
       html: html,
       mount: function () {
-        S.lastPath = key; persist();
-        track('path_view', { path: key });
-        var all = false;
+        track('mirrors_view');
         var btn = app.querySelector('[data-all]');
-        btn.addEventListener('click', function () {
-          all = !all;
-          var list = all ? MIRRORS.filter(function (m) { return m.audio; }).concat(MIRRORS.filter(function (m) { return !m.audio; })) : mine;
-          app.querySelector('[data-list]').innerHTML = list.map(mirrorRow).join('');
-          btn.textContent = all ? 'Show ' + p.name + ' only' : 'See all ' + CONFIG.totalMirrors + ' Mirrors';
-          if (all) track('see_all_mirrors', { path: key });
+        if (btn) btn.addEventListener('click', function () {
+          app.querySelectorAll('[data-more]').forEach(function (li) { li.hidden = false; });
+          btn.hidden = true;
+          track('see_all_mirrors');
         });
       }
     };
@@ -686,7 +634,7 @@
 
     var html =
       '<section class="screen player" data-player data-kind="mirror" data-n="' + m.n + '">' +
-        '<div class="topbar"><a class="icon-btn" href="' + (locked ? '#/path/' + m.path : '#/home') + '" aria-label="Back">' + I.down + '</a>' +
+        '<div class="topbar"><a class="icon-btn" href="' + (locked ? '#/mirrors' : '#/home') + '" aria-label="Back">' + I.down + '</a>' +
           '<p class="eyebrow">MIRROR ' + pad2(m.n) + ' · ' + esc(p.name) + '</p></div>' +
         '<h1>' + esc(m.title) + '</h1>' +
         '<div class="ring-wrap">' +
@@ -717,7 +665,7 @@
           '<p class="form-error" data-error role="alert"></p>' +
         '</form>' +
         '<p class="fine">' + esc(CONFIG.finePrint) + '</p>' +
-        '<a class="link" href="#/path/' + m.path + '" data-action="not-now">Not now, try another Mirror</a>' +
+        '<a class="link" href="#/mirrors" data-action="not-now">Not now, try another Mirror</a>' +
       '</section>';
 
     return {
@@ -760,21 +708,34 @@
   function captions(m) {
     var el = app.querySelector('[data-caption]'), lines = CAPTIONS[m.n] || [];
     if (!el || !lines.length) return function () {};
+    // the second each word starts, measured from the audio (js/caption-timing.js), when it matches the line's text
+    var timing = (window.PM_CAPTION_TIMING || {})[m.n] || [];
+    function wordStarts(i) {
+      var w = timing[i];
+      return w && w.length === lines[i][2].split(' ').length ? w : null;
+    }
+    function lineStart(i) { var w = wordStarts(i); return Math.min(lines[i][0], w ? w[0] - 0.1 : Infinity); }
     var cur = -1, spans = [], times = [], raf = 0;
     function lineAt(t) {
       var idx = 0;
-      for (var i = 0; i < lines.length; i++) if (t >= lines[i][0] - 0.08) idx = i;
+      for (var i = 0; i < lines.length; i++) if (t >= lineStart(i) - 0.08) idx = i;
       return idx;
     }
     function show(i) {
       cur = i;
-      var L = lines[i], words = L[2].split(' ');
-      var weights = words.map(function (w) { return w.length + 2; });
-      var total = weights.reduce(function (a, b) { return a + b; }, 0), acc = 0;
-      times = words.map(function (w, k) {
-        var a = L[0] + (L[1] - L[0]) * acc / total; acc += weights[k];
-        return [a, L[0] + (L[1] - L[0]) * acc / total];
-      });
+      var L = lines[i], words = L[2].split(' '), starts = wordStarts(i);
+      if (starts) {
+        // each word lights when it is said, and stays lit until the next one starts
+        times = starts.map(function (a, k) { return [a, k + 1 < starts.length ? starts[k + 1] : Math.max(L[1], a + 0.3)]; });
+      } else {
+        // no measured timing for this line: spread its words over the line by length
+        var weights = words.map(function (w) { return w.length + 2; });
+        var total = weights.reduce(function (a, b) { return a + b; }, 0), acc = 0;
+        times = words.map(function (w, k) {
+          var a = L[0] + (L[1] - L[0]) * acc / total; acc += weights[k];
+          return [a, L[0] + (L[1] - L[0]) * acc / total];
+        });
+      }
       el.innerHTML = words.map(function (w) { return '<span class="w">' + esc(w) + '</span>'; }).join(' ');
       spans = [].slice.call(el.children);
     }
@@ -829,6 +790,18 @@
         '<button type="button" class="link" data-action="cv-close">Close</button>' +
       '</section>';
   }
+  // The Mirror 21 pop-up for a collection milestone (a white door, like the other Mirror 21 cards)
+  function m21PopHTML(ms) {
+    return '<div class="dim" id="m21p-dim" data-action="m21p-close"></div>' +
+      '<section class="sheet m21-pop" id="m21p" role="dialog" aria-modal="true" aria-labelledby="m21p-title" inert>' +
+        '<p class="m21-pop-brand">MIRROR <span class="g">21</span></p>' +
+        '<h2 id="m21p-title">' + esc(ms.title) + '</h2>' +
+        '<p class="m21-pop-line">' + esc(ms.line) + '</p>' +
+        '<a class="btn-gold" href="#/mirror21" data-action="m21-open" data-from="milestone-' + milestoneKey(ms) + '">SEE MIRROR 21</a>' +
+        '<button type="button" class="link" data-action="m21p-close">Not now</button>' +
+      '</section>';
+  }
+
   var cvCur = null;
   function openViewer(id) {
     var x = nudgeBy(id), sheet = document.getElementById('cv'); if (!x || !sheet) return;
@@ -927,7 +900,7 @@
         '</div>' +
         '<button type="button" class="btn-gold" data-action="ns-save">' + I.download + '<span>SAVE TO MY PHONE</span></button>' +
         '<p class="ns-after" data-ns-after hidden>Saved. In Photos, tap Share, then <b>Use as Wallpaper</b>.</p>' +
-        (withM21 && M21 ? '<a class="ns-m21" data-ns-m21 hidden href="#/mirror21">' + esc((M21.cards || {}).afterNudge || 'Want Kevin with you for 21 days?') + ' <b>MIRROR 21 ' + I.arrow + '</b></a>' : '') +
+        (withM21 && M21 ? '<a class="ns-m21" data-ns-m21 hidden href="#/mirror21">' + esc((M21.cards || {}).afterNudge || 'Want Kevin with you for 21 steps?') + ' <b>MIRROR 21 ' + I.arrow + '</b></a>' : '') +
         '<button type="button" class="link" data-action="ns-close">Done</button>' +
       '</section>';
   }
@@ -959,8 +932,9 @@
     var count = collectedCount(), total = NUDGES.length;
     var segs = '';
     for (var i = 0; i < total; i++) segs += '<span' + (i < count ? ' class="on' + (i === count - 1 ? ' new' : '') + '"' : '') + '></span>';
-    // after a Mirror: into the app. After an episode: you are already in, so to the collection.
-    var next = kind === 'mirror'
+    // after a Mirror: into the app. After an episode, or a card that reaches a milestone: to the collection
+    // (where the Mirror 21 pop-up for that milestone is waiting).
+    var next = kind === 'mirror' && !milestonesDue().length
       ? '<a class="pill wide" href="#/home"><span>ENTER THE POCKET MIRROR</span><span class="dot">' + I.arrow + '</span></a>'
       : '<a class="pill wide" href="#/home/nudges" data-action="see-deck" data-deck="' + x.deck + '"><span>SEE MY COLLECTION</span><span class="dot">' + I.arrow + '</span></a>';
     var html =
@@ -997,13 +971,13 @@
   function miniPlayer() {
     if (!now || now.kind !== 'episode') return '';
     var e = episodeBy(now.n);
-    return '<div class="mini"><a href="#/episode/' + e.n + '" style="display:contents"><img src="' + e.cover + '" alt="">' +
+    return '<div class="mini"><a href="#/episode/' + e.n + '" style="display:contents"><span class="ep-tile">' + pad2(e.n) + '</span>' +
       '<span class="body"><small>EPISODE ' + pad2(e.n) + '</small><b>' + esc(e.title) + '</b></span></a>' +
       '<button type="button" class="play-ring" data-toggle data-action="toggle" data-kind="episode" data-n="' + e.n + '" aria-label="Play">' + PLAYPAUSE + '</button></div>';
   }
   function homeTop() {
     return '<div class="home-top"><p class="wordmark">THE POCKET<br>MIRROR</p>' +
-      (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-day training">MIRROR<span class="g">21</span></a>' : '') + '</div>';
+      (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-step training">MIRROR<span class="g">21</span></a>' : '') + '</div>';
   }
   function allMirrorsHeard() { return AVAILABLE.length > 0 && AVAILABLE.every(function (m) { return S.heard[m.n]; }); }
 
@@ -1039,9 +1013,18 @@
             '<small>' + collectedCount(p.deck) + '/' + nudgesOf(p.deck).length + '</small></button>';
         }).join('') + '</div>' +
         '<div data-collection></div>';
-      extra = viewerHTML() + nudgeSheetHTML(true);
+      var due = milestonesDue();
+      extra = viewerHTML() + nudgeSheetHTML(true) + (due.length ? m21PopHTML(due[0]) : '');
       mount = function () {
         track('nudges_view', { collected: got });
+        // a collection milestone: the Mirror 21 pop-up rises a moment after the tab opens (once per milestone)
+        var popT = due.length ? setTimeout(function () {
+          due.forEach(function (ms) { S.m21Shown[milestoneKey(ms)] = true; }); // two at once: only the first shows, both count as seen
+          persist();
+          var sheet = document.getElementById('m21p'); if (!sheet) return;
+          sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21p-dim').classList.add('open');
+          track('m21_milestone_view', { milestone: milestoneKey(due[0]) });
+        }, 1200) : 0;
         var wrap = app.querySelector('[data-collection]');
         // each deck shows its 7 cards in the order they are listed in content.js
         function build(key) { wrap.innerHTML = collectionHTML(pathBy(key).deck); }
@@ -1053,26 +1036,32 @@
           track('deck_switch', { deck: S.deck });
         });
         build(deckKey);
+        return function () { clearTimeout(popT); }; // left before it rose: it waits for the next visit
       };
     }
 
     if (tab === 'podcast') {
-      var upNext = nextEpisode();
+      var upNext = nextEpisode(), epsHeard = heardEpisodes(), epsTotal = PODCAST.episodes.length;
+      // each episode is a number tile: heard = white tile, up next = outlined, locked = greyed out
       body =
         homeTop() +
         markTitle(TITLES.podcast || ['12', 'EPISODES'], PODCAST.name + ' podcast') +
+        '<div class="progress white"><span>' + epsHeard + ' OF ' + epsTotal + ' HEARD</span><span class="bar" role="progressbar" aria-label="Episodes heard" aria-valuemin="0" aria-valuemax="' + epsTotal + '" aria-valuenow="' + epsHeard + '"><span style="width:' + (100 * epsHeard / epsTotal).toFixed(1) + '%"></span></span></div>' +
         '<ul class="episode-list">' + PODCAST.episodes.map(function (e) {
+          var tile = '<span class="ep-tile">' + pad2(e.n) + '</span>';
           if (!e.audio) {
-            return '<li><div class="episode-row soon"><span class="ph"></span><span class="body"><small>EPISODE ' + pad2(e.n) + '</small><b>Coming soon</b></span></div></li>';
+            return '<li><div class="ep-row locked">' + tile + '<span class="body"><small>COMING SOON</small><b>' + esc(e.title || 'New episode') + '</b></span></div></li>';
           }
           if (!episodeOpen(e)) {
-            return '<li><button type="button" class="episode-row locked" data-action="locked-episode" data-n="' + e.n + '">' +
-              '<span class="thumb"><img src="' + e.cover + '" alt="" loading="lazy"><span class="lock">' + I.lock + '</span></span>' +
-              '<span class="body"><small>EPISODE ' + pad2(e.n) + ' · LOCKED</small><b>' + esc(e.title) + '</b><span class="meta">' + esc(lockHint(e)) + '</span></span></button></li>';
+            return '<li><button type="button" class="ep-row locked" data-action="locked-episode" data-n="' + e.n + '">' + tile +
+              '<span class="body"><small>LOCKED</small><b>' + esc(e.title) + '</b><span class="meta">' + esc(lockHint(e, true)) + '</span></span>' +
+              '<span class="ep-end">' + I.lock + '</span></button></li>';
           }
-          var tag = S.eps[e.n] ? ' · HEARD' : (upNext && upNext.n === e.n ? ' · UP NEXT' : '');
-          return '<li><button type="button" class="episode-row' + (tag === ' · UP NEXT' ? ' next' : '') + '" data-ep-row="' + e.n + '" data-action="play-episode" data-n="' + e.n + '">' +
-            '<span class="thumb"><img src="' + e.cover + '" alt="" loading="lazy"></span><span class="body"><small>EPISODE ' + pad2(e.n) + tag + '</small><b>' + esc(e.title) + '</b><span class="meta">' + mins(e.duration) + '</span></span></button></li>';
+          var heard = !!S.eps[e.n], next = !heard && upNext && upNext.n === e.n;
+          var state = heard ? 'heard' : next ? 'next' : 'open';
+          return '<li><button type="button" class="ep-row ' + state + '" data-ep-row="' + e.n + '" data-action="play-episode" data-n="' + e.n + '">' + tile +
+            '<span class="body"><small>' + (heard ? 'HEARD' : next ? 'UP NEXT' : 'OPEN') + '</small><b>' + esc(e.title) + '</b><span class="meta">' + mins(e.duration) + '</span></span>' +
+            '<span class="ep-end">' + (heard ? I.check : '<span class="ep-play">' + I.play + '</span>') + '</span></button></li>';
         }).join('') + '</ul>';
       mount = function () { track('podcast_view'); };
     }
@@ -1090,29 +1079,67 @@
     if (!unlocked()) { go('#/'); return null; }
     if (!episodeOpen(e)) { toast(lockHint(e).toUpperCase()); go('#/home/podcast'); return null; }
     load('episode', e.n);
+    var nxt = EPISODES[EPISODES.indexOf(e) + 1];
     var html =
-      '<section class="screen player" data-player data-kind="episode" data-n="' + e.n + '">' +
+      '<section class="screen player podcast" data-player data-kind="episode" data-n="' + e.n + '">' +
         '<div class="topbar"><a class="icon-btn" href="#/home/podcast" aria-label="Back to the podcast">' + I.down + '</a>' +
           '<p class="eyebrow">' + esc(PODCAST.name) + ' · EPISODE ' + pad2(e.n) + '</p></div>' +
-        '<div class="cover"><img src="' + e.cover + '" alt="The Mirror, episode ' + e.n + ': ' + esc(e.title) + '"></div>' +
         '<h1>' + esc(e.title) + '</h1>' +
-        '<div class="scrub"><label class="sr-only" for="scrub">Position</label><input id="scrub" type="range" min="0" max="1000" step="1" value="0" data-scrub>' +
-          '<div class="times"><span data-time>0:00</span><span data-left>−' + fmt(e.duration) + '</span></div></div>' +
+        // the ring fills as it plays; drag the ring (or its dot) to move through the episode
+        '<div class="dial" data-dial role="slider" tabindex="0" aria-label="Position in the episode" aria-valuemin="0" aria-valuemax="' + Math.round(e.duration) + '" aria-valuenow="0">' +
+          '<svg class="ring" viewBox="0 0 250 250" aria-hidden="true"><circle class="track" cx="125" cy="125" r="115"/>' +
+            '<circle class="prog" data-ring cx="125" cy="125" r="115" stroke-dasharray="' + CIRC.toFixed(2) + '" stroke-dashoffset="' + CIRC.toFixed(2) + '"/>' +
+            '<circle class="knob" data-knob cx="125" cy="10" r="9"/></svg>' +
+          '<div class="dial-time"><b data-left>' + fmt(e.duration) + '</b><small>LEFT</small></div>' +
+        '</div>' +
         '<div class="transport">' +
           '<button type="button" class="skip" data-action="skip" data-by="-15" aria-label="Back 15 seconds">' + I.back15 + '</button>' +
           '<button type="button" class="big-play" data-toggle data-action="toggle" data-kind="episode" data-n="' + e.n + '" aria-label="Play">' + PLAYPAUSE + '</button>' +
           '<button type="button" class="skip" data-action="skip" data-by="15" aria-label="Forward 15 seconds">' + I.fwd15 + '</button>' +
         '</div>' +
+        (nxt && !episodeOpen(nxt) ? '<p class="next-lock" data-next-lock>' + I.lock + 'Finish this one to open ' + pad2(nxt.n) + '</p>' : '') +
         (M21 ? '<div class="m21-end" data-m21-end hidden>' + m21Card(((M21.cards || {}).episodeEnd || [])[0] || 'READY FOR MORE?', ((M21.cards || {}).episodeEnd || [])[1], 'compact') + '</div>' : '') +
       '</section>';
     return {
       html: html,
       mount: function () {
         track('episode_view', { episode: e.n });
-        var range = app.querySelector('[data-scrub]');
-        range.addEventListener('input', function () {
-          var d = (isFinite(audio.duration) && audio.duration) || e.duration;
-          audio.currentTime = d * range.value / 1000;
+        var dial = app.querySelector('[data-dial]');
+        var dur = function () { return (isFinite(audio.duration) && audio.duration) || e.duration; };
+        var mine = function () { return now && now.kind === 'episode' && now.n === e.n; };
+        // where the finger is on the ring, as a share of the way round (0 at the top, clockwise)
+        var dragging = false, last = 0;
+        function fractionAt(ev) {
+          var r = dial.getBoundingClientRect();
+          var a = Math.atan2(ev.clientX - (r.left + r.width / 2), -(ev.clientY - (r.top + r.height / 2)));
+          var f = (a < 0 ? a + 2 * Math.PI : a) / (2 * Math.PI);
+          // no jumping across the top: past the end stays at the end, before the start stays at the start
+          if (last > 0.75 && f < 0.25) f = 1; else if (last < 0.25 && f > 0.75) f = 0;
+          return f;
+        }
+        function seek(f) {
+          if (!mine()) load('episode', e.n);
+          last = f;
+          audio.currentTime = Math.min(dur() - 0.25, f * dur());
+          syncUI();
+        }
+        dial.addEventListener('pointerdown', function (ev) {
+          var r = dial.getBoundingClientRect(), dx = ev.clientX - (r.left + r.width / 2), dy = ev.clientY - (r.top + r.height / 2);
+          if (Math.sqrt(dx * dx + dy * dy) < r.width * 0.32) return; // the middle (the countdown) is not the ring
+          dragging = true; last = mine() ? audio.currentTime / dur() : 0;
+          dial.classList.add('dragging');
+          try { dial.setPointerCapture(ev.pointerId); } catch (x) { /* ignore */ }
+          seek(fractionAt(ev));
+        });
+        dial.addEventListener('pointermove', function (ev) { if (dragging) seek(fractionAt(ev)); });
+        function end() { if (!dragging) return; dragging = false; dial.classList.remove('dragging'); track('episode_seek', { episode: e.n }); }
+        dial.addEventListener('pointerup', end);
+        dial.addEventListener('pointercancel', end);
+        dial.addEventListener('keydown', function (ev) {
+          var by = ev.key === 'ArrowRight' || ev.key === 'ArrowUp' ? 5 : ev.key === 'ArrowLeft' || ev.key === 'ArrowDown' ? -5 : 0;
+          if (!by) return;
+          ev.preventDefault();
+          seek(Math.max(0, Math.min(1, ((mine() ? audio.currentTime : 0) + by) / dur())));
         });
       }
     };
@@ -1123,47 +1150,62 @@
     if (!M21) { go('#/home'); return null; }
     var heardList = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).map(Number);
     var m = mirrorBy(S.lastMirror) || mirrorBy(heardList[heardList.length - 1]) || MIRRORS[0];
-    var after = m.after || 'I did it.';
-    // Display XL for short lines, Tab title for longer ones (the vw cap below keeps it on one screen width)
-    var size = after.length <= 14 ? 56 : 48;
-    var back = unlocked() ? '#/home' : '#/';
-    var tick = I.check;
-    var weekNames = [['SEE IT', ''], ['OWN IT', ''], ['CHANGE IT', ' gold']];
+    var after = (m.after || 'I did it.').toUpperCase();
+    // the promise, with its last word in gold
+    var cut = after.lastIndexOf(' ');
+    var promise = cut < 0 ? '<span class="g">' + esc(after) + '</span>'
+      : esc(after.slice(0, cut + 1)) + '<span class="g">' + esc(after.slice(cut + 1)) + '</span>';
+    var close = unlocked() ? '#/home' : '#/';
     var html =
-      '<div class="m21w-fade" aria-hidden="true"></div>' +
-      '<section class="screen m21w">' +
-        '<div class="hero" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>' +
-        '<div class="top"><a class="back" href="' + back + '" aria-label="Back">' + I.back + '</a><p class="wm">THE POCKET MIRROR</p><span style="width:40px"></span></div>' +
-        '<div class="head">' +
-          '<h1 class="brand">MIRROR <span class="g">21</span></h1>' +
-          '<p class="lbl">YOU SAID</p>' +
-          '<p class="said">“' + esc(m.title) + '”</p>' +
-          '<p class="in">IN 21 DAYS</p>' +
-          '<p class="after' + (after.length <= 10 ? ' one-line' : '') + '" style="font-size:min(' + size + 'px, ' + (size / 4).toFixed(2) + 'vw)"><span class="q">“</span>' + esc(after) + '<span class="q">”</span></p>' +
-          '<p class="lede">' + esc(M21.tagline) + '</p>' +
+      // one white screen, no scrolling: the photo is the part that grows and shrinks with the phone
+      '<section class="screen m21x">' +
+        '<div class="m21x-top"><p class="m21x-brand">MIRROR<span class="g">21</span></p>' +
+          '<a class="m21x-close" href="' + close + '" aria-label="Close">' + I.close + '</a></div>' +
+        '<div class="m21x-photo" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>' +
+        '<div class="m21x-body">' +
+          '<p class="m21x-lbl">YOU SAID</p>' +
+          '<p class="m21x-said">“' + esc(m.title) + '”</p>' +
+          '<p class="m21x-in">IN 21 STEPS</p>' +
+          '<h1 class="m21x-after"><span class="g">“</span>' + promise + '<span class="g">”</span></h1>' +
+          '<ul class="m21x-points">' + (M21.points || []).map(function (t, i) {
+            return '<li>' + [I.target, I.pen, I.checkCircle][i % 3] + '<span>' + esc(t) + '</span></li>';
+          }).join('') + '</ul>' +
+          '<a class="btn-gold" data-action="m21-go" href="' + esc(M21.url || '#') + '"' + (M21.url ? ' target="_blank" rel="noopener"' : '') + '>START MIRROR 21 · ' + esc(M21.price) + '</a>' +
+          '<button type="button" class="m21x-how" data-action="m21-how">See how it works' + I.chevUp + '</button>' +
         '</div>' +
-        '<div class="price"><div class="l"><small>MIRROR <span class="g">21</span></small><strong class="g">' + esc(M21.price) + '</strong></div><ul>' +
-          (M21.priceLines || []).map(function (t) { return '<li>' + tick + '<span>' + esc(t) + '</span></li>'; }).join('') + '</ul></div>' +
-        '<div class="blk"><p class="sec">WHAT’S IN IT FOR YOU</p><ul class="ben">' +
-          (M21.benefits || []).map(function (b, i) { return '<li><span class="n">' + pad2(i + 1) + '</span><span><b>' + esc(b[0]) + '</b><span class="t">' + esc(b[1]) + '</span></span></li>'; }).join('') +
-        '</ul></div>' +
-        '<div class="blk"><p class="sec">YOUR 21 DAYS</p><div class="weeks">' + weekNames.map(function (w, wi) {
-          return '<div class="wk"><span class="lab"><b>WEEK ' + (wi + 1) + '</b><i class="' + w[1] + '">' + w[0] + '</i></span>' +
-            '<span class="say">' + esc((M21.weeks || [])[wi] || '') + '</span></div>';
-        }).join('') + '</div></div>' +
-        '<div class="blk"><p class="sec">EVERY DAY · ABOUT 3 MINUTES</p><div class="daily">' +
-          (M21.daily || []).map(function (d, i) { return '<div>' + [I.phones, I.target, I.checkCircle][i] + '<b>' + esc(d[0]) + '</b><span>' + esc(d[1]) + '</span></div>'; }).join('') +
-        '</div></div>' +
       '</section>' +
-      '<div class="m21w-cta"><a class="btn" data-action="m21-go" href="' + esc(M21.url || '#') + '"' + (M21.url ? ' target="_blank" rel="noopener"' : '') + '>START MIRROR 21 · ' + esc(M21.price) + '</a>' +
-        '<small>' + esc(M21.finePrint) + '</small></div>';
+      '<div class="dim" id="m21h-dim" data-action="m21-how-close"></div>' +
+      '<section class="sheet m21-how" id="m21h" role="dialog" aria-modal="true" aria-labelledby="m21h-title" inert>' +
+        '<span class="grab" aria-hidden="true"></span>' +
+        '<h2 id="m21h-title">HOW MIRROR 21 WORKS</h2>' +
+        '<ul class="stages">' + (M21.stages || []).map(function (s, i) {
+          return '<li><span class="lab"><small>STEPS ' + esc(s.steps) + '</small><b' + (i === 2 ? ' class="g"' : '') + '>' + esc(s.name) + '</b></span><span class="say">' + esc(s.line) + '</span></li>';
+        }).join('') + '</ul>' +
+        '<p class="each">EACH STEP · ABOUT 3 MINUTES</p>' +
+        '<ul class="each-step">' + (M21.eachStep || []).map(function (d, i) {
+          return '<li>' + [I.phones, I.video, I.bolt, I.checkCircle][i % 4] + '<b>' + esc(d[0]) + '</b><span>' + esc(d[1]) + '</span></li>';
+        }).join('') + '</ul>' +
+        '<button type="button" class="m21-got" data-action="m21-how-close">GOT IT</button>' +
+      '</section>';
     return {
       html: html,
       mount: function () {
         track('m21_view', { mirror: m.n });
         var root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
         root.classList.add('is-light'); if (meta) meta.setAttribute('content', '#ffffff');
-        return function () { root.classList.remove('is-light'); if (meta) meta.setAttribute('content', '#0a0a0a'); };
+        // size the photo so its fade (the bottom 30% is plain white) ends just above YOU SAID, on any phone
+        var photo = app.querySelector('.m21x-photo'), body = app.querySelector('.m21x-body');
+        function fitPhoto() {
+          var h = (body.offsetTop - 8 - photo.offsetTop) / 0.7;
+          photo.style.height = Math.max(0, Math.round(h)) + 'px';
+        }
+        fitPhoto();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPhoto);
+        window.addEventListener('resize', fitPhoto);
+        return function () {
+          window.removeEventListener('resize', fitPhoto);
+          root.classList.remove('is-light'); if (meta) meta.setAttribute('content', '#0a0a0a');
+        };
       }
     };
   }
@@ -1177,7 +1219,7 @@
       load('mirror', n);
       if (!same || audio.ended || !unlocked()) audio.currentTime = 0;
       play(); // start inside the tap so phones allow sound
-      S.lastMirror = n;
+      S.lastMirror = n; S.lastPath = m.path; persist();
       track('mirror_play', { mirror: n, path: m.path });
       go('#/mirror/' + n);
     },
@@ -1212,6 +1254,21 @@
       setTimeout(function () { openNudgeSheet(x.id, x.deck); }, 200);
     },
     'soon-card': function () { toast('COMING SOON'); },
+    'm21-how': function () {
+      var sheet = document.getElementById('m21h'); if (!sheet) return;
+      sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21h-dim').classList.add('open');
+      track('m21_how');
+    },
+    'm21-how-close': function () {
+      var sheet = document.getElementById('m21h'); if (!sheet) return;
+      sheet.classList.remove('open'); sheet.setAttribute('inert', ''); document.getElementById('m21h-dim').classList.remove('open');
+    },
+    'm21p-close': function () {
+      var sheet = document.getElementById('m21p'); if (!sheet) return;
+      sheet.classList.remove('open'); sheet.setAttribute('inert', '');
+      document.getElementById('m21p-dim').classList.remove('open');
+      track('m21_milestone_dismiss');
+    },
     'see-deck': function (el) {
       var p = PATHS.filter(function (x) { return x.deck === el.getAttribute('data-deck'); })[0];
       if (p) { S.deck = p.key; persist(); }
@@ -1260,7 +1317,7 @@
     },
     'start-over': function () {
       audio.pause(); audio.removeAttribute('src'); now = null;
-      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
+      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.m21Shown = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
       try { history.replaceState(null, '', location.pathname + location.hash); } catch (x) { /* ignore */ } // drop the home-screen unlock
       go('#/');
     },

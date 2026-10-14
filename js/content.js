@@ -12,7 +12,7 @@ window.PM_CONTENT = {
   CONFIG: {
     // DEMO MODE: true = emails are NOT saved or sent and a refresh starts the journey again.
     // Perfect for testing and showing people. Set to false before you launch.
-    demoMode: true,
+    demoMode: false,
 
     // Every Mirror stops here until the person gives their email (seconds).
     previewSeconds: 40,
@@ -58,7 +58,7 @@ window.PM_CONTENT = {
 
   /* ------------------------------------------------------------- the 12 Mirrors
    * audio: null  = not recorded yet, shows as "Coming soon".
-   * after        = the line on the Mirror 21 page: "You said: <title>" → "In 21 days: <after>".
+   * after        = the line on the Mirror 21 page: "You said: <title>" → "In 21 steps: <after>".
    * card         = the nudge card this Mirror unlocks the first time it is finished (an id from NUDGES below).
    *                Every card has exactly one Mirror or podcast episode that unlocks it.
    * duration     = seconds (shown as "1 min").
@@ -178,23 +178,34 @@ window.PM_CONTENT = {
     url: '',
     price: '$99',
     cards: {
-      allMirrors: ['YOU’VE LOOKED IN EVERY MIRROR', 'Now live it for 21 days, with Kevin.'],
-      episodeEnd: ['READY FOR MORE?', '21 days. One change. Kevin with you every day.'],
-      afterNudge: 'Want Kevin with you for 21 days?'
+      allMirrors: ['YOU’VE LOOKED IN EVERY MIRROR', 'Now live it in 21 steps, with Kevin.'],
+      episodeEnd: ['READY FOR MORE?', '21 steps. One change. Kevin with you every step.'],
+      afterNudge: 'Want Kevin with you for 21 steps?'
     },
-    tagline: '21 days. One change. Kevin with you every day.',
-    // The Mirror 21 page (white). The big "You said → In 21 days" uses the Mirror they last listened to.
-    photo: 'assets/images/kevin-cap.jpg',
-    priceLines: ['21 days · one change', '1 minute a day with Kevin', 'Miss a day? Start again, free'],
-    benefits: [
-      ['One change. Actually done.', 'Pick the one thing you keep putting off. In 21 days, it’s just what you do.'],
-      ['Kevin in your ear, every day.', 'A 1-minute Mirror each morning. Straight, honest, no fluff.'],
-      ['Small enough to do today.', 'One clear action before the day is over. Nothing more.'],
-      ['Proof, not promises.', 'Check in each night: Yes, Partly or No. Watch your follow-through grow.']
+    // Collection milestones: a pop-up on the 21 NUDGES tab, once each, with a SEE MIRROR 21 button.
+    // cards: N  = when the Nth card is collected · deck: 'white' | 'black' | 'gold' = when that deck is complete.
+    // Listed in order of priority: if two happen at once, only the first one in this list shows.
+    milestones: [
+      { cards: 21,     title: 'ALL 21 COLLECTED.',    line: 'Now live them: 21 steps with Kevin.' },
+      { deck: 'white', title: 'AWARENESS COMPLETE.',  line: 'That’s Steps 01–07 of Mirror 21: SEE IT. Live them with Kevin.' },
+      { deck: 'black', title: 'ACCEPTANCE COMPLETE.', line: 'Steps 08–14 of Mirror 21: OWN IT.' },
+      { deck: 'gold',  title: 'ACTION COMPLETE.',     line: 'Steps 15–21 of Mirror 21: CHANGE IT.' },
+      { cards: 14,     title: '14 OF 21.',            line: 'Two thirds there.' },
+      { cards: 7,      title: '7 OF 21.',             line: 'Change doesn’t come from collecting. It comes from doing.' },
+      { cards: 3,      title: '3 NUDGES IN.',         line: 'You’ve started something. Mirror 21 turns it into one real change.' }
     ],
-    weeks: ['Name what’s really in the way.', 'Stop explaining it away.', 'Make it what you do.'],
-    daily: [['LISTEN', 'A 1-minute Mirror'], ['ACT', 'One action today'], ['CHECK IN', 'Yes · Partly · No']],
-    finePrint: 'One payment · yours to keep · start when you’re ready'
+    tagline: '21 steps. One change. Kevin with you every step.',
+    // The Mirror 21 page (white, one screen, no scrolling). "You said → In 21 steps" uses the Mirror they last listened to:
+    // its title, crossed out, then its `after` line, with the last word in gold.
+    photo: 'assets/images/kevin-mirror21.jpg',
+    points: ['One change. Actually done.', 'Small enough to do today.', 'Watch your follow-through grow.'],
+    // "See how it works" sheet
+    stages: [
+      { steps: '01–07', name: 'SEE IT',    line: 'Name what’s really in the way.' },
+      { steps: '08–14', name: 'OWN IT',    line: 'Stop explaining it away.' },
+      { steps: '15–21', name: 'CHANGE IT', line: 'Make it what you do.' }
+    ],
+    eachStep: [['LISTEN', '1 minute with Kevin'], ['LEARN', 'The tool, in a short video'], ['ACT', 'One move for today'], ['CHECK', 'Did you do it?']]
   },
 
   /* ------------------------------------------------------------- captions (Mirrors 01–12)
