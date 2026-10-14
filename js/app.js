@@ -222,7 +222,7 @@
     var mode = a2hsMode();
     if (!mode || S.a2hsDone || !unlocked() || heardMirrors() < 1) return '';
     return '<div class="a2hs" data-a2hs>' +
-      '<div class="a2hs-row"><img src="assets/images/icon-192.png" alt="">' +
+      '<div class="a2hs-row"><img src="assets/images/icon-192.png?v=2" alt="">' +
         '<span class="body"><b>KEEP IT ON YOUR PHONE</b><span>Add The Pocket Mirror to your home screen.</span></span>' +
         '<button type="button" class="a2hs-x" data-action="a2hs-x" aria-label="No thanks">' + I.close + '</button></div>' +
       '<button type="button" class="a2hs-go" data-action="a2hs-go">' + (mode === 'android' ? 'ADD TO HOME SCREEN' : 'SHOW ME HOW') + '</button>' +
@@ -305,7 +305,8 @@
     return item;
   }
 
-  // Lock screen / control centre. Episodes show their number tile (white, black number), drawn here once the font is ready.
+  // Lock screen / control centre. Mirrors show the Daily Xcellence logo; episodes show their number tile
+  // (white, black number), drawn here once the font is ready.
   function setMediaSession(kind, item) {
     if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
     var meta = function (art) {
@@ -318,7 +319,8 @@
         });
       } catch (e) { /* ignore */ }
     };
-    if (kind !== 'episode') { meta({ src: HOST.photo, sizes: '512x512', type: 'image/jpeg' }); return; }
+    // Mirrors: the Daily Xcellence logo (white on black)
+    if (kind !== 'episode') { meta({ src: 'assets/images/lockscreen-mirror.png', sizes: '512x512', type: 'image/png' }); return; }
     var n = item.n;
     episodeTile(n).then(function (src) {
       if (now && now.kind === 'episode' && now.n === n) meta({ src: src, sizes: '512x512', type: 'image/png' });
