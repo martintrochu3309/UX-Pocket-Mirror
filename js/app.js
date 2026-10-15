@@ -115,7 +115,7 @@
   var DEMO_STATE = QS.get('demo') || '';
   var DEMO = !!CONFIG.demoMode || !!DEMO_STATE;
 
-  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, m21Shown: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
+  var S = { email: '', source: '', heard: {}, eps: {}, saved: {}, m21Shown: {}, m21EndHidden: {}, pending: [], deck: '', lastPath: '', lastMirror: 0, a2hsDone: false };
   if (!DEMO) {
     try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { /* private mode */ }
   } else if (CONFIG.demoMode) {
@@ -306,44 +306,17 @@
     return item;
   }
 
-  // Lock screen / control centre. Mirrors show the Daily Xcellence logo; episodes show their number tile
-  // (white, black number), drawn here once the font is ready.
+  // Lock screen / control centre / Dynamic Island: the Daily Xcellence logo (white on black), for Mirrors and episodes alike.
   function setMediaSession(kind, item) {
     if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
-    var meta = function (art) {
-      try {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: kind === 'episode' ? item.title : 'Mirror ' + pad2(item.n) + ' · ' + item.title,
-          artist: 'Kevin Craggs',
-          album: kind === 'episode' ? PODCAST.name : 'The Pocket Mirror',
-          artwork: [art]
-        });
-      } catch (e) { /* ignore */ }
-    };
-    // Mirrors: the Daily Xcellence logo (white on black)
-    if (kind !== 'episode') { meta({ src: 'assets/images/lockscreen-mirror.png', sizes: '512x512', type: 'image/png' }); return; }
-    var n = item.n;
-    episodeTile(n).then(function (src) {
-      if (now && now.kind === 'episode' && now.n === n) meta({ src: src, sizes: '512x512', type: 'image/png' });
-    }).catch(function () {});
-  }
-  var tiles = {};
-  function episodeTile(n) {
-    if (tiles[n]) return tiles[n];
-    var fontReady = document.fonts && document.fonts.load ? document.fonts.load('700 240px Magistral') : Promise.resolve();
-    tiles[n] = fontReady.catch(function () {}).then(function () {
-      var W = 512, cv = document.createElement('canvas'), x = cv.getContext('2d');
-      cv.width = W; cv.height = W;
-      x.fillStyle = '#0a0a0a'; x.fillRect(0, 0, W, W);
-      x.fillStyle = '#ffffff';
-      x.beginPath(); x.moveTo(64, 32); x.arcTo(480, 32, 480, 480, 32); x.arcTo(480, 480, 32, 480, 32); x.arcTo(32, 480, 32, 32, 32); x.arcTo(32, 32, 480, 32, 32); x.closePath(); x.fill();
-      x.fillStyle = '#0a0a0a';
-      x.font = '700 240px Magistral, "Arial Narrow", Arial, sans-serif';
-      x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.fillText(pad2(n), W / 2, W / 2 + 12);
-      return cv.toDataURL('image/png');
-    });
-    return tiles[n];
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: kind === 'episode' ? item.title : 'Mirror ' + pad2(item.n) + ' · ' + item.title,
+        artist: 'Kevin Craggs',
+        album: kind === 'episode' ? PODCAST.name : 'The Pocket Mirror',
+        artwork: [{ src: 'assets/images/lockscreen-mirror.png', sizes: '512x512', type: 'image/png' }]
+      });
+    } catch (e) { /* ignore */ }
   }
 
   function atPreviewLimit() {
@@ -508,7 +481,7 @@
         if (hint) hint.hidden = !!done;
       }
       var m21 = root.querySelector('[data-m21-end]');
-      if (m21) m21.hidden = !(S.eps[n] && unlocked());
+      if (m21) m21.hidden = !(S.eps[n] && unlocked() && !S.m21EndHidden[n]);
       // podcast ring: the countdown, the dot at the end of the progress, and the lock note for the next episode
       var left = root.querySelector('[data-left]');
       if (left) left.textContent = fmt(d - t);
@@ -1045,6 +1018,8 @@
         homeTop() +
         markTitle(TITLES.podcast || ['', 'EXPLORE'], 'Explore: ' + PODCAST.name + ' podcast') +
         '<div class="progress white"><span>' + epsHeard + ' OF ' + epsTotal + ' HEARD</span><span class="bar" role="progressbar" aria-label="Episodes heard" aria-valuemin="0" aria-valuemax="' + epsTotal + '" aria-valuenow="' + epsHeard + '"><span style="width:' + (100 * epsHeard / epsTotal).toFixed(1) + '%"></span></span></div>' +
+        // the numbers, timeline and chosen episode sit centred in the space between the title and the tab bar
+        '<div class="ep-stage">' +
         '<div class="ep-carousel" data-carousel role="listbox" aria-label="Episodes">' + all.map(function (e, i) {
           return '<button type="button" class="ep-num ' + epState(e) + '" data-i="' + i + '" role="option" aria-label="Episode ' + pad2(e.n) + '">' +
             '<span class="n">' + pad2(e.n) + '</span><span class="dot"></span>' + (i < all.length - 1 ? '<span class="seg"></span>' : '') + '</button>';
@@ -1052,6 +1027,7 @@
         '<div class="ep-info" aria-live="polite">' +
           '<p class="ep-label" data-ep-label></p><h2 class="ep-title" data-ep-title></h2><p class="ep-meta" data-ep-meta></p>' +
           '<div data-ep-cta></div>' +
+        '</div>' +
         '</div>';
       mount = function () {
         track('podcast_view');
@@ -1141,7 +1117,9 @@
           '<button type="button" class="skip" data-action="skip" data-by="15" aria-label="Forward 15 seconds">' + I.fwd15 + '</button>' +
         '</div>' +
         (nxt && !episodeOpen(nxt) ? '<p class="next-lock" data-next-lock>' + I.lock + 'Finish this one to open ' + pad2(nxt.n) + '</p>' : '') +
-        (M21 ? '<div class="m21-end" data-m21-end hidden>' + m21Card(((M21.cards || {}).episodeEnd || [])[0] || 'READY FOR MORE?', ((M21.cards || {}).episodeEnd || [])[1], 'compact') + '</div>' : '') +
+        // Mirror 21 card once the episode is heard; its ✕ hides it for this episode only
+        (M21 ? '<div class="m21-end" data-m21-end hidden>' + m21Card(((M21.cards || {}).episodeEnd || [])[0] || 'READY FOR MORE?', ((M21.cards || {}).episodeEnd || [])[1], 'compact') +
+          '<button type="button" class="m21-end-x" data-action="m21-end-close" data-n="' + e.n + '" aria-label="Close">' + I.close + '</button></div>' : '') +
       '</section>';
     return {
       html: html,
@@ -1297,6 +1275,11 @@
       setTimeout(function () { openNudgeSheet(x.id, x.deck); }, 200);
     },
     'soon-card': function () { toast('COMING SOON'); },
+    'm21-end-close': function (el) {
+      S.m21EndHidden[+el.getAttribute('data-n')] = true; persist();
+      var card = el.closest('[data-m21-end]'); if (card) card.hidden = true;
+      track('m21_episode_card_close', { episode: +el.getAttribute('data-n') });
+    },
     'm21-how': function () {
       var sheet = document.getElementById('m21h'); if (!sheet) return;
       sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21h-dim').classList.add('open');
@@ -1360,7 +1343,7 @@
     },
     'start-over': function () {
       audio.pause(); audio.removeAttribute('src'); now = null;
-      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.m21Shown = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
+      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.m21Shown = {}; S.m21EndHidden = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
       try { history.replaceState(null, '', location.pathname + location.hash); } catch (x) { /* ignore */ } // drop the home-screen unlock
       go('#/');
     },

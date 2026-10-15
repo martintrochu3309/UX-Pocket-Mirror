@@ -17,7 +17,9 @@
    · Corners: 8 (inputs, thumbnails), 16 (cards, sheets), round (buttons, circles).
    · One shadow, under floating layers (sheets, toast, mini player).
    · Exceptions: the card artwork and the lock-screen mock are pictures and
-     scale with themselves; caption words not yet said stay dark on purpose.
+     scale with themselves; caption words not yet said stay dark on purpose;
+     the tab bar labels are 11px; the landing headline (36px) and the podcast
+     episode number (112px) are off the scale.
    ===================================================================== */
 
 @font-face { font-family: "Magistral"; src: url("../assets/fonts/magistral-bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
@@ -96,7 +98,8 @@ a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: var(--r-sm); }
 [hidden] { display: none !important; }
 h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* text for screen readers only (iPhone could show a 1px sliver of it without the margin / clip-path) */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 
 /* ---------- app frame (phone-width column, centred on desktop) ---------- */
 #app { position: relative; max-width: var(--frame); min-height: 100dvh; margin: 0 auto; overflow-x: hidden; }
@@ -464,9 +467,10 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 /* the podcast: a row of episode numbers you swipe (the middle one big), a timeline of dots under them,
    and the chosen episode below with its PLAY button. White, like the podcast player. */
 .progress.white .bar span { background: var(--ink); }
+.ep-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 12px; }
 .ep-carousel {
   --w: calc(min(100vw, var(--frame)) / 3.2);
-  display: flex; margin: clamp(28px, 6dvh, 56px) calc(-1 * var(--pad)) 0; padding: 0 calc(50% + var(--pad) - var(--w) / 2);
+  display: flex; margin: 16px calc(-1 * var(--pad)) 0; padding: 0 calc(50% + var(--pad) - var(--w) / 2);
   overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .ep-carousel::-webkit-scrollbar { display: none; }
@@ -499,7 +503,7 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .ep-title { margin: 12px 0 0; font: italic 700 var(--fs-title)/1.2 var(--display); }
 .ep-meta { margin: 8px 0 0; min-height: 12px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
 .ep-play-btn {
-  display: inline-flex; align-items: center; gap: 10px; height: 52px; margin-top: 24px; padding: 0 32px; border-radius: var(--r-full);
+  display: inline-flex; align-items: center; gap: 10px; height: 52px; margin-top: clamp(24px, 5dvh, 44px); padding: 0 32px; border-radius: var(--r-full);
   background: var(--ink); color: var(--bg); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button);
 }
 .ep-play-btn svg { width: 14px; height: 14px; }
@@ -520,8 +524,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
   border-top: 1px solid var(--line); background: rgba(10, 10, 10, .97);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
 }
-.tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--ink-3); font: italic 700 var(--fs-small)/1 var(--display); letter-spacing: var(--ls-button); }
-.tabbar a svg { width: 26px; height: 26px; }
+/* kept quiet: the tab labels are the one place under 12px (11px, by choice), with tighter spacing and smaller icons */
+.tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ink-3); font: italic 700 11px/1 var(--display); letter-spacing: .06em; }
+.tabbar a svg { width: 22px; height: 22px; }
 .tabbar a[aria-current="page"] { color: var(--gold); }
 
 /* =====================================================================
@@ -556,7 +561,10 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .m21-go svg { width: 16px; height: 16px; }
 .m21-card.compact { padding: 14px 16px 12px; }
 .m21-card.compact .m21-name { font-size: var(--fs-title); }
-.m21-end { width: 100%; max-width: 360px; margin-top: 22px; }
+.m21-end { position: relative; width: 100%; max-width: 360px; margin-top: 22px; }
+.m21-end .m21-card { margin-top: 0; }
+.m21-end-x { position: absolute; top: 8px; right: 8px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--paper-ink-2); }
+.m21-end-x svg { width: 16px; height: 16px; }
 
 /* ---------- Mirror 21 screen ---------- */
 .m21 .m21-kicker { margin-top: 18px; color: var(--gold); }
