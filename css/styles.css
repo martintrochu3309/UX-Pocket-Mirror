@@ -461,32 +461,57 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .deck-switch button[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
 .home .btn-gold { margin-top: 16px; }
 
-/* the podcast list: a number tile per episode instead of a cover */
+/* the podcast: a row of episode numbers you swipe (the middle one big), a timeline of dots under them,
+   and the chosen episode below with its PLAY button. White, like the podcast player. */
 .progress.white .bar span { background: var(--ink); }
-.episode-list { margin: 12px 0 0; padding: 0; list-style: none; }
-.ep-row { display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 0; border-top: 1px solid var(--line); text-align: left; }
-.episode-list li:first-child .ep-row { border-top: 0; }
-.ep-tile {
-  display: grid; place-items: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: var(--r-sm);
-  font: 700 var(--fs-title)/1 var(--display); letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums;
-  background: var(--surface); color: var(--ink-3); border: 1.5px solid transparent;
+.ep-carousel {
+  --w: calc(min(100vw, var(--frame)) / 3.2);
+  display: flex; margin: clamp(28px, 6dvh, 56px) calc(-1 * var(--pad)) 0; padding: 0 calc(50% + var(--pad) - var(--w) / 2);
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-.ep-row.heard .ep-tile { background: var(--ink); color: var(--bg); }
-.ep-row.next .ep-tile, .ep-row.open .ep-tile { background: var(--bg); color: var(--ink); border-color: var(--ink); }
-.ep-row .body { flex: 1; min-width: 0; }
-.ep-row small { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
-.ep-row.next small { color: var(--gold); }
-.ep-row b { display: block; margin-top: 8px; font: italic 700 var(--fs-20)/1.2 var(--display); }
-.ep-row .meta { display: block; margin-top: 6px; font: 500 var(--fs-small)/1.4 var(--text); color: var(--ink-2); }
-.ep-end { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; color: var(--ink-3); }
-.ep-end svg { width: 16px; height: 16px; }
-.ep-play { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--bg); }
-.ep-play svg { width: 13px; height: 13px; margin-left: 2px; }
-.ep-row.open .ep-play { background: none; border: 1.5px solid var(--ink); color: var(--ink); }
-.ep-row.locked { opacity: .5; cursor: default; }
-.ep-row.locked small, .ep-row.locked b { color: var(--ink-3); }
-.ep-row.locked .meta { color: var(--ink-2); }
-.ep-row.playing small { color: var(--gold); }
+.ep-carousel::-webkit-scrollbar { display: none; }
+.ep-num {
+  --k: 1; /* 0 = in the middle, 1 = one step away (set from app.js while scrolling) */
+  position: relative; flex: 0 0 var(--w); height: 156px; padding: 0; scroll-snap-align: center; scroll-snap-stop: always;
+  color: var(--ink-2);
+}
+/* the hero number: the one size off the scale, so the chosen episode reads from across the room */
+.ep-num .n {
+  position: absolute; left: 0; right: 0; bottom: 44px; text-align: center;
+  font: 700 112px/1 var(--display); letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums;
+  transform: scale(calc(1 - .58 * var(--k))); transform-origin: 50% 100%; opacity: calc(1 - .35 * var(--k));
+}
+.ep-num.on .n { color: var(--ink); }
+.ep-num.locked .n { color: rgba(255, 255, 255, .2); }
+.ep-num.locked.on .n { color: var(--ink-3); }
+/* the timeline: a dot under each number, joined by a line that is white across what you have heard */
+.ep-num .dot { position: absolute; left: 50%; bottom: 13px; z-index: 1; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: rgba(255, 255, 255, .22); }
+.ep-num.heard .dot { background: var(--ink); }
+.ep-num.next .dot, .ep-num.open .dot { background: var(--ink-2); }
+.ep-num.on .dot { bottom: 9px; width: 16px; height: 16px; margin-left: -8px; background: var(--bg); border: 2px solid var(--ink); }
+.ep-num .seg { position: absolute; left: 50%; bottom: 16px; width: 100%; height: 2px; background: rgba(255, 255, 255, .14); }
+.ep-num.heard .seg { background: var(--ink); }
+/* the chosen episode */
+.ep-info { display: flex; flex-direction: column; align-items: center; margin-top: 28px; text-align: center; }
+.ep-label { margin: 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
+.ep-label.next { color: var(--gold); }
+.ep-label.locked { color: var(--ink-3); }
+.ep-title { margin: 12px 0 0; font: italic 700 var(--fs-title)/1.2 var(--display); }
+.ep-meta { margin: 8px 0 0; min-height: 12px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
+.ep-play-btn {
+  display: inline-flex; align-items: center; gap: 10px; height: 52px; margin-top: 24px; padding: 0 32px; border-radius: var(--r-full);
+  background: var(--ink); color: var(--bg); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button);
+}
+.ep-play-btn svg { width: 14px; height: 14px; }
+.ep-play-btn.off { background: none; border: 1px solid var(--line); color: var(--ink-3); font-weight: 500; letter-spacing: 0; cursor: default; }
+/* short phones: smaller numbers and tighter spacing so PLAY stays above the tab bar */
+@media (max-height: 700px) {
+  .ep-carousel { margin-top: 12px; }
+  .ep-num { height: 124px; }
+  .ep-num .n { bottom: 40px; font-size: 80px; }
+  .ep-info { margin-top: 16px; }
+  .ep-play-btn { height: 48px; margin-top: 16px; }
+}
 
 /* tab bar */
 .tabbar {

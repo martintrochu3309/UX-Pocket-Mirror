@@ -157,14 +157,15 @@ window.PM_CONTENT = {
     ]
   },
 
-  /* ------------------------------------------------------------- big titles (same style as 12 MIRRORS)
-   * [gold part, white part]
+  /* ------------------------------------------------------------- the 3 Home tabs: big reflected title + tab bar name
+   * title = [gold part, white part] (leave the gold part '' for an all-white title)
    */
   TITLES: {
-    mirrors: ['12', 'MIRRORS'],
-    nudges:  ['21', 'NUDGES'],
-    podcast: ['12', 'EPISODES']
+    mirrors: ['', 'LISTEN'],
+    nudges:  ['', 'COLLECT'],
+    podcast: ['', 'EXPLORE']
   },
+  TABS: { mirrors: 'LISTEN', nudges: 'COLLECT', podcast: 'EXPLORE' },
 
   /* ------------------------------------------------------------- Mirror 21 (the $99 course)
    * Never before the email. After the email it is always one tap away:

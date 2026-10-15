@@ -23,7 +23,7 @@
 
   var C = window.PM_CONTENT;
   var CONFIG = C.CONFIG, PATHS = C.PATHS, MIRRORS = C.MIRRORS, NUDGES = C.NUDGES, PODCAST = C.PODCAST, HOST = C.HOST;
-  var TITLES = C.TITLES || {}, M21 = C.MIRROR21 || null, CAPTIONS = C.CAPTIONS || {};
+  var TITLES = C.TITLES || {}, TABS = C.TABS || {}, M21 = C.MIRROR21 || null, CAPTIONS = C.CAPTIONS || {};
   var app = document.getElementById('app');
   var toastEl = document.getElementById('toast');
 
@@ -42,8 +42,9 @@
     download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', ' stroke-width="2.2"'),
     back15: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><text x="12" y="15.5" font-size="7" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial">15</text>', ' stroke-width="1.7"'),
     fwd15: svg('<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/><text x="12" y="15.5" font-size="7" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial">15</text>', ' stroke-width="1.7"'),
-    tabMirrors: svg('<circle cx="12" cy="10" r="6.5"/><path d="M9.5 8.5a3 3 0 0 1 3-2M12 16.5V21M9 21h6"/>', ' stroke-width="1.6"'),
-    tabNudges: svg('<rect x="7" y="3.5" width="12" height="16" rx="2" transform="rotate(8 13 11.5)"/><rect x="4" y="5" width="12" height="16" rx="2"/>', ' stroke-width="1.6"'),
+    // tab bar: LISTEN (headphones), COLLECT (stacked layers), EXPLORE (binoculars)
+    tabMirrors: svg('<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><path d="M4 14h3v6H5.5A1.5 1.5 0 0 1 4 18.5Zm16 0h-3v6h1.5a1.5 1.5 0 0 0 1.5-1.5Z"/>', ' stroke-width="1.6"'),
+    tabNudges: svg('<path d="m12 3 9 4.5-9 4.5-9-4.5Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/>', ' stroke-width="1.6"'),
     share: svg('<path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', ' stroke-width="1.8"'),
     addSq: svg('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>', ' stroke-width="1.8"'),
     up: svg('<path d="M12 19V5M6 11l6-6 6 6"/>', ' stroke-width="2.2"'),
@@ -54,7 +55,7 @@
     bolt: svg('<path d="M13 3 5 13.5h6L10 21l8-10.5h-6Z"/>', ' stroke-width="1.8"'),
     video: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/>', ' stroke-width="1.8"'),
     chevUp: svg('<path d="m6 15 6-6 6 6"/>', ' stroke-width="2.2"'),
-    tabPodcast: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>', ' stroke-width="1.6"')
+    tabPodcast: svg('<circle cx="6.5" cy="16" r="3.5"/><circle cx="17.5" cy="16" r="3.5"/><path d="M10 16h4M3 16 5.5 6.5A2 2 0 0 1 9.5 7v6M21 16l-2.5-9.5a2 2 0 0 0-4 .5v6"/>', ' stroke-width="1.6"')
   };
   var PLAYPAUSE = I.play + I.pause;
 
@@ -148,7 +149,7 @@
 
   /* ================================================================ big reflected titles (12 MIRRORS style) */
   function markTitle(parts, label, goldLast) {
-    var g = '<span class="g">' + esc(parts[0]) + '</span>', w = esc(parts[1]);
+    var g = parts[0] ? '<span class="g">' + esc(parts[0]) + '</span>' : '', w = esc(parts[1]);
     var inner = goldLast ? w + g : g + w;
     return '<h1 class="sr-only">' + esc(label) + '</h1>' +
       '<div class="mark-title" aria-hidden="true" data-fit><p>' + inner + '</p><p>' + inner + '</p></div>';
@@ -480,7 +481,9 @@
   window.addEventListener('resize', fitTitles);
 
   /* ================================================================ live UI (player state) */
+  var podcastSync = null; // set while the Podcast tab is open
   function syncUI() {
+    if (podcastSync) podcastSync();
     var playing = !audio.paused && !audio.ended;
     app.querySelectorAll('[data-toggle]').forEach(function (b) {
       var mine = now && b.getAttribute('data-kind') === now.kind && +b.getAttribute('data-n') === now.n;
@@ -525,9 +528,6 @@
       var dur = (isFinite(audio.duration) && audio.duration) || (mirrorBy(now.n) || {}).duration || 0;
       remain.textContent = fmt(dur - CONFIG.previewSeconds) + ' left';
     }
-    app.querySelectorAll('[data-ep-row]').forEach(function (r) {
-      r.classList.toggle('playing', !!(now && now.kind === 'episode' && now.n === +r.getAttribute('data-ep-row')));
-    });
   }
 
   /* ================================================================ gate (unlock sheet) */
@@ -968,7 +968,7 @@
     var t = function (key, label, icon) {
       return '<a href="#/home/' + key + '"' + (tab === key ? ' aria-current="page"' : '') + '>' + icon + '<span>' + label + '</span></a>';
     };
-    return '<nav class="tabbar" aria-label="The Pocket Mirror">' + t('mirrors', 'MIRRORS', I.tabMirrors) + t('nudges', 'NUDGES', I.tabNudges) + t('podcast', 'PODCAST', I.tabPodcast) + '</nav>';
+    return '<nav class="tabbar" aria-label="The Pocket Mirror">' + t('mirrors', TABS.mirrors || 'LISTEN', I.tabMirrors) + t('nudges', TABS.nudges || 'COLLECT', I.tabNudges) + t('podcast', TABS.podcast || 'EXPLORE', I.tabPodcast) + '</nav>';
   }
   function homeTop() {
     return '<div class="home-top"><p class="wordmark">THE POCKET<br>MIRROR</p>' +
@@ -985,7 +985,7 @@
       var heard = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).length;
       body =
         homeTop() +
-        markTitle(TITLES.mirrors || ['12', 'MIRRORS'], '12 Mirrors') +
+        markTitle(TITLES.mirrors || ['', 'LISTEN'], 'Listen: the 12 Mirrors') +
         '<div class="progress"><span>' + heard + ' OF ' + CONFIG.totalMirrors + ' HEARD</span><span class="bar" role="progressbar" aria-label="Mirrors heard" aria-valuemin="0" aria-valuemax="' + CONFIG.totalMirrors + '" aria-valuenow="' + heard + '"><span style="width:' + (100 * heard / CONFIG.totalMirrors).toFixed(1) + '%"></span></span></div>' +
         a2hsCardHTML() +
         (allMirrorsHeard() && M21 ? m21Card(((M21.cards || {}).allMirrors || [])[0], ((M21.cards || {}).allMirrors || [])[1]) : '') +
@@ -1000,7 +1000,7 @@
       var got = collectedCount(), total = NUDGES.length;
       body =
         homeTop() +
-        markTitle(TITLES.nudges || [String(total), 'NUDGES'], total + ' Nudges') +
+        markTitle(TITLES.nudges || ['', 'COLLECT'], 'Collect: the ' + total + ' nudge cards') +
         '<div class="progress"><span>' + got + ' OF ' + total + ' COLLECTED</span><span class="bar" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + got + '"><span style="width:' + (100 * got / total).toFixed(1) + '%"></span></span></div>' +
         '<div class="deck-switch" role="group" aria-label="Choose a deck">' + PATHS.map(function (p) {
           return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.deckName || p.name) +
@@ -1035,29 +1035,77 @@
     }
 
     if (tab === 'podcast') {
-      var upNext = nextEpisode(), epsHeard = heardEpisodes(), epsTotal = PODCAST.episodes.length;
-      // each episode is a number tile: heard = white tile, up next = outlined, locked = greyed out
+      var upNext = nextEpisode(), epsHeard = heardEpisodes(), all = PODCAST.episodes, epsTotal = all.length;
+      var epState = function (e) {
+        if (!e.audio || !episodeOpen(e)) return 'locked';
+        return S.eps[e.n] ? 'heard' : upNext && upNext.n === e.n ? 'next' : 'open';
+      };
+      // a swipeable row of episode numbers (the middle one is big), a timeline of dots under them, and the chosen episode below
       body =
         homeTop() +
-        markTitle(TITLES.podcast || ['12', 'EPISODES'], PODCAST.name + ' podcast') +
+        markTitle(TITLES.podcast || ['', 'EXPLORE'], 'Explore: ' + PODCAST.name + ' podcast') +
         '<div class="progress white"><span>' + epsHeard + ' OF ' + epsTotal + ' HEARD</span><span class="bar" role="progressbar" aria-label="Episodes heard" aria-valuemin="0" aria-valuemax="' + epsTotal + '" aria-valuenow="' + epsHeard + '"><span style="width:' + (100 * epsHeard / epsTotal).toFixed(1) + '%"></span></span></div>' +
-        '<ul class="episode-list">' + PODCAST.episodes.map(function (e) {
-          var tile = '<span class="ep-tile">' + pad2(e.n) + '</span>';
-          if (!e.audio) {
-            return '<li><div class="ep-row locked">' + tile + '<span class="body"><small>COMING SOON</small><b>' + esc(e.title || 'New episode') + '</b></span></div></li>';
+        '<div class="ep-carousel" data-carousel role="listbox" aria-label="Episodes">' + all.map(function (e, i) {
+          return '<button type="button" class="ep-num ' + epState(e) + '" data-i="' + i + '" role="option" aria-label="Episode ' + pad2(e.n) + '">' +
+            '<span class="n">' + pad2(e.n) + '</span><span class="dot"></span>' + (i < all.length - 1 ? '<span class="seg"></span>' : '') + '</button>';
+        }).join('') + '</div>' +
+        '<div class="ep-info" aria-live="polite">' +
+          '<p class="ep-label" data-ep-label></p><h2 class="ep-title" data-ep-title></h2><p class="ep-meta" data-ep-meta></p>' +
+          '<div data-ep-cta></div>' +
+        '</div>';
+      mount = function () {
+        track('podcast_view');
+        var car = app.querySelector('[data-carousel]'), items = [].slice.call(car.children), cur = -1, raf = 0;
+        var playingNow = function (e) { return now && now.kind === 'episode' && now.n === e.n && !audio.paused && !audio.ended; };
+        // the chosen episode, under the numbers
+        var shown = '';
+        function info(i) {
+          var e = all[i], st = epState(e), prev = all[i - 1];
+          var key = i + st + playingNow(e);
+          if (key === shown) return; // only redraw when something changed (this runs on every audio tick)
+          shown = key;
+          var label = playingNow(e) ? 'NOW PLAYING' : st === 'heard' ? 'HEARD' : st === 'next' ? 'UP NEXT' : st === 'locked' ? 'LOCKED' : 'OPEN';
+          app.querySelector('[data-ep-label]').textContent = label + ' · EPISODE ' + pad2(e.n);
+          app.querySelector('[data-ep-label]').className = 'ep-label ' + (playingNow(e) ? 'next' : st);
+          app.querySelector('[data-ep-title]').textContent = e.title || 'Coming soon';
+          app.querySelector('[data-ep-meta]').textContent = e.audio ? mins(e.duration) : '';
+          var cta = playingNow(e) ? '<a class="ep-play-btn" href="#/episode/' + e.n + '">OPEN PLAYER</a>'
+            : st === 'locked' ? '<span class="ep-play-btn off">' + I.lock + (e.audio && prev ? esc(lockHint(e, true)) : 'Coming soon') + '</span>'
+            : '<button type="button" class="ep-play-btn" data-action="play-episode" data-n="' + e.n + '">' + I.play + (st === 'heard' ? 'PLAY AGAIN' : 'PLAY') + '</button>';
+          app.querySelector('[data-ep-cta]').innerHTML = cta;
+        }
+        // sizes follow the scroll: the closer to the middle, the bigger and brighter
+        function measure() {
+          raf = 0;
+          var mid = car.scrollLeft + car.clientWidth / 2, best = 0, bestD = Infinity, w = items[0].offsetWidth;
+          items.forEach(function (el, i) {
+            var d = Math.abs(el.offsetLeft + w / 2 - mid), k = Math.min(1, d / w);
+            el.style.setProperty('--k', k.toFixed(3));
+            if (d < bestD) { bestD = d; best = i; }
+          });
+          if (best !== cur) {
+            if (cur >= 0) items[cur].classList.remove('on');
+            cur = best; items[cur].classList.add('on'); items[cur].setAttribute('aria-selected', 'true');
+            info(cur);
           }
-          if (!episodeOpen(e)) {
-            return '<li><button type="button" class="ep-row locked" data-action="locked-episode" data-n="' + e.n + '">' + tile +
-              '<span class="body"><small>LOCKED</small><b>' + esc(e.title) + '</b><span class="meta">' + esc(lockHint(e, true)) + '</span></span>' +
-              '<span class="ep-end">' + I.lock + '</span></button></li>';
-          }
-          var heard = !!S.eps[e.n], next = !heard && upNext && upNext.n === e.n;
-          var state = heard ? 'heard' : next ? 'next' : 'open';
-          return '<li><button type="button" class="ep-row ' + state + '" data-ep-row="' + e.n + '" data-action="play-episode" data-n="' + e.n + '">' + tile +
-            '<span class="body"><small>' + (heard ? 'HEARD' : next ? 'UP NEXT' : 'OPEN') + '</small><b>' + esc(e.title) + '</b><span class="meta">' + mins(e.duration) + '</span></span>' +
-            '<span class="ep-end">' + (heard ? I.check : '<span class="ep-play">' + I.play + '</span>') + '</span></button></li>';
-        }).join('') + '</ul>';
-      mount = function () { track('podcast_view'); };
+        }
+        function goTo(i, smooth) {
+          var el = items[i];
+          car.scrollTo({ left: el.offsetLeft - (car.clientWidth - el.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
+          if (!smooth) measure();
+        }
+        car.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(measure); }, { passive: true });
+        car.addEventListener('click', function (ev) { var b = ev.target.closest('.ep-num'); if (b) goTo(+b.getAttribute('data-i'), true); });
+        car.addEventListener('keydown', function (ev) {
+          if (ev.key === 'ArrowRight' && cur < items.length - 1) { ev.preventDefault(); goTo(cur + 1, true); items[cur + 1].focus(); }
+          if (ev.key === 'ArrowLeft' && cur > 0) { ev.preventDefault(); goTo(cur - 1, true); items[cur - 1].focus(); }
+        });
+        // open on what is playing, otherwise on the next episode to hear
+        var start = now && now.kind === 'episode' ? episodeBy(now.n) : upNext;
+        goTo(Math.max(0, all.indexOf(start)), false);
+        podcastSync = function () { if (cur >= 0) info(cur); }; // play / pause changes the button
+        return function () { podcastSync = null; cancelAnimationFrame(raf); };
+      };
     }
 
     return {
