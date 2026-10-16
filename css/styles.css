@@ -368,7 +368,7 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 @keyframes segIn { from { background: var(--line); transform: scaleY(1); } 60% { transform: scaleY(2.4); } to { background: var(--gold); transform: scaleY(1); } }
 .reward .spacer { flex: 1; min-height: 24px; }
 
-/* ---------- 4b · the collection (21 NUDGES tab) ---------- */
+/* ---------- 4b · the collection (COLLECT tab) ---------- */
 .deck-switch small { display: block; margin-top: -2px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); font-style: normal; }
 .deck-switch button[aria-pressed="true"] small { color: var(--gold); }
 /* sized so the first two rows show and the third peeks above the tab bar: there is more below */

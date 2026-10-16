@@ -199,7 +199,7 @@ window.PM_CONTENT = {
     // The Mirror 21 page (white, one screen, no scrolling). "You said → In 21 steps" uses the Mirror they last listened to:
     // its title, crossed out, then its `after` line, with the last word in gold.
     photo: 'assets/images/kevin-mirror21.jpg',
-    points: ['One change. Actually done.', 'Small enough to do today.', 'Watch your follow-through grow.'],
+    points: ['One change you’ll actually make.', 'Proof you did it.', 'A method you keep.'],
     // "See how it works" sheet
     stages: [
       { steps: '01–07', name: 'SEE IT',    line: 'Name what’s really in the way.' },

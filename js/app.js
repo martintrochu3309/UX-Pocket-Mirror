@@ -55,6 +55,7 @@
     bolt: svg('<path d="M13 3 5 13.5h6L10 21l8-10.5h-6Z"/>', ' stroke-width="1.8"'),
     video: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/>', ' stroke-width="1.8"'),
     chevUp: svg('<path d="m6 15 6-6 6 6"/>', ' stroke-width="2.2"'),
+    repeat: svg('<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11V9.5a3.5 3.5 0 0 1 3.5-3.5h13.5"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 13v1.5a3.5 3.5 0 0 1-3.5 3.5H3.5"/>', ' stroke-width="1.8"'),
     tabPodcast: svg('<circle cx="6.5" cy="16" r="3.5"/><circle cx="17.5" cy="16" r="3.5"/><path d="M10 16h4M3 16 5.5 6.5A2 2 0 0 1 9.5 7v6M21 16l-2.5-9.5a2 2 0 0 0-4 .5v6"/>', ' stroke-width="1.6"')
   };
   var PLAYPAUSE = I.play + I.pause;
@@ -735,7 +736,7 @@
     if (audio.readyState >= 1) set(); else audio.addEventListener('loadedmetadata', set, { once: true });
   }
 
-  /* ================================================================ the collection (21 NUDGES tab) */
+  /* ================================================================ the collection (COLLECT tab) */
   // One deck as a 3-across grid: collected cards face up, the rest face down saying how to unlock them.
   function collectionHTML(deck) {
     return '<ul class="collection">' + nudgesOf(deck).map(function (x) {
@@ -1189,7 +1190,7 @@
           '<p class="m21x-in">IN 21 STEPS</p>' +
           '<h1 class="m21x-after"><span class="g">“</span>' + promise + '<span class="g">”</span></h1>' +
           '<ul class="m21x-points">' + (M21.points || []).map(function (t, i) {
-            return '<li>' + [I.target, I.pen, I.checkCircle][i % 3] + '<span>' + esc(t) + '</span></li>';
+            return '<li>' + [I.target, I.checkCircle, I.repeat][i % 3] + '<span>' + esc(t) + '</span></li>';
           }).join('') + '</ul>' +
           '<a class="btn-gold" data-action="m21-go" href="' + esc(M21.url || '#') + '"' + (M21.url ? ' target="_blank" rel="noopener"' : '') + '>START MIRROR 21 · ' + esc(M21.price) + '</a>' +
           '<button type="button" class="m21x-how" data-action="m21-how">See how it works' + I.chevUp + '</button>' +
