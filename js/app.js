@@ -1216,7 +1216,7 @@
           ? '<div class="m21x-photo"><img src="' + esc(M21.videoPoster || M21.photo || HOST.photo) + '" alt="">' +
               '<video class="m21x-video" src="' + esc(M21.video) + '" poster="' + esc(M21.videoPoster || '') + '" preload="metadata" playsinline controls></video>' +
               '<button type="button" class="m21x-play" data-action="m21-video" aria-label="Play Kevin’s video">' +
-                '<span class="ring">' + I.play + '</span><small>WATCH · ' + fmt(M21.videoSeconds || 0) + '</small></button></div>'
+                '<span class="ring">' + I.play + '</span></button></div>'
           : '<div class="m21x-photo" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>') +
         '<div class="m21x-body">' +
           '<p class="m21x-lbl">YOU SAID</p>' +
