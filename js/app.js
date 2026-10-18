@@ -1234,10 +1234,11 @@
       '<section class="sheet m21-how" id="m21h" role="dialog" aria-modal="true" aria-labelledby="m21h-title" inert>' +
         '<span class="grab" aria-hidden="true"></span>' +
         '<h2 id="m21h-title">HOW MIRROR 21 WORKS</h2>' +
+        (M21.howSub ? '<p class="how-sub">' + esc(M21.howSub) + '</p>' : '') +
         '<ul class="stages">' + (M21.stages || []).map(function (s, i) {
           return '<li><span class="lab"><small>STEPS ' + esc(s.steps) + '</small><b' + (i === 2 ? ' class="g"' : '') + '>' + esc(s.name) + '</b></span><span class="say">' + esc(s.line) + '</span></li>';
         }).join('') + '</ul>' +
-        '<p class="each">EACH STEP · ABOUT 3 MINUTES</p>' +
+        '<p class="each">' + esc(M21.eachLabel || 'EACH STEP') + '</p>' +
         '<ul class="each-step">' + (M21.eachStep || []).map(function (d, i) {
           return '<li>' + [I.phones, I.video, I.bolt, I.checkCircle][i % 4] + '<b>' + esc(d[0]) + '</b><span>' + esc(d[1]) + '</span></li>';
         }).join('') + '</ul>' +

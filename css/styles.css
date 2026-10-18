@@ -719,11 +719,20 @@ html.is-light, html.is-light body { background: var(--paper); }
 .m21-how .grab { display: block; width: 40px; height: 4px; margin: -8px auto 16px; border-radius: var(--r-full); background: var(--paper-line); }
 .m21-how h2 { margin: 0; font: italic 700 var(--fs-title)/1.1 var(--display); letter-spacing: var(--ls-display); }
 .m21-how .stages { margin: 12px 0 0; padding: 0; list-style: none; }
-.m21-how .stages li { display: grid; grid-template-columns: 128px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--paper-line); }
+.m21-how .stages li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px 0; border-top: 1px solid var(--paper-line); }
 .m21-how .stages li:first-child { border-top: 0; }
 .m21-how .stages small { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--paper-ink-2); }
 .m21-how .stages b { display: block; margin-top: 4px; font: italic 700 var(--fs-20)/1 var(--display); white-space: nowrap; }
-.m21-how .stages .say { font: 500 var(--fs-body)/1.4 var(--text); }
+.m21-how .stages .say { font: 500 var(--fs-body)/1.4 var(--text); color: var(--paper-ink-2); }
+.m21-how .how-sub { margin: 8px 0 0; font: 500 var(--fs-body)/1.4 var(--text); color: var(--paper-ink-2); }
+/* short phones: tighter, so GOT IT stays on screen */
+@media (max-height: 720px) {
+  .m21-how .stages li { gap: 4px; padding: 8px 0; }
+  .m21-how .each { margin: 12px 0 8px; }
+  .m21-how .each-step { gap: 6px; }
+  .m21-how .each-step li { padding: 9px 16px; }
+  .m21-got { height: 48px; margin-top: 14px; }
+}
 .m21-how .each { margin: 20px 0 10px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
 .m21-how .each-step { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .m21-how .each-step li { display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--paper-line); border-radius: var(--r-md); }

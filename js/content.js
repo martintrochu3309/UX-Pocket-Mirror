@@ -72,7 +72,7 @@ window.PM_CONTENT = {
     { n: 6,  path: 'see',    title: 'I’m doubting myself.', after: 'I backed myself.',                              audio: 'assets/mirrors/mirror-06.mp3', duration: 69, card: 'believing-isnt-true' },
     { n: 7,  path: 'see',    title: 'Change is happening and I’m struggling.', after: 'I’m moving with it.',        audio: 'assets/mirrors/mirror-07.mp3', duration: 70, card: 'prepared-to-see' },
     { n: 8,  path: 'own',    title: 'I’ve lost direction.', after: 'I know where I’m going.',                       audio: 'assets/mirrors/mirror-08.mp3', duration: 66, card: 'own-your-time' },
-    { n: 9,  path: 'own',    title: 'My team isn’t pulling together.', after: 'We’re pulling together.',           audio: 'assets/mirrors/mirror-09.mp3', duration: 70, card: 'fix-your-standards' },
+    { n: 9,  path: 'own',    title: 'I’m not really listening.', after: 'They feel heard.',           audio: 'assets/mirrors/mirror-09.mp3', duration: 70, card: 'fix-your-standards' },
     { n: 10, path: 'change', title: 'I need to make a decision.', after: 'I made the call.',                           audio: 'assets/mirrors/mirror-10.mp3', duration: 62, card: 'already-late' },
     { n: 11, path: 'change', title: 'I’m feeling the pressure.', after: 'I was ready.',                                 audio: 'assets/mirrors/mirror-11.mp3', duration: 67, card: 'follow-through' },
     { n: 12, path: 'change', title: 'I’m playing it too safe.', after: 'I made my move.',                              audio: 'assets/mirrors/mirror-12.mp3', duration: 71, card: 'comfort-enemy' }
@@ -205,12 +205,14 @@ window.PM_CONTENT = {
     videoSeconds: 37,
     points: ['One change you’ll actually make.', 'Proof you did it.', 'A method you keep.'],
     // "See how it works" sheet
+    howSub: 'See It. Own It. Change It. In every step.',
     stages: [
-      { steps: '01–07', name: 'SEE IT',    line: 'Name what’s really in the way.' },
-      { steps: '08–14', name: 'OWN IT',    line: 'Stop explaining it away.' },
-      { steps: '15–21', name: 'CHANGE IT', line: 'Make it what you do.' }
+      { steps: '01–07', name: 'MAKE THE MOVE', line: 'Get clear. Choose what matters. Start doing it.' },
+      { steps: '08–14', name: 'MAKE IT STICK', line: 'Build consistency. Turn action into habit.' },
+      { steps: '15–21', name: 'MAKE IT YOURS', line: 'Own your progress. Learn to do it again.' }
     ],
-    eachStep: [['LISTEN', '1 minute with Kevin'], ['LEARN', 'The tool, in a short video'], ['ACT', 'One move for today'], ['CHECK', 'Did you do it?']]
+    eachLabel: '21 STEPS. ONE AT A TIME. AT YOUR PACE.',
+    eachStep: [['LISTEN', 'Kevin teaches the skill.'], ['LEARN', 'See how it works.'], ['ACT', 'Put it into practice.'], ['CHECK', 'Record what you actually did.']]
   },
 
   /* ------------------------------------------------------------- captions (Mirrors 01–12)
