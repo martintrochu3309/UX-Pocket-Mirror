@@ -662,10 +662,39 @@ html.is-light, html.is-light body { background: var(--paper); }
 .m21x-top { position: relative; z-index: 1; }
 .m21x-photo {
   position: absolute; left: 0; right: 0; top: calc(var(--safe-top) + 64px); height: 50%; overflow: hidden;
-  /* the photo fades out around the logo on Kevin's shirt: plain white under it, where the text sits */
+}
+/* the photo / video fades out around the logo on Kevin's shirt: plain white under it, where the text sits
+   (on the picture only, so the play button on top stays solid) */
+.m21x-photo img, .m21x-photo video {
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%;
   -webkit-mask-image: linear-gradient(0deg, transparent 0, transparent 30%, #000 58%); mask-image: linear-gradient(0deg, transparent 0, transparent 30%, #000 58%);
 }
-.m21x-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%; }
+/* Kevin's video: a round white play button on his chest (below his face) until it plays */
+.m21x-play {
+  position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0; color: var(--paper);
+  transition: opacity .2s ease;
+}
+.m21x-play .ring {
+  display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%;
+  background: rgba(255, 255, 255, .92); color: var(--paper-ink); box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+}
+.m21x-play .ring svg { width: 24px; height: 24px; margin-left: 4px; }
+.m21x-play small { font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
+.m21x-play:active .ring { transform: scale(.95); }
+
+/* the video itself stays hidden on the page: tapping play opens it in the phone's own full-screen player */
+.m21x-photo .m21x-video { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; -webkit-mask-image: none; mask-image: none; }
+.m21x-photo .m21x-video:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; object-fit: contain; }
+.m21x-photo .m21x-video:-webkit-full-screen { width: 100%; height: 100%; opacity: 1; background: #000; object-fit: contain; }
+/* a device with no full screen: the player shows in the photo area instead, with its own controls */
+.m21x-photo.inline .m21x-video { inset: 0; width: 100%; height: 100%; opacity: 1; pointer-events: auto; z-index: 2; background: #000; object-fit: contain; }
+.m21x-photo.inline .m21x-play { display: none; }
+/* very short phones: the photo is small, so just the button, a little higher */
+@media (max-height: 600px) {
+  .m21x-play { top: 46%; }
+  .m21x-play small { display: none; }
+}
 .m21x-body { position: relative; display: flex; flex-shrink: 0; flex-direction: column; align-items: center; margin-top: auto; padding: 0 20px; text-align: center; z-index: 1; }
 .m21x-lbl { margin: 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--paper-ink-2); }
 .m21x-said {

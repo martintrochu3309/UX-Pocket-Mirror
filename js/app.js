@@ -1168,6 +1168,33 @@
   }
 
   /* ================================================================ 7 · MIRROR 21 (white) */
+  // Kevin's video in the phone's own full-screen player (Apple's on iPhone: ✕, AirPlay, volume, ±10s, scrubbing…)
+  function playVideo() {
+    var vid = app.querySelector('.m21x-video'); if (!vid) return;
+    var p = vid.play(); // inside the tap, so phones allow sound
+    if (p && p.catch) p.catch(function () {});
+    try {
+      if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();               // iPhone / iPad / Safari: Apple's player
+      else if (vid.requestFullscreen) vid.requestFullscreen().catch(inlineVideo); // Android, Chrome, Firefox
+      else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
+      else inlineVideo();
+    } catch (e) { inlineVideo(); }
+  }
+  // no full screen possible: show the player right in the photo area instead
+  function inlineVideo() { var ph = app.querySelector('.m21x-photo'); if (ph) ph.classList.add('inline'); }
+  function exitVideo() {
+    var vid = app.querySelector('.m21x-video'); if (!vid) return;
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+    else if (vid.webkitExitFullscreen) { try { vid.webkitExitFullscreen(); } catch (e) { /* not in full screen */ } }
+    stopVideo();
+  }
+  // back on the Mirror 21 page: stopped, rewound, the still and play button showing
+  function stopVideo() {
+    var vid = app.querySelector('.m21x-video'); if (!vid) return;
+    vid.pause();
+    try { vid.currentTime = 0; } catch (e) { /* not loaded yet */ }
+    var ph = app.querySelector('.m21x-photo'); if (ph) ph.classList.remove('inline');
+  }
   function mirror21Screen() {
     if (!M21) { go('#/home'); return null; }
     var heardList = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).map(Number);
@@ -1183,7 +1210,14 @@
       '<section class="screen m21x">' +
         '<div class="m21x-top"><p class="m21x-brand">MIRROR<span class="g">21</span></p>' +
           '<a class="m21x-close" href="' + close + '" aria-label="Close">' + I.close + '</a></div>' +
-        '<div class="m21x-photo" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>' +
+        (M21.video
+          // Kevin's video: a still with a play button; tapping opens the phone's own full-screen player
+          // (Apple's on iPhone). The video element stays hidden on the page.
+          ? '<div class="m21x-photo"><img src="' + esc(M21.videoPoster || M21.photo || HOST.photo) + '" alt="">' +
+              '<video class="m21x-video" src="' + esc(M21.video) + '" poster="' + esc(M21.videoPoster || '') + '" preload="metadata" playsinline controls></video>' +
+              '<button type="button" class="m21x-play" data-action="m21-video" aria-label="Play Kevin’s video">' +
+                '<span class="ring">' + I.play + '</span><small>WATCH · ' + fmt(M21.videoSeconds || 0) + '</small></button></div>'
+          : '<div class="m21x-photo" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>') +
         '<div class="m21x-body">' +
           '<p class="m21x-lbl">YOU SAID</p>' +
           '<p class="m21x-said">“' + esc(m.title) + '”</p>' +
@@ -1224,8 +1258,20 @@
         fitPhoto();
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPhoto);
         window.addEventListener('resize', fitPhoto);
+        // the phone's player: when it is closed (or the video ends), stop and rewind, back to the page
+        var vid = app.querySelector('.m21x-video');
+        var onFsChange = function () { if (!(document.fullscreenElement || document.webkitFullscreenElement)) stopVideo(); };
+        if (vid) {
+          vid.addEventListener('webkitendfullscreen', stopVideo); // iPhone: ✕ / Done in Apple's player
+          document.addEventListener('fullscreenchange', onFsChange);
+          document.addEventListener('webkitfullscreenchange', onFsChange);
+          vid.addEventListener('ended', function () { track('m21_video_end'); exitVideo(); });
+        }
         return function () {
           window.removeEventListener('resize', fitPhoto);
+          document.removeEventListener('fullscreenchange', onFsChange);
+          document.removeEventListener('webkitfullscreenchange', onFsChange);
+          if (vid) vid.pause();
           root.classList.remove('is-light'); if (meta) meta.setAttribute('content', '#0a0a0a');
         };
       }
@@ -1280,6 +1326,11 @@
       S.m21EndHidden[+el.getAttribute('data-n')] = true; persist();
       var card = el.closest('[data-m21-end]'); if (card) card.hidden = true;
       track('m21_episode_card_close', { episode: +el.getAttribute('data-n') });
+    },
+    'm21-video': function () {
+      if (!audio.paused) audio.pause(); // never two voices at once: a Mirror or episode playing in the background stops
+      playVideo();
+      track('m21_video_play');
     },
     'm21-how': function () {
       var sheet = document.getElementById('m21h'); if (!sheet) return;

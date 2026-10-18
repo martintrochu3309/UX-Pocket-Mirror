@@ -199,6 +199,10 @@ window.PM_CONTENT = {
     // The Mirror 21 page (white, one screen, no scrolling). "You said → In 21 steps" uses the Mirror they last listened to:
     // its title, crossed out, then its `after` line, with the last word in gold.
     photo: 'assets/images/kevin-mirror21.jpg',
+    // Kevin's video in place of the photo (tap to play, with sound). video: '' = show the photo instead.
+    video: 'assets/images/mirror21-video.mp4',
+    videoPoster: 'assets/images/mirror21-video-poster.jpg',
+    videoSeconds: 37,
     points: ['One change you’ll actually make.', 'Proof you did it.', 'A method you keep.'],
     // "See how it works" sheet
     stages: [
