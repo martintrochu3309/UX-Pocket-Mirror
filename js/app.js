@@ -127,7 +127,20 @@
     MIRRORS.forEach(function (m) { if (m.audio) S.heard[m.n] = true; });
   }
   // Opened from the home-screen icon (iPhone keeps a separate memory there): carry the unlock over.
-  if (QS.get('pm') === '1') {
+  // ONLY in the home-screen app itself. In Safari / WhatsApp / Instagram the ?pm=1 address is just a link that
+  // someone shared after giving their own email, so it must NOT unlock anything: it is ignored and removed.
+  var IS_HOME_APP = navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (QS.get('pm') === '1' && !IS_HOME_APP) {
+    ['pm', 'h', 'e', 's', 'l', 'j'].forEach(function (k) { QS.delete(k); });
+    try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS.toString() : '') + location.hash); } catch (x) { /* ignore */ }
+  }
+  // People who opened such a shared link before this fix were saved as "email given" with no real email
+  // ('home-screen'). Outside the home-screen app that doesn't count: they are asked for their email again.
+  if (S.email === 'home-screen' && !IS_HOME_APP) {
+    S.email = '';
+    try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  }
+  if (QS.get('pm') === '1' && IS_HOME_APP) {
     if (!S.email) S.email = 'home-screen';
     (QS.get('h') || '').split(',').forEach(function (n) { if (+n) S.heard[+n] = true; });
     (QS.get('e') || '').split(',').forEach(function (n) { if (+n) S.eps[+n] = true; });
@@ -138,11 +151,8 @@
       if (lm && !S.lastPath) S.lastPath = lm.path;
     }
     if (+QS.get('j') && !S.joinedAt) S.joinedAt = +QS.get('j') * 864e5;
-    // only the home-screen app itself is "done"; a refresh in Safari keeps the add-to-home-screen card
-    if (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) {
-      S.a2hsDone = true;
-      try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (x) { /* ignore */ }
-    }
+    S.a2hsDone = true;
+    try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (x) { /* ignore */ }
     try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
   }
   function persist() { stampInstallURL(); if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
