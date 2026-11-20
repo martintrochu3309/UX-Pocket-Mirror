@@ -317,6 +317,9 @@
   /* ================================================================ audio (one player for everything) */
   var audio = new Audio();
   audio.preload = 'auto';
+  // in the page (not floating outside it): iPhone Safari is more willing to keep it playing with the screen locked
+  audio.setAttribute('playsinline', '');
+  document.body.appendChild(audio);
   var now = null; // { kind: 'mirror' | 'episode', n }
   var gateOpen = false;
 
@@ -343,6 +346,18 @@
       });
     } catch (e) { /* ignore */ }
   }
+  // lock screen / control centre buttons: play, pause, back and forward 15 s, and dragging the bar.
+  // Having these tells the phone this is a real audio player, which helps it keep playing with the screen locked.
+  (function mediaControls() {
+    if (!('mediaSession' in navigator)) return;
+    var set = function (action, fn) { try { navigator.mediaSession.setActionHandler(action, fn); } catch (e) { /* not supported */ } };
+    var skip = function (by) { var d = (isFinite(audio.duration) && audio.duration) || 0; audio.currentTime = Math.max(0, Math.min(d || Infinity, audio.currentTime + by)); };
+    set('play', function () { play(); });
+    set('pause', function () { audio.pause(); });
+    set('seekbackward', function (e) { skip(-((e && e.seekOffset) || 15)); });
+    set('seekforward', function (e) { skip((e && e.seekOffset) || 15); });
+    set('seekto', function (e) { if (e && isFinite(e.seekTime)) audio.currentTime = e.seekTime; });
+  })();
 
   function atPreviewLimit() {
     return now && now.kind === 'mirror' && !unlocked() && audio.currentTime >= CONFIG.previewSeconds - 0.25;
@@ -350,6 +365,7 @@
 
   function play() {
     if (atPreviewLimit()) { openGate(); return; }
+    releaseIntro(); // a Mirror or episode starts: Kevin's intro video is let go (a video in the page can make iPhones stop audio on lock)
     if (audio.ended) audio.currentTime = 0;
     var p = audio.play();
     if (p && p.catch) p.catch(function () { syncUI(); });
@@ -574,25 +590,36 @@
       '</section>';
     return {
       html: html,
-      mount: function () { track('landing_view'); }
+      mount: function () {
+        track('landing_view');
+        // MEET KEVIN comes next the first time: start loading it now, so it plays the instant FIND MY MIRROR is tapped
+        // (Android and computers load it ahead; iPhones only load on play, but show its first frame straight away)
+        if (INTRO && !S.introSeen) { var v = introVideo(); try { v.load(); } catch (x) { /* ignore */ } }
+      }
     };
   }
 
   /* ================================================================ 1b · MEET KEVIN (the intro video, the first time only)
      Full screen, in colour, a black fade over his hands. Playing: just Kevin, a thin progress line and a barely-there SKIP.
-     Tap = pause: MEET KEVIN (top left) and the play button (on his chin) come back.
+     Tap = pause: MEET KEVIN (top left) and the play button (in the middle of the screen) come back.
      At the end: WATCH AGAIN and LET'S BEGIN (on to "Which one is you?"). */
-  // one video element, made inside the FIND MY MIRROR tap so it can start with sound (phones allow sound from a tap)
+  // one video element, made on the Landing (so it loads ahead) and kept in the page, hidden, until MEET KEVIN shows it.
+  // FIND MY MIRROR starts it inside the tap, so it plays with sound (phones only allow sound from a tap).
   var introVid = null;
   function introVideo() {
-    if (introVid) return introVid;
+    if (introVid) {
+      if (!introVid.isConnected) { introVid.hidden = true; document.body.appendChild(introVid); } // back on the Landing
+      return introVid;
+    }
     var v = document.createElement('video');
     v.className = 'intro-video';
-    v.src = INTRO.video;
-    if (INTRO.poster) v.poster = INTRO.poster;
     v.preload = 'auto'; v.playsInline = true;
     v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
     v.setAttribute('aria-label', 'Kevin introduces The Pocket Mirror');
+    if (INTRO.poster) v.poster = INTRO.poster;
+    v.src = INTRO.video;
+    v.hidden = true;
+    document.body.appendChild(v); // in the page (not floating), so phones load it and let it play
     introVid = v;
     return v;
   }
@@ -604,10 +631,16 @@
   // leave the intro (how: skip · begin · end) and carry on to the Mirrors
   function introDone(how) {
     var v = introVid;
-    if (v) v.pause();
     track('intro_' + how, { at: v ? Math.round(v.currentTime) : 0 });
-    introVid = null;
+    releaseIntro();
     go('#/mirrors');
+  }
+  // let Kevin's intro video go completely (stopped, emptied, out of the page), so only the audio player is left
+  function releaseIntro() {
+    var v = introVid; if (!v) return;
+    introVid = null;
+    try { v.pause(); v.removeAttribute('src'); v.load(); } catch (x) { /* ignore */ }
+    if (v.parentNode) v.parentNode.removeChild(v);
   }
   function introScreen() {
     if (!INTRO || unlocked()) { go(unlocked() ? '#/home' : '#/mirrors'); return null; }
@@ -621,7 +654,7 @@
         '<button type="button" class="intro-skip" data-action="intro-done" data-how="skip">SKIP</button>' +
         // top left: the time, then MEET KEVIN (here before it starts, when paused and at the end; away while Kevin talks)
         '<div class="intro-head"><p class="intro-meta" data-intro-meta></p><h1 class="intro-title">' + esc(INTRO.title || 'MEET KEVIN') + '</h1></div>' +
-        // on his chin: play (before it starts and when paused)
+        // in the middle of the screen: play (before it starts and when paused)
         '<button type="button" class="intro-play" data-action="intro-toggle" aria-label="Play"><span class="ring">' + I.play + '</span></button>' +
         // at the end: watch again, or on to the Mirrors
         '<div class="intro-end">' +
@@ -634,7 +667,8 @@
       mount: function () {
         var root = app.querySelector('[data-intro]'), stage = app.querySelector('[data-intro-stage]');
         var fill = app.querySelector('[data-intro-fill]'), meta = app.querySelector('[data-intro-meta]');
-        stage.appendChild(v);
+        stage.appendChild(v); // moved in from its hidden spot, still playing
+        v.hidden = false;
         function sync() {
           var playing = !v.paused && !v.ended, d = isFinite(v.duration) && v.duration ? v.duration : 55;
           root.classList.toggle('paused', !playing && !v.ended);
@@ -937,6 +971,18 @@
     if (audio.readyState >= 1) set(); else audio.addEventListener('loadedmetadata', set, { once: true });
   }
 
+  /* ================================================================ a fixed page (COLLECT · EXPLORE)
+     The page can't scroll or bounce at all (not even the iPhone rubber band or pull-to-refresh): only the cards /
+     cassettes move, left and right. Returns the function that unlocks it (when the tab is left). */
+  function lockPage() {
+    var root = document.documentElement;
+    var stop = function (e) { if (e.touches && e.touches.length > 1) return; e.preventDefault(); }; // pinch-zoom still allowed
+    root.classList.add('locked');
+    document.addEventListener('touchmove', stop, { passive: false });
+    window.scrollTo(0, 0);
+    return function () { root.classList.remove('locked'); document.removeEventListener('touchmove', stop, { passive: false }); };
+  }
+
   /* ================================================================ swipe decks (COLLECT cards · EXPLORE cassettes)
      The items follow your finger: `pos` is a float, so the whole row moves with the drag, then glides and settles on one.
      Tap a side item = bring it to the middle. Tap the middle one = o.tapMiddle(k). Arrow keys and Enter work too.
@@ -967,7 +1013,14 @@
     }
     function goTo(k) { target = Math.max(0, Math.min(last, k)); spin(); }
 
-    var grab = 0, grabPos = 0, turning = false, dragged = false, pressed = null;
+    // tapping the middle item runs o.tapMiddle from the "click" that follows the tap (not from pointerup): phones only
+    // let sound start (and sharing open) inside a real tap, so playing an episode from its cassette needs this.
+    var grab = 0, grabPos = 0, turning = false, dragged = false, pressed = null, middleTap = false;
+    stage.addEventListener('click', function () {
+      if (!middleTap) return;
+      middleTap = false;
+      o.tapMiddle(picked);
+    });
     stage.addEventListener('pointerdown', function (e) {
       turning = true; dragged = false; grab = e.clientX; grabPos = pos;
       var el = e.target; while (el && el !== stage && els.indexOf(el) < 0) el = el.parentNode;
@@ -976,22 +1029,27 @@
       stage.classList.add('dragging');
       try { stage.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ }
     });
+    // the finger moves the row; it is drawn once per screen refresh (not on every touch event), so it stays smooth
+    var drawRaf = 0;
+    function drawSoon() { if (!drawRaf) drawRaf = requestAnimationFrame(function () { drawRaf = 0; place(); mark(); }); }
     stage.addEventListener('pointermove', function (e) {
       if (!turning) return;
       var d = e.clientX - grab;
       if (Math.abs(d) > 5) dragged = true;
       pos = Math.max(-0.4, Math.min(last + 0.4, grabPos - d / (width() * (o.unit || 0.56))));
-      place(); mark();
+      drawSoon();
     });
     function letGo(cancelled) {
       if (!turning) return;
       turning = false;
+      cancelAnimationFrame(drawRaf); drawRaf = 0;
       stage.classList.remove('dragging');
       var tapped = !cancelled && !dragged ? pressed : null;
       pressed = null;
       if (tapped) {
         var k = els.indexOf(tapped);
-        if (k === picked) o.tapMiddle(k); else goTo(k);
+        if (k === picked) { middleTap = true; setTimeout(function () { middleTap = false; }, 600); } // the click right after runs tapMiddle
+        else goTo(k);
       } else {
         if (dragged && o.flicked) o.flicked(Math.max(0, Math.min(last, Math.round(pos))));
         goTo(Math.round(pos));
@@ -1012,18 +1070,23 @@
     stage.classList.add('dragging');
     place(); mark();
     requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.remove('dragging'); }); });
-    return { goTo: goTo, stop: function () { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
+    return { goTo: goTo, stop: function () { cancelAnimationFrame(raf); cancelAnimationFrame(drawRaf); window.removeEventListener('resize', onResize); } };
   }
 
   /* ================================================================ COLLECT: the arc (from the first Pocket Mirror)
      The cards stand in a fan: the middle one big and flat, its neighbours stepping out, turning towards you,
      further back and fading. Tap the middle card = save it (yours) or hear what unlocks it (not yet). */
+  // far items are taken out of the page (display none) once, and only the ones near the middle are moved each frame
+  function farAway(c, far) {
+    if (far) { if (!c._far) { c.style.display = 'none'; c._far = true; } return true; }
+    if (c._far) { c.style.display = ''; c._far = false; }
+    return false;
+  }
   function arcLayout(c, o, W) {
     var a = Math.abs(o), sgn = o < 0 ? -1 : 1;
-    if (a > 3.4) { c.style.opacity = 0; c.style.visibility = 'hidden'; return; }
+    if (farAway(c, a > 3.4)) return;
     var ax = Math.min(a, 3);
     var x = sgn * W * (0.30 * ax + 0.25 * Math.min(ax, 1));   // the first neighbour steps out furthest, then the fan tightens
-    c.style.visibility = '';
     c.style.transform = 'translate(-50%,-50%) translateX(' + x.toFixed(1) + 'px) translateZ(' + (-ax * 92).toFixed(1) + 'px) rotateY(' +
       (-sgn * ax * 27).toFixed(2) + 'deg) scale(' + (1 - ax * 0.07).toFixed(3) + ')';
     c.style.opacity = a < 1 ? 1 : Math.max(0.12, 1 - (a - 1) * 0.42);
@@ -1079,16 +1142,16 @@
      Colour = state: grey = heard, white = you can listen to it now, black = locked. Its number sits under it. */
   function tapeLayout(c, o, W) {
     var a = Math.abs(o), sgn = o < 0 ? -1 : 1;
-    if (a > 2.3) { c.style.opacity = 0; c.style.visibility = 'hidden'; return; }
+    if (farAway(c, a > 2.3)) return;
     var a1 = Math.min(a, 1), a2 = Math.max(0, a - 1);
     var x = sgn * W * (0.84 * a1 + 0.5 * a2);   // the first neighbour sits just clear of the middle one, half off the screen
-    c.style.visibility = '';
     c.style.transform = 'translate(-50%,-50%) translateX(' + x.toFixed(1) + 'px) scale(' + (1 - 0.38 * a1 - 0.12 * a2).toFixed(3) + ')';
     c.style.opacity = a <= 1 ? 1 - 0.3 * a : Math.max(0, 0.7 - a2 * 0.7);
     c.style.zIndex = String(100 - Math.round(a * 10));
   }
-  // white = open (heard or not yet); locked = the grey one, frosted, with a lock on it (see .tape.locked)
-  function tapeColour(st) { return st === 'locked' ? 'grey' : 'white'; }
+  // white = open (heard or not yet); locked = the frosted one (ep-NN-locked: the grey one, blurred and darker, made
+  // ahead of time so the phone doesn't blur while you swipe), with a lock on it
+  function tapeColour(st) { return st === 'locked' ? 'locked' : 'white'; }
   // an episode's cassette (PODCAST.cassette: {colour} and {n} are filled in); if that file is missing, the plain one of that colour
   function cassetteImg(e, colour, extra) {
     var fill = function (t) { return String(t).replace('{colour}', colour).replace('{n}', pad2(e.n)); };
@@ -1338,7 +1401,7 @@
           '<span class="arc-floor" aria-hidden="true"></span><span class="arc-glow" aria-hidden="true"></span>' +
           // yours = the card's face; not yet = the card back (it turns over once you have it)
           arc.map(function (x, i) {
-            var have = isCollected(x.id), lazy = Math.abs(i - startAt) > 4 ? ' loading="lazy"' : '';
+            var have = isCollected(x.id), lazy = ''; // all loaded up front (small files): no card appears late mid-swipe
             return '<div class="arc-card ' + x.deck + (have ? '' : ' locked') + (x.id === flipId ? ' flip-in' : '') + '" role="option" data-i="' + i + '" aria-label="' + esc(have ? x.text : 'Card not collected yet') + '">' +
               '<div class="arc-inner">' +
                 '<img class="arc-face" src="' + (have ? cardSrc(x.id, x.deck) : CARD_BACK) + '" alt="" draggable="false"' + lazy + '>' +
@@ -1360,8 +1423,8 @@
           sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21p-dim').classList.add('open');
           track('m21_milestone_view', { milestone: milestoneKey(due[0]) });
         }, 1200) : 0;
-        var stopArc = mountArc(arc, startAt);
-        return function () { clearTimeout(popT); stopArc(); }; // left before the pop-up rose: it waits for the next visit
+        var stopArc = mountArc(arc, startAt), unlock = lockPage();
+        return function () { clearTimeout(popT); stopArc(); unlock(); }; // left before the pop-up rose: it waits for the next visit
       };
     }
 
@@ -1381,7 +1444,7 @@
         '<div class="tapes" data-tapes tabindex="0" role="listbox" aria-label="Episodes. Swipe or use the arrow keys; Enter plays the middle one.">' + all.map(function (e, i) {
           var st = epState(e);
           return '<div class="tape ' + st + '" data-i="' + i + '" role="option" aria-label="Episode ' + pad2(e.n) + ', ' + stateWord[st] + '">' +
-            '<div class="tape-pic">' + cassetteImg(e, tapeColour(st), i > 3 ? ' loading="lazy"' : '') +
+            '<div class="tape-pic">' + cassetteImg(e, tapeColour(st), ' decoding="async"') +
               (st === 'locked' ? '<span class="tape-lock" aria-hidden="true">' + I.lock + '</span>' : '') + '</div>' +
             '<p class="tape-n"><span>' + pad2(e.n) + '</span>' +
               (st === 'heard' ? '<i class="ic-done">' + I.check + '</i>' : st === 'next' ? '<i class="ic-dot"></i>' : '') + '</p>' +
@@ -1424,8 +1487,9 @@
         var swipe = swipeDeck(stage, els, Math.max(0, all.indexOf(start)), {
           layout: tapeLayout, unit: 0.84, pick: info, tapMiddle: useMiddle
         });
-        podcastSync = function () { if (cur >= 0) info(cur); }; // play / pause changes the button
-        return function () { podcastSync = null; swipe.stop(); };
+        podcastSync = function () { if (cur >= 0) info(cur); }; // play / pause changes the line under it
+        var unlock = lockPage();
+        return function () { podcastSync = null; swipe.stop(); unlock(); };
       };
     }
 
@@ -1631,8 +1695,9 @@
     'find-mirror': function (el, e) {
       if (!INTRO || S.introSeen || unlocked()) return; // the link itself goes to the Mirrors
       e.preventDefault();
-      var p = introVideo().play(); if (p && p.catch) p.catch(function () {}); // blocked? the banner's play button starts it
-      go('#/intro');
+      var p = introVideo().play(); if (p && p.catch) p.catch(function () {}); // blocked? the play button starts it
+      // open MEET KEVIN in this same instant (not on the next tick), so there is no gap before Kevin appears
+      try { history.pushState(null, '', location.pathname + location.search + '#/intro'); render(); } catch (x) { go('#/intro'); }
     },
     'intro-toggle': function () { toggleIntro(); },
     'intro-again': function () {

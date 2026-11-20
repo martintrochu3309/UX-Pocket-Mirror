@@ -212,9 +212,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .intro-meta { margin: 0; min-height: 12px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .intro-title { margin: 10px 0 0; font: italic 700 var(--fs-display)/1 var(--display); letter-spacing: -.03em; }
 .intro:not(.paused):not(.ended) .intro-head { opacity: 0; transform: translateY(-6px); }
-/* on his chin: the see-through glass play button (like Kevin's video on the Mirror 21 page) */
+/* in the middle of the screen: the see-through glass play button (like Kevin's video on the Mirror 21 page) */
 .intro-play {
-  position: absolute; z-index: 2; left: 50%; top: 33%; transform: translate(-50%, -50%);
+  position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%);
   display: flex; padding: 0; color: var(--ink); transition: opacity .3s ease;
 }
 .intro-play .ring {
@@ -477,6 +477,10 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .segs span.new { animation: segIn .6s ease 1.3s both; }
 @keyframes segIn { from { background: rgba(255, 255, 255, .14); transform: scaleY(1); } 60% { transform: scaleY(2.4); } to { background: var(--ink); transform: scaleY(1); } }
 
+/* COLLECT and EXPLORE are fixed pages (lockPage in app.js): no scrolling, no bounce; only the cards / cassettes move */
+html.locked, html.locked body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html.locked body { position: fixed; inset: 0; width: 100%; }
+
 /* ---------- 4b · COLLECT: all 21 cards in one arc you flick through ---------- */
 /* one screen, no scrolling: the bar (13 OF 21), stages, question, the arc (takes the room left), the info line */
 .home.collect { height: 100dvh; min-height: 0; overflow: hidden; }
@@ -494,19 +498,18 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 /* the stage the cards stand on: full width, 3D */
 .arc {
   position: relative; flex: 1 1 auto; min-height: 220px; margin: 6px calc(-1 * var(--pad)) 0;
-  perspective: 1500px; perspective-origin: 50% 46%; overflow: hidden; touch-action: pan-y; cursor: grab;
+  perspective: 1500px; perspective-origin: 50% 46%; overflow: hidden; touch-action: none; cursor: grab;   /* a finger on the cards only turns them */
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
 }
 .arc.dragging { cursor: grabbing; }
 .arc:focus-visible { outline-offset: -4px; }
 .arc { --card-h: min(84%, 340px, 88vw); --floor: calc(47% + var(--card-h) / 2 + 22px); }   /* the light sits just under the cards */
+/* moved frame by frame from app.js (swipeDeck): no CSS transition here, it would fight the glide and make cards lag and pile up */
 .arc-card {
   position: absolute; top: 47%; left: 50%; height: var(--card-h); aspect-ratio: 745 / 1040;
-  border-radius: 14px; background: #111; cursor: pointer; will-change: transform;
-  box-shadow: 0 26px 48px rgba(0, 0, 0, .72), 0 0 0 1px rgba(255, 255, 255, .06);
-  transition: transform 520ms cubic-bezier(.32, 0, .18, 1), opacity 520ms ease;
+  border-radius: 14px; background: #111; cursor: pointer; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 22px 36px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06);
 }
-.arc.dragging .arc-card { transition: none; }
 /* the face (or, for a card you don't have yet, the card back: the same back the Card unlocked screen turns over) */
 .arc-inner { position: absolute; inset: 0; transform-style: preserve-3d; }
 .arc-face {
@@ -619,7 +622,7 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .home.explore { height: 100dvh; min-height: 0; overflow: hidden; }
 .tapes {
   position: relative; flex: 1 1 auto; min-height: 200px; margin: 8px calc(-1 * var(--pad)) 0; overflow: hidden;
-  touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;   /* a finger on the cassettes only swipes them */
   container-type: size;
 }
 .tapes.dragging { cursor: grabbing; }
@@ -627,11 +630,11 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 /* one cassette + its number under it: as wide as the room allows (it shrinks on short phones) */
 .tape {
   position: absolute; top: 50%; left: 50%; width: 58vw; width: min(64cqw, (100cqh - 70px) * 1.45, 300px);
-  will-change: transform; cursor: pointer; transition: transform 520ms cubic-bezier(.32, 0, .18, 1), opacity 520ms ease;
+  cursor: pointer;   /* moved frame by frame from app.js: no CSS transition (it would fight the glide) */
 }
-.tapes.dragging .tape { transition: none; }
 .tape-pic { position: relative; isolation: isolate; }
-.tape img { display: block; width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .7)); }
+/* no live shadow filter: it is recalculated every frame while the cassettes scale, which made swiping lag */
+.tape img { display: block; width: 100%; height: auto; pointer-events: none; }
 /* the one you can play, in the middle: a soft white light pulses around it (tap it to play) */
 .tape-pic::before {
   content: ""; position: absolute; z-index: -1; inset: 4% 3%; border-radius: 6% / 9%; opacity: 0; pointer-events: none;
@@ -639,10 +642,9 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 }
 .tape[aria-selected="true"]:not(.locked) .tape-pic::before { animation: tapeGlow 2s ease-in-out infinite; }
 @keyframes tapeGlow { 0%, 100% { opacity: .15; transform: scale(.98); } 50% { opacity: 1; transform: scale(1.03); } }
-/* not open yet: the cassette frosted (blurred, darker, no colour) with a white lock on it, and LOCKED under its number */
-.tape.locked img { filter: blur(4px) brightness(.6) saturate(0) drop-shadow(0 18px 30px rgba(0, 0, 0, .7)); }
+/* not open yet: the frosted cassette (a ready-made picture: ep-NN-locked.webp) with a white lock on it, and LOCKED under its number */
 .tape-lock { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink); }
-.tape-lock svg { width: 26%; height: auto; stroke-width: 1.6; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .4)); }
+.tape-lock svg { width: 26%; height: auto; stroke-width: 1.6; }
 .tape-locked { margin: 6px 0 0; text-align: center; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-3); }
 /* 02 • under the middle cassette; 01 ✓ (heard) and 03 / LOCKED under the others */
 .tape-n {
@@ -848,7 +850,7 @@ html.is-light, html.is-light body { background: var(--paper); }
   object-fit: cover;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 78%, transparent 100%);
 }
-.film .intro-play { top: 44%; }   /* on his chin */
+.film .intro-play { top: 50%; }   /* in the middle (the video frame sits in the middle of the screen) */
 .film .intro-title .m21-mark { font-size: 1em; }
 /* LET'S FOLLOW THROUGH: a pop-up in the middle of the screen, over the paused video (the kit's centred pop-up) */
 .sheet.m21-pop.center {
