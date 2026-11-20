@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Coaching Starts With You · style kit</title>
+  <link rel="preload" href="fonts/magistral-bold-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/nhd-light.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="coaching-starts-with-you.css">
+  <style>
+    /* Demo page only (not part of the kit): section headings between the examples */
+    .kit-sec { margin-top: 44px; padding-top: 14px; border-top: 2px solid var(--csy-ink); }
+    .kit-h { margin: 0; font: 700 10px/1.4 var(--csy-font-body); letter-spacing: .22em; color: var(--csy-soft); text-transform: uppercase; }
+    .kit-code { margin-top: 12px; font: 12px/1.5 ui-monospace, Consolas, monospace; color: var(--csy-muted); background: #fafaf8; border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="csy">
+<main class="csy-screen csy-screen--tabs">
+
+  <img class="csy-logo" src="../assets/logo.png" alt="Coaching starts with you" width="720" height="258" onerror="this.remove()">
+  <p class="csy-label" style="margin-top:28px">STYLE KIT</p>
+  <h1 class="csy-title csy-title--xl">COACHING STARTS WITH YOU</h1>
+  <p class="csy-intro">Every piece of the look, with its markup. Link coaching-starts-with-you.css, put class="csy" on &lt;body&gt;, copy what you need.</p>
+
+  <!-- TEXT -->
+  <section class="kit-sec"><h2 class="kit-h">Text</h2>
+    <p class="csy-hero" style="margin-top:14px">FOLLOW-THROUGH</p>
+    <h1 class="csy-title csy-title--xl">SEE IT</h1>
+    <h1 class="csy-title">SIGN UP</h1>
+    <h2 class="csy-section-title">TIPS FOR YOUR NEXT SESSION</h2>
+    <p class="csy-eyebrow" style="margin-top:18px">YOUR ROADBLOCK:</p>
+    <p class="csy-label" style="margin-top:14px">EMAIL</p>
+    <p class="csy-intro">Where are you? (intro line)</p>
+    <p class="csy-body">Before I step in, do I ask what the player sees before I tell them what I see? (a question or paragraph to read)</p>
+    <p class="csy-text">You believe in the change, but you're not yet following through. (description)</p>
+    <p class="csy-voice">“I did it when it was easy.”</p>
+    <p class="csy-promise">When <b class="csy-own">a player repeats the same mistake</b>, I will <b class="csy-own">ask what they noticed</b>.</p>
+    <p class="csy-quote">The biggest gap isn't between C and B. <em>It's between B and A.</em></p>
+    <button class="csy-ex-link">See an example</button>
+    <p class="csy-hint">Tap a letter to see what it means.</p>
+    <div class="kit-code">&lt;h1 class="csy-title csy-title--xl"&gt;SEE IT&lt;/h1&gt;
+&lt;p class="csy-eyebrow"&gt;YOUR ROADBLOCK:&lt;/p&gt;
+&lt;p class="csy-promise"&gt;When &lt;b class="csy-own"&gt;…&lt;/b&gt;, I will &lt;b class="csy-own"&gt;…&lt;/b&gt;.&lt;/p&gt;</div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="kit-sec"><h2 class="kit-h">Buttons</h2>
+    <div class="csy-stack" style="margin-top:14px">
+      <button class="csy-btn csy-btn--ink">SEND MY CODE <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="csy-btn csy-btn--outline">I ALREADY HAVE AN ACCOUNT</button>
+      <button class="csy-btn csy-btn--ink" disabled>DISABLED</button>
+      <button class="csy-hold" id="hold"><span class="csy-hold-fill"></span><span class="csy-hold-label">I'M COMMITTED</span></button>
+    </div>
+    <p class="csy-hint">Press and hold the black bar (2 seconds).</p>
+    <div class="csy-pills"><button class="csy-pill is-on" data-pill>KEEP GOING</button><button class="csy-pill" data-pill>MAKE IT EASIER</button></div>
+    <div class="csy-pills csy-pills--stack"><button class="csy-pill" data-pill>YES</button><button class="csy-pill is-on" data-pill>PARTLY</button><button class="csy-pill" data-pill>NO</button></div>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:18px">
+      <button class="csy-back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="csy-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <span class="csy-round"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+      <button class="csy-btn-sm">DOWNLOAD CSV</button>
+      <button class="csy-link">SEND A NEW CODE</button>
+    </div>
+    <div class="kit-code">&lt;button class="csy-btn csy-btn--ink"&gt;SEND MY CODE &lt;svg…&gt;&lt;/button&gt;
+&lt;div class="csy-pills"&gt;&lt;button class="csy-pill is-on"&gt;KEEP GOING&lt;/button&gt;…&lt;/div&gt;
+&lt;button class="csy-hold"&gt;&lt;span class="csy-hold-fill"&gt;&lt;/span&gt;&lt;span class="csy-hold-label"&gt;I'M COMMITTED&lt;/span&gt;&lt;/button&gt;</div>
+  </section>
+
+  <!-- FORMS -->
+  <section class="kit-sec"><h2 class="kit-h">Forms</h2>
+    <label class="csy-field"><span class="csy-label">EMAIL</span><input class="csy-input" type="email" placeholder="you@example.com"></label>
+    <div class="csy-field"><span class="csy-label">ORGANIZATION</span><p class="csy-input csy-input--read csy-input--locked">Golf Department
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></p></div>
+    <label class="csy-field"><span class="csy-label">AGE</span><span class="csy-select is-empty"><select class="csy-input" onchange="this.parentNode.classList.toggle('is-empty', !this.value)">
+      <option value="" selected disabled hidden>Choose</option><option>25–34</option><option>35–44</option></select>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></label>
+    <label class="csy-field"><span class="csy-strong">What are you doing particularly well in your coaching?</span>
+      <span class="csy-box-wrap"><textarea class="csy-box" rows="2" placeholder="…"></textarea></span></label>
+    <p class="csy-eyebrow" style="margin-top:22px">YOUR COMMITMENT</p>
+    <div class="csy-pair">
+      <span class="csy-box-wrap"><span class="csy-box-starter">When </span><textarea class="csy-box" rows="2" placeholder="…"></textarea></span>
+      <span class="csy-box-wrap"><span class="csy-box-starter">I will </span><textarea class="csy-box" rows="2" placeholder="…"></textarea></span>
+    </div>
+    <p class="csy-label" style="margin-top:22px">ENTER THE 6-DIGIT CODE</p>
+    <label class="csy-code"><input inputmode="numeric" maxlength="6" aria-label="6-digit code">
+      <span class="csy-code-box">1</span><span class="csy-code-box">2</span><span class="csy-code-box is-next"></span><span class="csy-code-box"></span><span class="csy-code-box"></span><span class="csy-code-box"></span></label>
+    <p class="csy-fineprint" style="margin-top:18px">By signing up, you agree to our <u>Terms</u> &amp; <u>Privacy Policy</u>.</p>
+    <div class="kit-code">&lt;label class="csy-field"&gt;&lt;span class="csy-label"&gt;EMAIL&lt;/span&gt;&lt;input class="csy-input"&gt;&lt;/label&gt;
+&lt;div class="csy-pair"&gt;
+  &lt;span class="csy-box-wrap"&gt;&lt;span class="csy-box-starter"&gt;When &lt;/span&gt;&lt;textarea class="csy-box"&gt;&lt;/textarea&gt;&lt;/span&gt;
+  …
+&lt;/div&gt;
+(The starter needs a little script to indent the box's first line: see the bottom of this file.)</div>
+  </section>
+
+  <!-- CARDS & TILES -->
+  <section class="kit-sec"><h2 class="kit-h">Cards and tiles</h2>
+    <section class="csy-card"><h2 class="csy-section-title">MY COMMITMENT
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></h2>
+      <p class="csy-promise">When <b class="csy-own">they get frustrated during practice</b>, I will <b class="csy-own">ask what they noticed first</b>.</p></section>
+
+    <div class="csy-card csy-card--expand" id="expand" role="button" tabindex="0" aria-expanded="false">
+      <p class="csy-eyebrow">YOUR ROADBLOCK:</p><p class="csy-card-title">HABIT</p><p class="csy-text">Under pressure, autopilot beats intention.</p>
+      <div class="csy-card-more" hidden><p class="csy-eyebrow">THE GATEWAY:</p><p class="csy-card-title">A PLAN FOR THE MOMENT</p>
+        <p class="csy-text">Decide in advance: "When this happens, I will…" so the new response is ready before the pressure arrives.</p></div>
+      <span class="csy-round"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    </div>
+
+    <div class="csy-card csy-card--dark"><p class="csy-label" style="color:#cfcfcb">PROGRAMME COMPLETE</p><p class="csy-card-title">3 checks done</p><p class="csy-text">From Renting it to Owning it.</p></div>
+
+    <div class="csy-defs"><p><b>TEACH</b>They don't know it yet.</p><p><b>COACH</b>They know it, but don't own it.</p></div>
+
+    <p class="csy-intro" style="margin-top:28px">Where are you?</p>
+    <div class="csy-tiles has-selected">
+      <button class="csy-tile" data-tile="A"><span class="csy-tile-letter"><span>A</span></span><span class="csy-tile-text"><span class="csy-tile-name">Actively change</span></span>
+        <span class="csy-tile-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <button class="csy-tile is-selected" data-tile="B"><span class="csy-tile-letter"><span>B</span></span><span class="csy-tile-text"><span class="csy-tile-label">YOU ARE HERE · WEEK 2</span><span class="csy-tile-name">Believe, but don't follow through</span></span>
+        <span class="csy-tile-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <button class="csy-tile" data-tile="C"><span class="csy-tile-letter"><span>C</span></span><span class="csy-tile-text"><span class="csy-tile-name">Cling to comfort</span></span>
+        <span class="csy-tile-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+    </div>
+    <p class="csy-hint">Tap a tile: it opens a pop-up in the middle of the screen.</p>
+    <div class="kit-code">&lt;div class="csy-tiles has-selected"&gt;
+  &lt;button class="csy-tile is-selected"&gt;&lt;span class="csy-tile-letter"&gt;&lt;span&gt;B&lt;/span&gt;&lt;/span&gt;
+    &lt;span class="csy-tile-text"&gt;&lt;span class="csy-tile-label"&gt;YOU ARE HERE&lt;/span&gt;&lt;span class="csy-tile-name"&gt;…&lt;/span&gt;&lt;/span&gt;
+    &lt;span class="csy-tile-arrow"&gt;&lt;svg…&gt;&lt;/span&gt;&lt;/button&gt;
+&lt;/div&gt;</div>
+  </section>
+
+  <!-- LISTS -->
+  <section class="kit-sec"><h2 class="kit-h">Lists</h2>
+    <ol class="csy-rows">
+      <li class="csy-row"><span class="csy-num"><span>01</span></span><span class="csy-row-title">Ask before telling</span><span class="csy-answer csy-answer--partly">PARTLY</span></li>
+      <li class="csy-row"><span class="csy-num"><span>02</span></span><span class="csy-row-title">Resist the quick answer</span><span class="csy-answer csy-answer--yes">YES</span></li>
+      <li class="csy-row"><span class="csy-num"><span>03</span></span><span class="csy-row-title">More capable without me</span><span class="csy-answer csy-answer--no">NO</span></li>
+      <li class="csy-row"><span class="csy-num"><span>04</span></span><span class="csy-row-title">With dots instead</span><span class="csy-dots"><i class="on"></i><i></i></span></li>
+    </ol>
+    <h2 class="csy-section-title">TIPS FOR YOUR NEXT SESSION</h2>
+    <ol class="csy-steps">
+      <li class="csy-step"><div class="csy-step-rail"><span class="csy-step-dot">01</span><span class="csy-step-line"></span></div><div class="csy-step-body">Before the session ends, ask "What will you do on your own next time?"</div></li>
+      <li class="csy-step"><div class="csy-step-rail"><span class="csy-step-dot">02</span><span class="csy-step-line"></span></div><div class="csy-step-body">At the next appropriate mistake, ask "What did you notice?"</div></li>
+    </ol>
+    <div class="csy-accordion">
+      <section class="csy-acc-item is-open">
+        <button class="csy-acc-head" data-acc aria-expanded="true"><span class="csy-acc-num">01</span><span class="csy-acc-titles"><span class="csy-acc-name">See it</span><span class="csy-acc-tag">Awareness</span></span>
+          <span class="csy-acc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+        <div class="csy-acc-body"><p class="csy-acc-lead">Be honest with yourself about how you coach.</p>
+          <p class="csy-body" style="margin:0">Reflect on your sessions. Ask for feedback.</p>
+          <p class="csy-acc-line">You can't improve what you're unwilling to see.</p>
+          <p class="csy-label csy-label--sm" style="margin-top:22px">PRACTICAL REMINDERS</p>
+          <ul class="csy-bullets"><li><b>Ask before telling.</b> Aim for more questions.</li><li><b>Listen to understand.</b> Don't just prepare your next instruction.</li></ul></div>
+      </section>
+      <section class="csy-acc-item">
+        <button class="csy-acc-head" data-acc aria-expanded="false"><span class="csy-acc-num">02</span><span class="csy-acc-titles"><span class="csy-acc-name">Own it</span><span class="csy-acc-tag">Acceptance</span></span>
+          <span class="csy-acc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+        <div class="csy-acc-body"><p class="csy-acc-lead">None of us has all the answers.</p></div>
+      </section>
+    </div>
+    <p style="margin-top:20px">Badges: <span class="csy-badge">FREE</span> <span class="csy-letter csy-letter--sm"><span>B</span></span> <span class="csy-letter"><span>A</span></span></p>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="kit-sec"><h2 class="kit-h">Progress</h2>
+    <div class="csy-top" style="margin-top:14px"><button class="csy-back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="csy-bar"><span class="csy-bar-part"><i style="width:100%"></i></span><span class="csy-bar-part"><i style="width:100%"></i></span><span class="csy-bar-part"></span><span class="csy-bar-part"></span><span class="csy-bar-part"></span><span class="csy-bar-part"></span></div></div>
+    <div class="csy-card" style="display:flex;align-items:center;gap:18px">
+      <svg viewBox="0 0 112 112" width="88" height="88" role="img" aria-label="14 days left">
+        <circle class="csy-ring-track" cx="56" cy="56" r="50" fill="none" stroke-width="7"/>
+        <circle class="csy-ring-arc" cx="56" cy="56" r="50" fill="none" stroke-width="7" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="282.7" transform="rotate(-90 56 56)"/>
+        <text class="csy-ring-value" x="56" y="62" text-anchor="middle">14</text><text class="csy-ring-sub" x="56" y="80" text-anchor="middle">DAYS</text></svg>
+      <div><p class="csy-label csy-label--sm">NEXT CHECK</p><p class="csy-card-title" style="margin-top:6px">WEEK 4</p><p class="csy-text">in 14 days</p></div>
+    </div>
+    <div class="kit-code">Ring: dasharray = 2πr (314.16 for r=50); dashoffset = 314.16 × (1 − progress).</div>
+  </section>
+
+  <!-- POP-UPS & BANNER -->
+  <section class="kit-sec"><h2 class="kit-h">Pop-ups and banner</h2>
+    <div class="csy-stack" style="margin-top:14px">
+      <button class="csy-btn csy-btn--outline" data-open="bottom">OPEN A BOTTOM SHEET</button>
+      <button class="csy-btn csy-btn--outline" data-open="center">OPEN A CENTRED POP-UP</button>
+    </div>
+    <div class="csy-banner"><div><b>Add to your Home Screen</b>So your results stay saved between checks.</div>
+      <button class="csy-close" aria-label="Dismiss" onclick="this.parentNode.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;margin-top:22px">
+      <h2 class="csy-section-title" style="margin:0">MY ANSWERS</h2>
+      <button class="csy-picker" id="picker">WEEK 2 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="csy-menu" id="menu" hidden><button class="csy-menu-item is-on">WEEK 2</button><button class="csy-menu-item">WEEK 4</button><button class="csy-menu-item" disabled>WEEK 6</button></div>
+    </div>
+    <div class="kit-code">&lt;div class="csy-dim"&gt;&lt;/div&gt;
+&lt;div class="csy-sheet csy-sheet--center" role="dialog" aria-modal="true"&gt; … &lt;/div&gt;</div>
+  </section>
+
+  <section class="kit-sec"><h2 class="kit-h">Bottom navigation</h2>
+    <p class="csy-text">Fixed at the bottom of this page: a glassy bar of tabs and a round button beside it. Mark the current tab with aria-current="page"; the round one with .is-on.</p>
+  </section>
+</main>
+
+<!-- Bottom navigation -->
+<div class="csy-nav">
+  <nav class="csy-tabs" aria-label="Sections"><a href="#" aria-current="page">SEE IT</a><a href="#">OWN IT</a><a href="#">CHANGE IT</a></nav>
+  <a href="#" class="csy-nav-round" aria-label="Guide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6a4 4 0 0 1 4 4v11a3 3 0 0 0-3-3H2z"/><path d="M22 5h-6a4 4 0 0 0-4 4v11a3 3 0 0 1 3-3h7z"/></svg><span>GUIDE</span></a>
+</div>
+
+<!-- Pop-ups (hidden until opened) -->
+<div id="sheets"></div>
+
+<script>
+  /* Demo behaviour only. Copy what you need. */
+  const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+
+  // Grey sentence starter inside a box: indent the box's first line by the starter's width.
+  function indentStarters() {
+    $$(".csy-box-wrap").forEach(w => { const s = w.querySelector(".csy-box-starter"), b = w.querySelector(".csy-box");
+      if (s && b) b.style.textIndent = Math.ceil(s.getBoundingClientRect().width + 1) + "px"; });
+  }
+  indentStarters(); if (document.fonts) document.fonts.ready.then(indentStarters);
+
+  // Press and hold: fill over 2 seconds; letting go early resets.
+  (function () { const b = $("#hold"), f = b.querySelector(".csy-hold-fill"); let t = null;
+    b.addEventListener("pointerdown", e => { e.preventDefault(); f.style.transition = "width 2000ms linear"; f.style.width = "100%";
+      t = setTimeout(() => { t = null; b.querySelector(".csy-hold-label").textContent = "COMMITTED ✓"; }, 2000); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => { if (!t) return; clearTimeout(t); t = null;
+      f.style.transition = "width 200ms ease"; f.style.width = "0"; }));
+  })();
+
+  // Pills: one chosen per group.
+  $$("[data-pill]").forEach(p => p.addEventListener("click", () => { p.parentNode.querySelectorAll(".csy-pill").forEach(x => x.classList.remove("is-on")); p.classList.add("is-on"); }));
+
+  // Accordion.
+  $$("[data-acc]").forEach(h => h.addEventListener("click", () => { const it = h.closest(".csy-acc-item"); it.classList.toggle("is-open"); h.setAttribute("aria-expanded", it.classList.contains("is-open")); }));
+
+  // Expanding card: + becomes −.
+  $("#expand").addEventListener("click", function () { const more = this.querySelector(".csy-card-more"), open = more.hidden;
+    more.hidden = !open; this.setAttribute("aria-expanded", open);
+    this.querySelector(".csy-round").innerHTML = open ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'; });
+
+  // Pop-ups.
+  function openSheet(center, title, body) {
+    $("#sheets").innerHTML = `<div class="csy-dim" data-close></div><div class="csy-sheet${center ? " csy-sheet--center" : ""}" role="dialog" aria-modal="true">
+      <button class="csy-close" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      ${title}${body}</div>`;
+    $$("[data-close]").forEach(x => x.addEventListener("click", () => { $("#sheets").innerHTML = ""; }));
+  }
+  $$("[data-open]").forEach(b => b.addEventListener("click", () => openSheet(b.dataset.open === "center",
+    `<h2 class="csy-title" style="margin-top:4px">${b.dataset.open === "center" ? "CENTRED POP-UP" : "BOTTOM SHEET"}</h2>`,
+    `<p class="csy-text">Tap outside or × to close.</p><div class="csy-foot"><button class="csy-btn csy-btn--ink" data-close>GOT IT</button></div>`)));
+  const names = { A: "Actively change", B: "Believe, but don't follow through", C: "Cling to comfort" };
+  $$("[data-tile]").forEach(t => t.addEventListener("click", () => openSheet(true,
+    `<div class="csy-sheet-head"><span class="csy-letter"><span>${t.dataset.tile}</span></span><h2 class="csy-title">${names[t.dataset.tile].toUpperCase()}</h2></div>`,
+    `<div class="csy-sheet-sec"><p class="csy-eyebrow">WHAT TO DO NEXT:</p><p class="csy-card-title">CHANGE IT</p><p class="csy-text">Write one "When… I will…" and do it.</p></div>`)));
+
+  // Picker + menu.
+  $("#picker").addEventListener("click", e => { e.stopPropagation(); $("#menu").hidden = !$("#menu").hidden; });
+  document.addEventListener("click", () => { $("#menu").hidden = true; });
+</script>
+</body>
+</html>

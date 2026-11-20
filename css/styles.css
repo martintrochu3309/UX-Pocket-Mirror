@@ -74,7 +74,7 @@
   --pad: 24px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tabbar: 84px;
+  --tabbar: 80px;     /* the floating tab bar (64) + its gap from the bottom edge (16) */
 }
 @media (max-width: 380px) {
   :root { --fs-xl: 48px; --fs-tab: 40px; --fs-display: 28px; }
@@ -125,21 +125,6 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; margin-left: -10px; border-radius: 50%; color: var(--ink); }
 .icon-btn svg { width: 24px; height: 24px; }
 
-/* gold circle + label pill (the "round gold arrow" button) */
-.pill {
-  display: inline-flex; align-items: center; gap: 14px;
-  padding: 6px 6px 6px 24px; border-radius: var(--r-full);
-  border: 1px solid var(--line);
-  font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); white-space: nowrap;
-  transition: transform .12s ease, border-color .2s ease;
-}
-.pill:active { transform: scale(.97); }
-.pill .dot {
-  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
-  background: var(--gold); color: var(--on-gold);
-}
-.pill .dot svg { width: 22px; height: 22px; }
-.pill.wide { width: 100%; justify-content: space-between; border-color: var(--gold-35); }
 .btn-gold {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; height: 60px; border-radius: var(--r-full);
@@ -148,6 +133,21 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
   transition: transform .12s ease;
 }
 .btn-gold:active { transform: scale(.98); }
+/* the same button in white: the kit's black "ink" button, flipped for the dark app */
+.btn-gold.white { background: var(--ink); color: var(--bg); }
+/* the kit's outline button, dark: same size, thin light border, white label */
+.btn-outline {
+  display: flex; align-items: center; justify-content: center; width: 100%; height: 60px;
+  border: 1px solid rgba(255, 255, 255, .24); border-radius: var(--r-full); color: var(--ink);
+  font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button);
+  transition: transform .12s ease, border-color .2s ease;
+}
+.btn-outline:active { transform: scale(.98); border-color: rgba(255, 255, 255, .5); }
+.btn-outline svg { width: 18px; height: 18px; margin-left: 10px; }   /* e.g. the down chevron on SEE ALL 12 MIRRORS */
+/* the logo image (assets/images/pocket-mirror-logo.png, trimmed from "Pocket Mirror - dark.png").
+   Its background is pure black; "screen" makes that black vanish into the page so no box shows. */
+.logo { display: block; height: auto; mix-blend-mode: screen; }
+.topbar .logo { width: 136px; }
 .btn-gold.done { background: none; border: 1px solid var(--gold-35); color: var(--gold); }
 .btn-gold svg { width: 18px; height: 18px; }
 .link { font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; padding: 12px 8px; }
@@ -166,15 +166,16 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
    ===================================================================== */
 /* the wordmark top left, the line and Kevin (its voice) in the middle, the button at the bottom */
 .landing { text-align: center; }
-.landing .wordmark { text-align: left; }
-.landing-mid { display: flex; flex-direction: column; align-items: center; gap: 24px; margin: auto 0; }
-/* the one size off the scale: 36 is the biggest that keeps "WITH YOURSELF." on one line (32 on small phones) */
-.landing h1 { margin: 0; font: italic 700 36px/1.05 var(--display); letter-spacing: var(--ls-display); }
-@media (max-width: 380px) { .landing h1 { font-size: var(--fs-display); } }
-.landing .host img { width: 36px; height: 36px; }
-.landing-foot { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.landing .pill { align-self: center; }
-.landing .fine { margin: 0; color: var(--ink-2); }
+.landing .logo { width: 168px; }
+.landing-mid { display: flex; flex-direction: column; align-items: center; gap: 28px; margin: auto 0; }
+/* off the scale on purpose (it's the cover): YOURSELF. as big as the column allows (≈ 5.6em wide, 6 leaves a margin),
+   up to 64px; "ONE MINUTE WITH" sits above it at half that size. All white, no gold on the landing. */
+.landing h1 { margin: 0; font: italic 700 64px/.92 var(--display); font-size: min(64px, calc((100vw - 2 * var(--pad)) / 6)); letter-spacing: -.04em; white-space: nowrap; }
+.landing h1 .lead { display: block; margin-bottom: .2em; font-size: .5em; letter-spacing: -.02em; }
+.landing h1 .word { display: block; }
+.landing .host img { width: 44px; height: 44px; box-shadow: 0 0 0 1.5px var(--ink-3); }
+.landing-foot { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.landing .fine { margin: 0; font-style: italic; font-weight: 300; color: var(--ink-2); }
 .tap-hint {
   display: flex; align-items: center; justify-content: center; gap: 10px; margin: clamp(16px, 3dvh, 26px) 0 0;
   font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2);
@@ -185,35 +186,94 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(224, 184, 76, .6); } 100% { box-shadow: 0 0 0 10px rgba(224, 184, 76, 0); } }
 
 /* =====================================================================
+   1b · MEET KEVIN · the intro video (first time only)
+   ===================================================================== */
+/* full screen, black behind, the video in its own colour */
+.intro {
+  position: fixed; top: 0; bottom: 0; left: 50%; z-index: 5; width: min(100%, var(--frame)); transform: translateX(-50%);
+  overflow: hidden; background: #000; transition: opacity .45s ease;
+}
+.intro.leaving { opacity: 0; }
+.intro-stage { position: absolute; inset: 0; cursor: pointer; }
+.intro-video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+/* a thin progress line along the top */
+.intro-bar { position: absolute; left: 16px; right: 16px; top: calc(var(--safe-top) + 12px); height: 2px; border-radius: 1px; background: rgba(255, 255, 255, .2); box-shadow: 0 0 6px rgba(0, 0, 0, .25); pointer-events: none; }
+.intro-bar span { display: block; width: 0; height: 100%; border-radius: inherit; background: rgba(255, 255, 255, .85); transition: width .25s linear; }
+/* SKIP: small and barely there */
+.intro-skip { position: absolute; z-index: 2; top: calc(var(--safe-top) + 20px); right: 8px; padding: 12px 10px; font: 700 10px/1 var(--text); letter-spacing: .2em; color: rgba(255, 255, 255, .5); text-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
+/* the black fades: the top one behind MEET KEVIN (only when it shows), the bottom one always, strong, up over his hands */
+.intro-shade { position: absolute; inset: 0; pointer-events: none; }
+.intro-shade::before, .intro-shade::after { content: ""; position: absolute; left: 0; right: 0; }
+.intro-shade::before { top: 0; height: 30%; background: linear-gradient(180deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, .35) 55%, transparent); transition: opacity .4s ease; }
+.intro-shade::after { bottom: 0; height: 50%; background: linear-gradient(0deg, #000 0, #000 22%, rgba(0, 0, 0, .9) 45%, rgba(0, 0, 0, .6) 70%, transparent); }
+.intro:not(.paused):not(.ended) .intro-shade::before { opacity: .35; }
+/* top left: the time, then MEET KEVIN (like a step title); away while Kevin talks */
+.intro-head { position: absolute; z-index: 2; left: var(--pad); right: 72px; top: calc(var(--safe-top) + 36px); pointer-events: none; transition: opacity .35s ease, transform .35s ease; }
+.intro-meta { margin: 0; min-height: 12px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.intro-title { margin: 10px 0 0; font: italic 700 var(--fs-display)/1 var(--display); letter-spacing: -.03em; }
+.intro:not(.paused):not(.ended) .intro-head { opacity: 0; transform: translateY(-6px); }
+/* on his chin: the see-through glass play button (like Kevin's video on the Mirror 21 page) */
+.intro-play {
+  position: absolute; z-index: 2; left: 50%; top: 33%; transform: translate(-50%, -50%);
+  display: flex; padding: 0; color: var(--ink); transition: opacity .3s ease;
+}
+.intro-play .ring {
+  display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(10, 10, 10, .3); border: 1.5px solid rgba(255, 255, 255, .75);
+  -webkit-backdrop-filter: blur(8px) saturate(120%); backdrop-filter: blur(8px) saturate(120%); box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
+  transition: transform .12s ease;
+}
+.intro-play:active .ring { transform: scale(.95); }
+.intro-play svg { width: 26px; height: 26px; margin-left: 4px; }
+.intro:not(.paused) .intro-play { opacity: 0; pointer-events: none; }
+/* at the end: WATCH AGAIN, then the white LET'S BEGIN button */
+.intro-end {
+  position: absolute; z-index: 2; left: var(--pad); right: var(--pad); bottom: calc(var(--safe-bottom) + 28px);
+  display: flex; flex-direction: column; align-items: center; gap: 14px; transition: opacity .35s ease, transform .35s ease;
+}
+.intro:not(.ended) .intro-end { opacity: 0; transform: translateY(12px); pointer-events: none; }
+.intro-again { display: inline-flex; align-items: center; gap: 10px; padding: 10px; font: 700 var(--fs-body)/1 var(--text); letter-spacing: .1em; color: var(--ink); }
+.intro-again svg { width: 18px; height: 18px; }
+.intro .intro-begin { height: 60px; }
+@media (prefers-reduced-motion: reduce) { .intro, .intro-head, .intro-play, .intro-end, .intro-shade::before, .intro-bar span { transition: none; } }
+
+/* =====================================================================
    2 · PATH · WHICH ONE IS YOU?
    ===================================================================== */
-.path .quote { margin: 0; font: italic 300 var(--fs-20)/1.4 var(--text); color: var(--ink-2); }
-.section-label { display: flex; align-items: center; gap: 12px; margin: 28px 0 4px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
-.section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-.mirror-list { margin: 0; padding: 0; list-style: none; }
+/* the page's question as the title (kit: tight Magistral), on one line at 32px (28 on small phones);
+   data-fit (fitTitles in app.js) shrinks it a little more only if it would still be wider than the screen. Then the Mirrors as cards. No gold. */
+.page-title { margin: 28px 0 0; font: italic 700 var(--fs-display)/1 var(--display); letter-spacing: -.03em; white-space: nowrap; }
+.page-title > span { display: inline-block; }
+.path .mirror-list { margin-top: 24px; }
+
+/* one Mirror = one card (kit "choice tile", dark): ringed number, title, length, round white play button.
+   Also used on Home · 12 Mirrors. */
+.mirror-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .mirror-row {
-  display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px 0; text-align: left;
-  border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; text-align: left;
+  border: 1px solid var(--line); border-radius: 20px; background: var(--surface);
+  transition: transform .12s ease, background-color .2s ease;
 }
-.mirror-list li:first-child .mirror-row { border-top: 0; }
-.mirror-row:active { background: rgba(255, 255, 255, .03); }
-.mirror-row .num { flex-shrink: 0; width: 26px; font: 700 var(--fs-small)/1 var(--text); color: var(--ink-3); }
-.mirror-row .body { flex: 1; min-width: 0; }
-.mirror-row .t { display: block; font: italic 700 var(--fs-20)/1.2 var(--display); }
+.mirror-row:active { transform: scale(.99); background: #1c1c1c; }
+.mirror-row .num {
+  display: grid; place-items: center; flex-shrink: 0; align-self: flex-start; width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid var(--ink); font: italic 700 var(--fs-small)/1 var(--display); letter-spacing: 0;
+}
+.mirror-row .body { flex: 1; min-width: 0; padding-top: 4px; }
+.mirror-row .t { display: block; font: italic 700 var(--fs-20)/1.15 var(--display); letter-spacing: -.02em; }
 .mirror-row .meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
 .mirror-row .meta svg { width: 14px; height: 14px; }
-.mirror-row .meta.gold { color: var(--gold); }
 .play-ring {
-  display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
-  border: 1.5px solid var(--gold); color: var(--gold);
+  display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
+  background: var(--ink); color: var(--bg);
 }
 .play-ring svg { width: 16px; height: 16px; margin-left: 2px; }
-.play-ring.heard { background: var(--gold); color: var(--on-gold); border-color: var(--gold); }
 .play-ring.heard svg { margin-left: 0; }
 .mirror-row.soon { cursor: default; }
-.mirror-row.soon .play-ring { border-color: var(--line); color: var(--ink-3); }
+.mirror-row.soon .num { border-color: var(--ink-3); color: var(--ink-3); }
+.mirror-row.soon .play-ring { background: none; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink-3); }
 .more-note { margin: 14px 0 0; font: 500 var(--fs-small)/1.4 var(--text); color: var(--ink-2); }
-.path .link { align-self: center; margin-top: 10px; }
+.path .btn-outline { margin-top: 20px; }
 
 /* =====================================================================
    3 · PLAYER (Mirror and podcast)
@@ -221,45 +281,93 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .player { align-items: center; text-align: center; }
 .player .topbar { align-self: stretch; }
 .player .eyebrow { flex: 1; text-align: center; margin-right: 34px; }
-.player h1 { margin: clamp(12px, 3dvh, 28px) 0 0; font: italic 700 var(--fs-title)/1.2 var(--display); max-width: 330px; }
-.ring-wrap { position: relative; width: var(--ring); height: var(--ring); margin-top: clamp(20px, 5dvh, 48px); --ring: min(250px, 64vw, 34dvh); }
-.ring-wrap svg.ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring-wrap .track { fill: none; stroke: rgba(255, 255, 255, .08); stroke-width: 7; }
-.ring-wrap .prog { fill: none; stroke: var(--gold); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset .3s linear; }
-.ring-wrap .mark { fill: var(--ink); }
-/* the play button is an object: it keeps the metal and the screen's one glow */
+/* the title is the topic: bold italic Magistral (kit tracking). The captions below are Kevin's voice: light, upright, bigger. */
+.player h1 { margin: clamp(12px, 3dvh, 28px) 0 0; font: italic 700 var(--fs-title)/1.15 var(--display); letter-spacing: -.02em; max-width: 330px; }
+/* the play button: solid white with the screen's one glow (Mirror and podcast players) */
 .big-play {
   position: absolute; left: 50%; top: 50%; width: 35%; height: 35%; transform: translate(-50%, -50%);
   display: grid; place-items: center; border-radius: 50%;
-  background: var(--gold-metal); color: var(--on-gold); box-shadow: 0 0 44px var(--gold-35);
+  background: var(--ink); color: var(--bg); box-shadow: 0 0 44px rgba(255, 255, 255, .14);
   transition: transform .12s ease;
 }
 .big-play:active { transform: translate(-50%, -50%) scale(.95); }
 .big-play svg { width: 34%; height: 34%; }
 .big-play .i-play { margin-left: 6%; }
-.time { margin: 16px 0 0; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.player .spacer { flex: 1; min-height: 20px; }
 .sound-hint { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); }
 .sound-hint svg { width: 14px; height: 14px; }
+
+/* ---------- Mirror player (Spotify-like): artwork, title, bar, controls, Subtitles + Best with sound ---------- */
+.mirror-player { align-items: stretch; text-align: left; }
+.mirror-player .eyebrow, .subs .eyebrow { color: var(--ink); font-size: var(--fs-body); letter-spacing: .08em; }
+/* the artwork: Daily Xcellence logo + "it starts with you" on a dark rounded card. Square, never taller than 42% of the screen. */
+.art {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%;
+  width: min(100%, 42dvh); aspect-ratio: 1; margin: clamp(10px, 2dvh, 20px) auto 0;
+  border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(160deg, #1d1d1d, #111);
+  container-type: inline-size;
+}
+.art img { width: 74%; height: auto; mix-blend-mode: screen; }   /* the logo's black background vanishes into the card */
+.art p { margin: 0; font: italic 700 clamp(11px, 3.6vw, 15px)/1 var(--display); font-size: 4.3cqw; letter-spacing: .3em; text-indent: .3em; white-space: nowrap; }
+/* title on two lines, left, Magistral; no line under it (MIRROR 01 is in the top bar) */
+.mirror-player h1 { max-width: none; margin: clamp(16px, 3dvh, 28px) 0 0; text-align: center; }   /* centred (Mirror and episode players) */
+/* the bar: grey track, the free part lighter (before the email), white fill and dot; drag or tap it */
+.scrub { margin-top: clamp(14px, 2.6dvh, 24px); padding: 12px 0; touch-action: none; cursor: pointer; border-radius: var(--r-sm); }
+.scrub-track { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .14); }
+.scrub-free, .scrub-fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 2px; }
+.scrub-free { background: rgba(255, 255, 255, .3); }
+.scrub-fill { width: 0; background: var(--ink); transition: width .25s linear; }
+.scrub-knob { position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--ink); transition: left .25s linear, transform .15s ease; }
+.scrub.dragging .scrub-fill, .scrub.dragging .scrub-knob { transition: none; }
+.scrub.dragging .scrub-knob { transform: scale(1.3); }
+.scrub-times { display: flex; justify-content: space-between; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.mirror-player .transport, .subs .transport { margin-top: clamp(10px, 2dvh, 20px); }
+.mirror-player .transport .skip svg, .subs .transport .skip svg { width: 34px; height: 34px; }
+/* bottom row: the outlined Subtitles button left, Best with sound right; sits at the bottom on tall phones */
+.player-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: clamp(18px, 3dvh, 32px); }
+.cc-btn {
+  display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px 0 16px;
+  border: 1.5px solid rgba(255, 255, 255, .55); border-radius: var(--r-full); font: 500 var(--fs-body)/1 var(--text);
+  transition: transform .12s ease;
+}
+.cc-btn:active { transform: scale(.97); }
+.cc-btn svg { width: 24px; height: 24px; }
+.player-foot .sound-hint { font-size: var(--fs-body); color: var(--ink-2); }
+.player-foot .sound-hint svg { width: 18px; height: 18px; }
+
+/* ---------- Subtitles: full-screen layer over the Mirror player (slides up; under the email gate) ---------- */
+.subs {
+  position: fixed; top: 0; bottom: 0; left: 50%; z-index: 15; width: min(100%, var(--frame));
+  display: flex; flex-direction: column; padding: calc(var(--safe-top) + 20px) var(--pad) calc(var(--safe-bottom) + 28px);
+  background: var(--bg); transform: translate(-50%, 100%); visibility: hidden;
+  transition: transform .38s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .38s;
+}
+.subs.open { transform: translate(-50%, 0); visibility: visible; transition: transform .38s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
+.subs.instant { transition: none; }
+.subs .eyebrow { flex: 1; text-align: center; }
+.subs .subs-x { margin: 0 -10px 0 0; }
+.subs-card { margin-top: 14px; padding: 18px 20px; text-align: center; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font: italic 700 var(--fs-20)/1.1 var(--display); letter-spacing: -.01em; }
+/* the line just said (grey, smaller) above the line being said: each word turns white as Kevin says it */
+.subs-lines { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 24px 0; overflow: hidden; text-align: center; }
+.subs-prev { margin: 0; font: italic 700 var(--fs-title)/1.15 var(--display); letter-spacing: -.02em; color: var(--ink-3); text-wrap: balance; }
+.subs-prev:empty { display: none; }
+.subs-now { margin: 0; font: italic 700 var(--fs-display)/1.12 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+.subs-now .w { color: #4f4f4c; transition: color .12s ease; }
+.subs-now .w.said, .subs-now .w.now { color: var(--ink); }
+.subs-now.in { animation: subs-in .35s ease both; }
+@keyframes subs-in { from { opacity: 0; transform: translateY(10px); } }
+.subs-controls { display: flex; flex-direction: column; border-top: 1px solid var(--line); padding-top: 6px; }
+/* filled CC = subtitles on; tap to turn them off */
+.cc-on { align-self: center; margin-top: 16px; height: 32px; padding: 0 12px; border-radius: var(--r-sm); background: var(--ink); color: var(--bg); font: 700 var(--fs-small)/1 var(--text); letter-spacing: .06em; }
+@media (prefers-reduced-motion: reduce) { .subs, .subs.open { transition: none; } .subs-now.in { animation: none; } }
 /* the player fades out as it hands over to the card unlocked screen */
 .player.leaving { animation: leave .3s ease forwards; }
 @keyframes leave { to { opacity: 0; transform: scale(.98); } }
 
-/* podcast player: white on purpose, so The Mirror podcast feels distinct from the gold Mirrors.
-   A ring that fills as it plays, the time left in the middle, and a dot you can drag round the ring. */
-.dial { position: relative; width: var(--dial); height: var(--dial); margin-top: clamp(24px, 5dvh, 48px); --dial: min(270px, 70vw, 38dvh); touch-action: none; cursor: grab; border-radius: 50%; }
-.dial.dragging { cursor: grabbing; }
-.dial svg.ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.dial .track { fill: none; stroke: rgba(255, 255, 255, .08); stroke-width: 7; }
-.dial .prog { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 125px 125px; transition: stroke-dashoffset .3s linear; }
-.dial .knob { fill: var(--ink); filter: drop-shadow(0 0 6px rgba(0, 0, 0, .6)); }
-.dial.dragging .prog { transition: none; }
-.dial-time { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; }
-.dial-time b { font: 700 var(--fs-xl)/1 var(--display); letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums; }
-.dial-time small { font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
-.podcast .big-play { background: var(--ink); color: var(--bg); box-shadow: 0 0 44px rgba(255, 255, 255, .14); }
-.podcast .transport { margin-top: clamp(24px, 5dvh, 44px); }
-.next-lock { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 0; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); }
+/* episode player: the Mirror player's layout (.mirror-player), the episode's cassette as the artwork */
+.art.tape-art img { width: 90%; mix-blend-mode: normal; filter: drop-shadow(0 14px 24px rgba(0, 0, 0, .6)); }
+.player-foot.solo { justify-content: center; }
+.episode-player .m21-end { align-self: center; margin-top: 18px; }
+.next-lock { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 18px 0 0; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); }
 .next-lock svg { width: 14px; height: 14px; }
 .transport { display: flex; align-items: center; justify-content: center; gap: 28px; margin-top: clamp(18px, 3dvh, 32px); }
 .transport .skip { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; color: var(--ink); }
@@ -281,36 +389,30 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 }
 .sheet.open { transform: translate(-50%, 0); }
 .host { display: flex; align-items: center; gap: 12px; }
-.host img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--gold); }
+.host img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--ink-3); }
 .host b { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
 .host small { display: block; margin-top: 6px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
-.sheet h2 { margin: 18px 0 14px; font: italic 700 var(--fs-display)/1 var(--display); letter-spacing: var(--ls-display); }
-.unlock-list { display: flex; flex-direction: column; gap: 12px; margin: 0 0 18px; padding: 0; list-style: none; font: 500 var(--fs-body)/1.3 var(--text); }
-.unlock-list li { display: flex; align-items: center; gap: 12px; }
-.unlock-list li > svg { flex-shrink: 0; width: 16px; height: 16px; color: var(--gold); }
-.unlock-list .grow { flex: 1; }
-.unlock-list small { font-size: var(--fs-small); color: var(--ink-2); }
-/* mini cards are card artwork */
-.mini-card { width: 18px; height: 25px; border-radius: 4px; background: linear-gradient(135deg, #fbe99a, #c99a33 50%, #f3d46b); box-shadow: 0 0 12px rgba(224, 184, 76, .6); transform: rotate(8deg); }
-.mini-card.white { background: linear-gradient(135deg, #ffffff, #cfcfcf 50%, #f4f4f4); box-shadow: 0 0 12px rgba(255, 255, 255, .35); }
-.mini-card.black { background: linear-gradient(135deg, #3d3d3d, #0c0c0c 50%, #2a2a2a); box-shadow: 0 0 0 1px #555, 0 0 12px rgba(255, 255, 255, .2); }
-/* the email field stays a pill so the round button inside it sits right */
+.sheet h2 { margin: 18px 0 14px; font: italic 700 var(--fs-display)/1 var(--display); letter-spacing: -.03em; }
+/* what the email gives: the kit's bullet list, small white dots */
+.unlock-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; font: 500 var(--fs-body)/1.35 var(--text); }
+.unlock-list li { position: relative; padding-left: 18px; }
+.unlock-list li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+/* the email field (kit input, dark): full width, white border while typing; the white KEEP LISTENING button sits under it */
 .email-row {
-  display: flex; align-items: center; gap: 8px; height: 58px; padding: 0 4px 0 20px;
-  border: 1px solid var(--line); border-radius: var(--r-full); background: var(--bg);
+  display: flex; align-items: center; height: 56px; padding: 0 18px;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg);
   transition: border-color .2s ease;
 }
-.email-row:focus-within { border-color: var(--gold); }
+.email-row:focus-within { border-color: var(--ink); }
 .email-row.error { border-color: var(--error); }
 .email-row input {
   flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; background: none;
   color: var(--ink); font: 500 var(--fs-body)/1 var(--text);
 }
 .email-row input::placeholder { color: var(--ink-3); }
-.email-row button { display: grid; place-items: center; flex-shrink: 0; width: 50px; height: 50px; border-radius: 50%; background: var(--gold); color: var(--on-gold); }
-.email-row button svg { width: 22px; height: 22px; }
-.email-row button[disabled] { opacity: .6; }
-.form-error { min-height: 18px; margin: 8px 0 0 20px; font: 500 var(--fs-small)/1.4 var(--text); color: var(--error); }
+.form-error { min-height: 18px; margin: 6px 0 4px 4px; font: 500 var(--fs-small)/1.4 var(--text); color: var(--error); }
+.form-error:empty { min-height: 10px; }
+[data-gate-form] .btn-gold { height: 56px; }
 .fine { margin: 6px 0 0; text-align: center; font: 500 var(--fs-small)/1.4 var(--text); color: var(--ink-3); }
 .sheet .link { display: block; margin: 8px auto 0; text-align: center; }
 
@@ -318,12 +420,12 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .toast {
   position: fixed; left: 50%; top: calc(var(--safe-top) + 14px); z-index: 40;
   display: flex; align-items: center; gap: 10px; padding: 11px 16px 11px 12px; border-radius: var(--r-full);
-  background: var(--surface); border: 1px solid var(--gold-35); box-shadow: var(--shadow);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
   font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); white-space: nowrap;
   opacity: 0; transform: translate(-50%, -16px); pointer-events: none; transition: opacity .35s ease, transform .35s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.toast .tick { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: var(--on-gold); }
+.toast .tick { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); }
 .toast .tick svg { width: 14px; height: 14px; }
 
 /* =====================================================================
@@ -331,16 +433,24 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
    ===================================================================== */
 /* ---------- 4a · card unlocked (straight after a Mirror or episode) ---------- */
 .reward { align-items: center; text-align: center; overflow: hidden; }
-.reward .eyebrow { margin-top: 16px; }
+/* "✓ MIRROR 01 DONE": a small chip, an achievement rather than a label */
+.done-chip {
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; margin: 16px 0 0; padding: 0 14px 0 10px;
+  border: 1px solid var(--line); border-radius: var(--r-full); background: var(--surface);
+  font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); animation: rise .6s ease both;
+}
+.done-chip svg { width: 14px; height: 14px; }
 .reward h1 { margin: 14px 0 0; font: italic 700 var(--fs-display)/1.05 var(--display); letter-spacing: var(--ls-display); animation: rise .6s ease .1s both; }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.reward-stage { margin-top: clamp(20px, 4dvh, 36px); perspective: 1200px; }
+/* the card sits centred in the room between the title and the button */
+.reward-stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; margin: clamp(16px, 3dvh, 28px) 0; perspective: 1200px; }
 /* the card arrives face down, turns over, then floats: a slow rise and fall with a little tilt */
 .reward-card {
   position: relative; width: min(272px, 68vw, 42dvh); aspect-ratio: 745 / 1040; border-radius: var(--r-md);
   box-shadow: 0 0 60px var(--gold-35);
   animation: cardIn .5s ease both, cardFloat 6s ease-in-out 1.6s infinite;
 }
+.reward-card.white, .reward-card.black { box-shadow: 0 0 60px rgba(255, 255, 255, .16); }   /* gold glow only behind gold cards */
 .rc-inner { position: absolute; inset: 0; transform-style: preserve-3d; animation: cardTurn 1s cubic-bezier(.3, .7, .2, 1) .35s both; }
 .rc-face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: var(--r-md); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .rc-back { transform: rotateY(180deg); }
@@ -360,38 +470,84 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
   75% { transform: translateY(-6px) rotateX(-3deg) rotateY(5deg); }
 }
 @keyframes sheen { 0% { background-position: 150% 0; } 45%, 100% { background-position: -50% 0; } }
-.reward .collected { margin: clamp(22px, 4dvh, 34px) 0 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold); }
+/* collected: white text, white segments for the cards you have, grey for the rest (no gold) */
 .segs { display: flex; gap: 3px; width: 100%; max-width: 300px; margin-top: 12px; }
-.segs span { flex: 1; height: 3px; border-radius: var(--r-full); background: var(--line); }
-.segs span.on { background: var(--gold); }
+.segs span { flex: 1; height: 3px; border-radius: var(--r-full); background: rgba(255, 255, 255, .14); }
+.segs span.on { background: var(--ink); }
 .segs span.new { animation: segIn .6s ease 1.3s both; }
-@keyframes segIn { from { background: var(--line); transform: scaleY(1); } 60% { transform: scaleY(2.4); } to { background: var(--gold); transform: scaleY(1); } }
-.reward .spacer { flex: 1; min-height: 24px; }
+@keyframes segIn { from { background: rgba(255, 255, 255, .14); transform: scaleY(1); } 60% { transform: scaleY(2.4); } to { background: var(--ink); transform: scaleY(1); } }
 
-/* ---------- 4b · the collection (COLLECT tab) ---------- */
-.deck-switch small { display: block; margin-top: -2px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-3); font-style: normal; }
-.deck-switch button[aria-pressed="true"] small { color: var(--gold); }
-/* sized so the first two rows show and the third peeks above the tab bar: there is more below */
-.home .deck-switch { margin-top: 16px; }
-.home .deck-switch button { gap: 6px; padding: 8px 6px 10px; }
-.home .deck-switch img { width: 32px; height: 32px; }
-.collection { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
-.collection li { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.slot { position: relative; display: block; width: 100%; aspect-ratio: 745 / 1040; padding: 0; border-radius: var(--r-sm); overflow: hidden; background: var(--surface); }
-.slot img { width: 100%; height: 100%; object-fit: cover; }
-.slot:active { transform: scale(.97); }
-.slot.got { box-shadow: 0 0 0 1px var(--gold-35); }
-.slot.locked img { filter: brightness(.45); }
-/* how to unlock it, on the face-down card */
-.slot .how {
-  position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 4px; padding: 24px 4px 12px; text-align: center;
-  background: linear-gradient(0deg, rgba(0, 0, 0, .85) 45%, rgba(0, 0, 0, 0));
+/* ---------- 4b · COLLECT: all 21 cards in one arc you flick through ---------- */
+/* one screen, no scrolling: the bar (13 OF 21), stages, question, the arc (takes the room left), the info line */
+.home.collect { height: 100dvh; min-height: 0; overflow: hidden; }
+/* AWARENESS · ACCEPTANCE · ACTION: light up by themselves as you flick; tap one to jump to it */
+.arc-stages { display: flex; justify-content: center; gap: 4px; margin-top: 28px; }
+.arc-stages button {
+  height: 32px; padding: 0 12px; border-radius: var(--r-full); color: var(--ink-3);
+  font: 700 clamp(10px, 2.8vw, 11px)/1 var(--text); letter-spacing: .12em; white-space: nowrap;
+  transition: background-color .25s ease, color .25s ease;
 }
-.slot .how small { font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
-.slot .how b { font: italic 700 var(--fs-body)/1 var(--display); color: var(--ink); white-space: nowrap; }
-.slot.soon .how b { color: var(--ink-2); }
-.collection .cap { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 12px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold); white-space: nowrap; }
-.collection .cap svg { width: 12px; height: 12px; flex-shrink: 0; }
+.arc-stages button[aria-current="true"] { color: var(--ink); background: rgba(255, 255, 255, .1); }
+/* the stage's question (CAN I SEE IT?), one line */
+.arc-ask { margin: 14px 0 0; text-align: center; font: italic 700 min(var(--fs-title), 5vw)/1.1 var(--display); letter-spacing: -.02em; white-space: nowrap; }
+.arc-ask.swap { animation: rise .35s ease both; }
+/* the stage the cards stand on: full width, 3D */
+.arc {
+  position: relative; flex: 1 1 auto; min-height: 220px; margin: 6px calc(-1 * var(--pad)) 0;
+  perspective: 1500px; perspective-origin: 50% 46%; overflow: hidden; touch-action: pan-y; cursor: grab;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.arc.dragging { cursor: grabbing; }
+.arc:focus-visible { outline-offset: -4px; }
+.arc { --card-h: min(84%, 340px, 88vw); --floor: calc(47% + var(--card-h) / 2 + 22px); }   /* the light sits just under the cards */
+.arc-card {
+  position: absolute; top: 47%; left: 50%; height: var(--card-h); aspect-ratio: 745 / 1040;
+  border-radius: 14px; background: #111; cursor: pointer; will-change: transform;
+  box-shadow: 0 26px 48px rgba(0, 0, 0, .72), 0 0 0 1px rgba(255, 255, 255, .06);
+  transition: transform 520ms cubic-bezier(.32, 0, .18, 1), opacity 520ms ease;
+}
+.arc.dragging .arc-card { transition: none; }
+/* the face (or, for a card you don't have yet, the card back: the same back the Card unlocked screen turns over) */
+.arc-inner { position: absolute; inset: 0; transform-style: preserve-3d; }
+.arc-face {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 14px; pointer-events: none;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+}
+.arc-back { transform: rotateY(180deg); }
+/* just unlocked: it turns over from its back, once, as the tab opens */
+.arc-card.flip-in { perspective: 1200px; }
+.arc-card.flip-in .arc-inner { animation: cardTurn 1s cubic-bezier(.3, .7, .2, 1) .45s both; }
+/* the light the cards stand on: silver, gold only under gold cards (crossfades as you flick) */
+.arc-floor, .arc-glow { position: absolute; pointer-events: none; transition: opacity .5s ease; }
+.arc-floor {
+  left: 10%; right: 10%; top: var(--floor); height: 2px; border-radius: 50%; filter: blur(1.5px);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .3) 18%, rgba(255, 255, 255, .85) 50%, rgba(255, 255, 255, .3) 82%, transparent);
+}
+.arc-glow { left: 14%; right: 14%; top: calc(var(--floor) - 60px); height: 120px; border-radius: 50%; filter: blur(26px); background: radial-gradient(closest-side, rgba(255, 255, 255, .12), transparent 72%); }
+.arc::before, .arc::after { content: ""; position: absolute; pointer-events: none; opacity: 0; transition: opacity .5s ease; }
+.arc::before {
+  left: 10%; right: 10%; top: var(--floor); height: 3px; border-radius: 50%; filter: blur(1.5px);
+  background: linear-gradient(90deg, transparent, rgba(170, 129, 7, .45) 18%, rgba(255, 239, 154, .9) 50%, rgba(170, 129, 7, .45) 82%, transparent);
+}
+.arc::after { left: 14%; right: 14%; top: calc(var(--floor) - 60px); height: 120px; border-radius: 50%; filter: blur(26px); background: radial-gradient(closest-side, rgba(224, 184, 76, .22), transparent 72%); }
+.arc[data-tone="gold"]::before, .arc[data-tone="gold"]::after { opacity: 1; }
+.arc[data-tone="gold"] .arc-floor, .arc[data-tone="gold"] .arc-glow { opacity: 0; }
+/* under the arc: what the middle card is. Yours: "✓ MIRROR 01 · TAP TO SAVE". Locked: "▶ LISTEN TO EPISODE 09 TO UNLOCK" */
+.arc-info {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; align-self: center; height: 40px; margin-top: 6px; padding: 0 18px;
+  border-radius: var(--r-full); border: 1px solid var(--line); color: var(--ink-2);
+  font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); white-space: nowrap;
+}
+.arc-info svg { width: 14px; height: 14px; flex: none; }
+.arc-info.locked { color: var(--ink); border-color: rgba(255, 255, 255, .3); }
+.arc-info:active { transform: scale(.97); }
+/* 13 OF 21 COLLECTED, at the top: the 21 segments in their three decks; the middle card's segment stands taller */
+.arc-progress { margin-top: 22px; }
+.arc-progress .segs span { transition: transform .25s ease, background-color .25s ease; }
+.arc-progress .segs span.gap { margin-left: 7px; }
+.arc-progress .segs span.here { transform: scaleY(2.6); background: rgba(255, 255, 255, .45); }
+.arc-progress .segs span.on.here { background: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .arc-card { transition: none; } .arc-ask.swap, .arc-card.flip-in .arc-inner { animation: none; } }
 
 /* ---------- 4c · a collected card, big (tap to flip) ---------- */
 .viewer {
@@ -444,123 +600,110 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 /* =====================================================================
    5 · HOME (after email) · tabs
    ===================================================================== */
+/* room at the bottom for the floating tab bar */
 .home { padding-bottom: calc(var(--tabbar) + var(--safe-bottom) + 24px); }
 .home .logo12 { width: 100%; max-width: 360px; margin: 26px 0 0; }
-.progress { display: flex; align-items: center; gap: 12px; margin: 20px 0 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
-.progress .bar { position: relative; flex: 1; height: 4px; border-radius: var(--r-full); background: var(--line); overflow: hidden; }
-.progress .bar span { position: absolute; inset: 0 auto 0 0; border-radius: var(--r-full); background: var(--gold); }
-.home .mirror-list { margin-top: 10px; }
-.home .mirror-row { padding: 15px 0; }
+.home .mirror-list { margin-top: 16px; }
 
-.home h1.tab-title { margin: 22px 0 0; font: italic 700 var(--fs-tab)/1 var(--display); letter-spacing: var(--ls-display); }
+/* LISTEN / COLLECT / EXPLORE: tight Magistral, one line (data-fit shrinks it only if needed), no reflection */
+.tab-title { margin: 26px 0 0; font: italic 700 var(--fs-tab)/1 var(--display); letter-spacing: -.04em; white-space: nowrap; }
+.tab-title > span { display: inline-block; }
+/* "12 OF 12 HEARD" and a white segmented bar (same as Card unlocked) */
+.tab-progress { margin-top: 12px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
+.tab-progress .segs { max-width: none; margin-top: 10px; }
+.tab-progress + .tab-sub { margin-top: 14px; }
 .home .tab-sub { margin: 10px 0 0; font: 500 var(--fs-body)/1.5 var(--text); color: var(--ink-2); }
-.deck-switch { display: flex; gap: 10px; margin-top: 20px; }
-.deck-switch button {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 6px 12px;
-  border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface);
-  font: italic 700 var(--fs-small)/1 var(--display); color: var(--ink-2); white-space: nowrap;
-}
-.deck-switch img { width: 46px; height: 46px; object-fit: contain; }
-.deck-switch button[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
 .home .btn-gold { margin-top: 16px; }
 
-/* the podcast: a row of episode numbers you swipe (the middle one big), a timeline of dots under them,
-   and the chosen episode below with its PLAY button. White, like the podcast player. */
-.progress.white .bar span { background: var(--ink); }
-.ep-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 12px; }
-.ep-carousel {
-  --w: calc(min(100vw, var(--frame)) / 3.2);
-  display: flex; margin: 16px calc(-1 * var(--pad)) 0; padding: 0 calc(50% + var(--pad) - var(--w) / 2);
-  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+/* EXPLORE: a row of cassettes you swipe, then the middle one's title, length and button. One screen, no scrolling. */
+.home.explore { height: 100dvh; min-height: 0; overflow: hidden; }
+.tapes {
+  position: relative; flex: 1 1 auto; min-height: 200px; margin: 8px calc(-1 * var(--pad)) 0; overflow: hidden;
+  touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  container-type: size;
 }
-.ep-carousel::-webkit-scrollbar { display: none; }
-.ep-num {
-  --k: 1; /* 0 = in the middle, 1 = one step away (set from app.js while scrolling) */
-  position: relative; flex: 0 0 var(--w); height: 156px; padding: 0; scroll-snap-align: center; scroll-snap-stop: always;
-  color: var(--ink-2);
+.tapes.dragging { cursor: grabbing; }
+.tapes:focus-visible { outline-offset: -4px; }
+/* one cassette + its number under it: as wide as the room allows (it shrinks on short phones) */
+.tape {
+  position: absolute; top: 50%; left: 50%; width: 58vw; width: min(64cqw, (100cqh - 70px) * 1.45, 300px);
+  will-change: transform; cursor: pointer; transition: transform 520ms cubic-bezier(.32, 0, .18, 1), opacity 520ms ease;
 }
-/* the hero number: the one size off the scale, so the chosen episode reads from across the room */
-.ep-num .n {
-  position: absolute; left: 0; right: 0; bottom: 44px; text-align: center;
-  font: 700 112px/1 var(--display); letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums;
-  transform: scale(calc(1 - .58 * var(--k))); transform-origin: 50% 100%; opacity: calc(1 - .35 * var(--k));
+.tapes.dragging .tape { transition: none; }
+.tape-pic { position: relative; isolation: isolate; }
+.tape img { display: block; width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .7)); }
+/* the one you can play, in the middle: a soft white light pulses around it (tap it to play) */
+.tape-pic::before {
+  content: ""; position: absolute; z-index: -1; inset: 4% 3%; border-radius: 6% / 9%; opacity: 0; pointer-events: none;
+  box-shadow: 0 0 30px 12px rgba(255, 255, 255, .6), 0 0 90px 30px rgba(255, 255, 255, .28); transition: opacity .4s ease;
 }
-.ep-num.on .n { color: var(--ink); }
-.ep-num.locked .n { color: rgba(255, 255, 255, .2); }
-.ep-num.locked.on .n { color: var(--ink-3); }
-/* the timeline: a dot under each number, joined by a line that is white across what you have heard */
-.ep-num .dot { position: absolute; left: 50%; bottom: 13px; z-index: 1; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: rgba(255, 255, 255, .22); }
-.ep-num.heard .dot { background: var(--ink); }
-.ep-num.next .dot, .ep-num.open .dot { background: var(--ink-2); }
-.ep-num.on .dot { bottom: 9px; width: 16px; height: 16px; margin-left: -8px; background: var(--bg); border: 2px solid var(--ink); }
-.ep-num .seg { position: absolute; left: 50%; bottom: 16px; width: 100%; height: 2px; background: rgba(255, 255, 255, .14); }
-.ep-num.heard .seg { background: var(--ink); }
-/* the chosen episode */
-.ep-info { display: flex; flex-direction: column; align-items: center; margin-top: 28px; text-align: center; }
-.ep-label { margin: 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
-.ep-label.next { color: var(--gold); }
-.ep-label.locked { color: var(--ink-3); }
-.ep-title { margin: 12px 0 0; font: italic 700 var(--fs-title)/1.2 var(--display); }
-.ep-meta { margin: 8px 0 0; min-height: 12px; font: 500 var(--fs-small)/1 var(--text); color: var(--ink-2); }
-.ep-play-btn {
-  display: inline-flex; align-items: center; gap: 10px; height: 52px; margin-top: clamp(24px, 5dvh, 44px); padding: 0 32px; border-radius: var(--r-full);
-  background: var(--ink); color: var(--bg); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button);
+.tape[aria-selected="true"]:not(.locked) .tape-pic::before { animation: tapeGlow 2s ease-in-out infinite; }
+@keyframes tapeGlow { 0%, 100% { opacity: .15; transform: scale(.98); } 50% { opacity: 1; transform: scale(1.03); } }
+/* not open yet: the cassette frosted (blurred, darker, no colour) with a white lock on it, and LOCKED under its number */
+.tape.locked img { filter: blur(4px) brightness(.6) saturate(0) drop-shadow(0 18px 30px rgba(0, 0, 0, .7)); }
+.tape-lock { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink); }
+.tape-lock svg { width: 26%; height: auto; stroke-width: 1.6; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .4)); }
+.tape-locked { margin: 6px 0 0; text-align: center; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-3); }
+/* 02 • under the middle cassette; 01 ✓ (heard) and 03 / LOCKED under the others */
+.tape-n {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 14px 0 0;
+  font: italic 700 40px/1 var(--display); letter-spacing: -.02em; color: var(--ink-3); font-variant-numeric: tabular-nums;
 }
-.ep-play-btn svg { width: 14px; height: 14px; }
-.ep-play-btn.off { background: none; border: 1px solid var(--line); color: var(--ink-3); font-weight: 500; letter-spacing: 0; cursor: default; }
-/* short phones: smaller numbers and tighter spacing so PLAY stays above the tab bar */
-@media (max-height: 700px) {
-  .ep-carousel { margin-top: 12px; }
-  .ep-num { height: 124px; }
-  .ep-num .n { bottom: 40px; font-size: 80px; }
-  .ep-info { margin-top: 16px; }
-  .ep-play-btn { height: 48px; margin-top: 16px; }
-}
+.tape[aria-selected="true"] .tape-n { color: var(--ink); }
+.tape-n svg { width: 30px; height: 30px; }
+.tape-n .ic-done { display: grid; place-items: center; width: 34px; height: 34px; border: 2.5px solid currentColor; border-radius: 50%; }
+.tape-n .ic-done svg { width: 18px; height: 18px; }
+.tape-n .ic-dot { width: 12px; height: 12px; border-radius: 50%; background: currentColor; }
+/* the middle episode */
+.tape-info { display: flex; flex-direction: column; align-items: center; padding-top: 6px; text-align: center; }
+.tape-title { margin: 0; font: italic 700 min(var(--fs-display), 8vw)/1.08 var(--display); letter-spacing: -.03em; text-wrap: balance; min-height: 2.16em; display: flex; align-items: center; }
+.tape-meta { margin: 8px 0 0; min-height: 16px; font: 500 var(--fs-body)/1 var(--text); color: var(--ink-2); }
+/* one grey line instead of a button: "Finish 02 to unlock 03", "Tap to listen again", "Finish Episode 02 to open"… */
+.tape-hint { margin: clamp(12px, 2.4dvh, 20px) 0 4px; min-height: 1.3em; font: italic 300 var(--fs-20)/1.3 var(--text); color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .tape[aria-selected="true"]:not(.locked) .tape-pic::before { animation: none; opacity: .7; } }
 
-/* tab bar */
+/* tab bar: the kit's floating glass pill, dark. Active tab white on a soft highlight; the others grey. */
 .tabbar {
-  position: fixed; left: 50%; bottom: 0; z-index: 10; width: min(100%, var(--frame)); transform: translateX(-50%);
-  display: flex; height: calc(var(--tabbar) + var(--safe-bottom)); padding: 12px 24px var(--safe-bottom);
-  border-top: 1px solid var(--line); background: rgba(10, 10, 10, .97);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  position: fixed; left: 50%; bottom: max(16px, calc(var(--safe-bottom) + 8px)); z-index: 10;
+  width: min(100% - 32px, var(--frame) - 32px); height: 64px; transform: translateX(-50%);
+  display: flex; gap: 4px; padding: 6px; border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, .08); background: rgba(28, 28, 28, .74);
+  -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .06);
 }
-/* kept quiet: the tab labels are the one place under 12px (11px, by choice), with tighter spacing and smaller icons */
-.tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ink-3); font: italic 700 11px/1 var(--display); letter-spacing: .06em; }
-.tabbar a svg { width: 22px; height: 22px; }
-.tabbar a[aria-current="page"] { color: var(--gold); }
+/* kept quiet: the tab labels are the one place under 12px (11px, by choice) */
+.tabbar a {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border-radius: 26px; color: var(--ink-3); font: italic 700 11px/1 var(--display); letter-spacing: .06em;
+  transition: background-color .2s ease, color .2s ease;
+}
+.tabbar a svg { width: 20px; height: 20px; }
+.tabbar a[aria-current="page"] { color: var(--ink); background: rgba(255, 255, 255, .1); }
 
-/* =====================================================================
-   BIG REFLECTED TITLES (12 MIRRORS · 21 NUDGES · 12 EPISODES · MIRROR 21)
-   ===================================================================== */
-/* the tight .8 line height would clip the tops of the letters, so the box gets .14em of headroom
-   (taken back from the margin, so the title sits where it did) */
-.mark-title { font-size: var(--fs-xl); height: 1.44em; margin: calc(22px - .14em) 0 0; padding-top: .14em; overflow: hidden; }
-.mark-title p {
-  margin: 0; font: 700 1em/.8 var(--display); letter-spacing: var(--ls-display); white-space: nowrap; color: var(--ink);
-  -webkit-text-stroke: .012em currentColor;
-}
-.mark-title .g, .m21-name .g { color: var(--gold); -webkit-text-stroke: .012em currentColor; }
-.mark-title p + p {
-  margin-top: .03em; transform: scaleY(-1); opacity: .34;
-  -webkit-mask-image: linear-gradient(0deg, #000 18%, transparent 62%); mask-image: linear-gradient(0deg, #000 18%, transparent 62%);
-}
-.home .mark-title + .progress, .home .mark-title + .tab-sub { margin-top: 4px; }
+/* the MIRROR 21 logotype, everywhere Mirror 21 is named: MIRROR in bold italic Magistral (the text colour), 21 in gold.
+   It takes the size of the text around it. The brand mark is the one place gold stays. */
+.m21-mark { font: italic 700 1em/1 var(--display); letter-spacing: -.01em; white-space: nowrap; text-transform: none; }
+.m21-mark b { font-weight: inherit; color: var(--gold); }
 
 /* ---------- Mirror 21 card (a white door in the dark app) ---------- */
 .m21-card {
-  position: relative; display: block; margin-top: 18px; padding: 18px 18px 16px; border-radius: var(--r-md);
+  position: relative; display: block; margin-top: 18px; padding: 20px 20px 18px; border-radius: 20px;
   background: var(--paper); border: 1px solid var(--paper); color: var(--paper-ink);
   text-align: left;
 }
-.m21-eyebrow { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold-deep); }
-.m21-name { display: block; margin-top: 10px; font: 700 var(--fs-display)/.9 var(--display); letter-spacing: var(--ls-display); }
+.m21-eyebrow { display: block; font: 700 var(--fs-small)/1.3 var(--text); letter-spacing: var(--ls-label); color: var(--paper-ink-2); }
+.m21-name { display: flex; align-items: center; margin-top: 12px; font: 700 var(--fs-display)/1 var(--display); letter-spacing: -.02em; }
 .m21-line { display: block; margin-top: 10px; font: 500 var(--fs-body)/1.4 var(--text); color: var(--paper-ink-2); }
-.m21-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--paper-line); }
-.m21-foot > span:first-child { font: italic 700 var(--fs-title)/1 var(--display); }
-.m21-go { display: inline-flex; align-items: center; gap: 8px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); color: var(--gold-deep); }
-.m21-go svg { width: 16px; height: 16px; }
-.m21-card.compact { padding: 14px 16px 12px; }
+/* one black button: SEE HOW IT WORKS · $99 */
+.m21-cta {
+  display: flex; align-items: center; justify-content: center; height: 52px; margin-top: 16px; border-radius: var(--r-full);
+  background: var(--paper-ink); color: var(--paper); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button);
+}
+.m21-card:active .m21-cta { transform: scale(.98); }
+.m21-cta .m21-mark { margin-left: .3em; font-size: 15px; letter-spacing: 0; }   /* SEE MIRROR 21: the logotype inside */
+.m21-card.compact { padding: 16px 16px 14px; }
 .m21-card.compact .m21-name { font-size: var(--fs-title); }
+.m21-card.compact .m21-cta { height: 44px; margin-top: 12px; }
 .m21-end { position: relative; width: 100%; max-width: 360px; margin-top: 22px; }
 .m21-end .m21-card { margin-top: 0; }
 .m21-end-x { position: absolute; top: 8px; right: 8px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--paper-ink-2); }
@@ -568,7 +711,6 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 
 /* ---------- Mirror 21 screen ---------- */
 .m21 .m21-kicker { margin-top: 18px; color: var(--gold); }
-.m21 .mark-title { margin-top: calc(10px - .14em); }
 .m21-tag { margin: 0; font: italic 300 var(--fs-20)/1.4 var(--text); color: var(--ink-2); }
 .m21-points { margin: 0; padding: 0; list-style: none; }
 .m21-points li { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); font: 500 var(--fs-body)/1.5 var(--text); }
@@ -603,26 +745,36 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .sheet.ns .btn-gold { margin-top: 20px; }
 .ns-after { margin: 10px 0 0; text-align: center; font: 500 var(--fs-small)/1.4 var(--text); color: var(--ink-2); }
 .ns-m21 { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 12px; padding: 12px; border-radius: var(--r-md); background: var(--paper); color: var(--paper-ink); font: 500 var(--fs-small)/1.4 var(--text); text-align: center; }
-.ns-m21 b { display: inline-flex; align-items: center; gap: 6px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); color: var(--gold-deep); }
+.ns-m21 b { display: inline-flex; align-items: center; gap: 6px; font: 700 var(--fs-body)/1 var(--text); color: var(--paper-ink); }
 .ns-m21 svg { width: 14px; height: 14px; }
 .sheet.ns .link { display: block; margin: 6px auto 0; }
 
 /* ---------- Mirror 21 pop-up at a collection milestone (a white door) ---------- */
 .sheet.m21-pop { background: var(--paper); color: var(--paper-ink); border-top: 0; text-align: center; }
-.m21-pop-brand { margin: 4px 0 0; font: 700 var(--fs-body)/1 var(--display); letter-spacing: var(--ls-display); }
-.m21-pop-brand .g { color: var(--gold-deep); }
-.sheet.m21-pop h2 { margin: 16px 0 0; font: italic 700 var(--fs-display)/1.05 var(--display); letter-spacing: var(--ls-display); }
+/* same as the Mirror 21 card: MIRROR + 21 in a black circle, tight title, one black button. No gold. */
+.m21-pop-brand { display: flex; align-items: center; justify-content: center; margin: 0; font: 700 var(--fs-body)/1 var(--display); letter-spacing: -.01em; }
+.m21-pop-brand .m21-mark { font-size: var(--fs-20); }
+/* "SEE MIRROR 21": the logotype inside the button, a touch bigger than the label */
+.btn-gold .m21-mark { margin: 0 .3em 0 .15em; font-size: 15px; letter-spacing: 0; }
+.m21x .btn-gold, .sheet.m21-pop .btn-gold { gap: 0; }   /* text + logotype + text: spaced by the logotype's margins, not the button's gap */
+.sheet.m21-pop h2 { margin: 14px 0 0; font: italic 700 var(--fs-display)/1.05 var(--display); letter-spacing: -.03em; }
 .m21-pop-line { margin: 12px auto 0; max-width: 300px; font: 500 var(--fs-body)/1.5 var(--text); color: var(--paper-ink-2); }
 .sheet.m21-pop .btn-gold { margin-top: 24px; }
+/* the black button on white (the Mirror 21 doors) */
+.btn-gold.ink { background: var(--paper-ink); color: var(--paper); }
 .sheet.m21-pop .link { display: block; margin: 8px auto 0; color: var(--paper-ink-2); }
 
 /* ---------- Home top bar with MIRROR 21 (a white door) ---------- */
-.home-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* the POCKET MIRROR logo (image) left, the MIRROR 21 logotype in a white pill right */
+.home-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.home-top .logo { width: 150px; }
 .m21-btn {
-  display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: var(--r-full);
-  background: var(--paper); color: var(--paper-ink);
-  font: 700 var(--fs-body)/1 var(--display); letter-spacing: var(--ls-display); white-space: nowrap;
+  display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: var(--r-full);
+  background: var(--paper); color: var(--paper-ink); box-shadow: 0 0 24px rgba(255, 255, 255, .12);
+  font: 700 var(--fs-body)/1 var(--display); letter-spacing: -.01em; white-space: nowrap;
+  transition: transform .12s ease;
 }
+.m21-btn:active { transform: scale(.96); }
 .m21-btn .g, .m21-card .g, .ns-m21 .g { color: var(--gold-deep); }
 
 /* =====================================================================
@@ -637,109 +789,74 @@ h1, h2, .t, .feeling, .quote, .line { text-wrap: balance; }
 .face.back .lbl { margin: 10% 0 4%; font-size: 9px; }
 .face.back .line { padding: 6.5% 2%; font: italic 700 clamp(13px, 4vw, 15.5px)/1.2 var(--display); }
 
-/* captions: the word Kevin is saying is bold white; words not yet said stay dark on purpose */
-.caption {
-  min-height: 4.2em; max-width: 340px; margin: clamp(14px, 2.6dvh, 24px) auto 0; text-align: center;
-  font: 700 var(--fs-20)/1.4 var(--text); text-wrap: balance;
-}
-.caption .w { display: inline-block; color: #4f4f4c; transition: color .12s ease, transform .12s ease; }
-.caption .w.said { color: var(--ink); }
-.caption .w.now { color: #ffffff; transform: scale(1.06); }
 
 /* =====================================================================
    MIRROR 21 · white page
    ===================================================================== */
 html.is-light, html.is-light body { background: var(--paper); }
-/* one white screen, never scrolls: everything below the photo keeps its size, the photo takes what is left */
-.m21x { height: 100dvh; overflow: hidden; padding: calc(var(--safe-top) + 12px) 0 calc(var(--safe-bottom) + 16px); background: var(--paper); color: var(--paper-ink); }
-.m21x .g, .m21-how .g { color: var(--gold-deep); }
-.m21x-top { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; height: 44px; padding: 0 20px; }
+/* one white screen (the kit as it is: it's a white kit), never scrolls: everything keeps its size except the phones
+   picture, which takes what is left. Gold: the 21 of the logotype and the rule under the phones (as in the design). */
+.m21x { position: relative; height: 100dvh; overflow: hidden; padding: calc(var(--safe-top) + 12px) 0 calc(var(--safe-bottom) + 14px); background: var(--paper); color: var(--paper-ink); text-align: center; }
+.m21x-top { position: relative; z-index: 1; display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; height: 44px; padding: 0 20px; }
 .m21x-brand { margin: 0; font: 700 var(--fs-title)/1 var(--display); letter-spacing: var(--ls-display); }
-.m21x-close { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--paper-line); color: var(--paper-ink); }
-.m21x-close svg { width: 18px; height: 18px; }
-/* the photo sits behind, sized from app.js so its plain white bottom starts just above YOU SAID */
-.m21x { position: relative; }
-.m21x-top { position: relative; z-index: 1; }
-.m21x-photo {
-  position: absolute; left: 0; right: 0; top: calc(var(--safe-top) + 64px); height: 50%; overflow: hidden;
+/* the kit's soft grey round close */
+.m21x-close { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(0, 0, 0, .06); color: var(--paper-ink); }
+.m21x-close svg { width: 16px; height: 16px; }
+/* the headline (SEE IT. OWN IT. CHANGE IT.): huge, black, tight, one phrase per line. As wide as the screen allows for
+   the longest line (≈ 6.4em), and shorter when there are more lines (--lines, set from app.js) so the phones keep room. */
+.m21x-head {
+  flex-shrink: 0; margin: 16px 0 0; padding: 0 16px;
+  font: italic 700 64px/.9 var(--display); font-size: min(80px, calc((min(100vw, var(--frame)) - 40px) / 6.6), calc(20dvh / var(--lines, 2))); letter-spacing: -.045em;
 }
-/* the photo / video fades out around the logo on Kevin's shirt: plain white under it, where the text sits
-   (on the picture only, so the play button on top stays solid) */
-.m21x-photo img, .m21x-photo video {
-  display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%;
-  -webkit-mask-image: linear-gradient(0deg, transparent 0, transparent 30%, #000 58%); mask-image: linear-gradient(0deg, transparent 0, transparent 30%, #000 58%);
+.m21x-head span { display: block; white-space: nowrap; }
+/* the title on top (IN 21 STEPS): Magistral bold italic, a bit bigger than SEE IT. OWN IT. CHANGE IT. under it, without shouting */
+.m21x-kicker {
+  flex-shrink: 0; margin: 16px 0 0; padding: 0 16px; white-space: nowrap;
+  font: italic 700 40px/.95 var(--display); font-size: min(46px, calc((min(100vw, var(--frame)) - 40px) / 8.8), 6dvh); letter-spacing: -.04em;
 }
-/* Kevin's video: a see-through "glass" play button, centred on the part of the picture you can see (above the fade).
-   Dark, blurred and half transparent, so his face still shows through it. */
-.m21x-play {
-  position: absolute; left: 50%; top: 35%; transform: translate(-50%, -50%);
-  display: flex; padding: 0; color: var(--paper); transition: opacity .2s ease;
-}
-.m21x-play .ring {
-  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
-  background: rgba(10, 10, 10, .28); border: 1.5px solid rgba(255, 255, 255, .7); color: var(--paper);
-  -webkit-backdrop-filter: blur(8px) saturate(120%); backdrop-filter: blur(8px) saturate(120%);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, .2);
-}
-.m21x-play .ring svg { width: 20px; height: 20px; margin-left: 3px; }
-.m21x-play:active .ring { transform: scale(.95); }
-
-/* the video itself stays hidden on the page: tapping play opens it in the phone's own full-screen player */
-.m21x-photo .m21x-video { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; -webkit-mask-image: none; mask-image: none; }
-.m21x-photo .m21x-video:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; object-fit: contain; }
-.m21x-photo .m21x-video:-webkit-full-screen { width: 100%; height: 100%; opacity: 1; background: #000; object-fit: contain; }
-/* a device with no full screen: the player shows in the photo area instead, with its own controls */
-.m21x-photo.inline .m21x-video { inset: 0; width: 100%; height: 100%; opacity: 1; pointer-events: auto; z-index: 2; background: #000; object-fit: contain; }
-.m21x-photo.inline .m21x-play { display: none; }
-.m21x-body { position: relative; display: flex; flex-shrink: 0; flex-direction: column; align-items: center; margin-top: auto; padding: 0 20px; text-align: center; z-index: 1; }
-.m21x-lbl { margin: 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--paper-ink-2); }
-.m21x-said {
-  margin: 8px 0 0; font: italic 300 var(--fs-title)/1.25 var(--text); color: var(--gold-deep);
-  text-decoration: line-through; text-decoration-color: var(--gold); text-decoration-thickness: 2px;
-}
-.m21x-in { display: flex; align-items: center; gap: 12px; margin: 16px 0 0; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold-deep); }
-.m21x-in::before, .m21x-in::after { content: ""; width: 24px; height: 1px; background: currentColor; }
-.m21x-after { margin: 10px 0 0; font: italic 700 var(--fs-tab)/.95 var(--display); letter-spacing: var(--ls-display); text-wrap: wrap; }
-.m21x-points { display: grid; gap: 10px; margin: 20px 0 0; padding: 0; list-style: none; text-align: left; }
+.m21x-kicker + .m21x-head { margin-top: 8px; }
+/* one line (SEE IT. OWN IT. CHANGE IT.): starts big and fitTitles (data-fit) shrinks it to exactly the width */
+.m21x-head.one { margin: 18px 16px 0; padding: 0; font-size: 44px; line-height: 1; white-space: nowrap; }
+.m21x-head.one span { display: inline-block; }
+.m21x-sub { flex-shrink: 0; margin: 12px 0 0; padding: 0 20px; font: 300 var(--fs-20)/1.3 var(--text); color: var(--paper-ink-2); text-wrap: balance; }
+/* the three phones: they take the room that is left */
+.m21x-visual { position: relative; flex: 1 1 auto; min-height: 120px; margin: 12px 6px 0; }
+.m21x-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 22px rgba(0, 0, 0, .16)); }
+.m21x-body { position: relative; z-index: 1; display: flex; flex-shrink: 0; flex-direction: column; align-items: center; padding: 0 20px; }
+/* the gold rule under the phones (as in the design) */
+.m21x-rule { align-self: stretch; height: 2px; margin: 14px 16px 0; border: 0; background: var(--gold); }
+.m21x-points { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; text-align: left; }
 .m21x-points li { display: flex; align-items: center; gap: 12px; font: 500 var(--fs-body)/1.3 var(--text); }
-.m21x-points svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--gold-deep); }
-.m21x .btn-gold { margin-top: 24px; }
-.m21x-how { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px; font: 500 var(--fs-small)/1 var(--text); color: var(--paper-ink); text-decoration: underline; text-underline-offset: 4px; }
-.m21x-how svg { width: 14px; height: 14px; }
+.m21x-points svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--paper-ink); }
+/* START MIRROR 21: the black button, the logotype inside (no price: it is on the LET'S FOLLOW THROUGH button) */
+.m21x .btn-gold { margin-top: 20px; }
 /* short phones: a little tighter, so it still fits on one screen */
 @media (max-height: 720px) {
-  .m21x-after { font-size: var(--fs-display); }
-  .m21x-in { margin-top: 12px; }
-  .m21x-points { gap: 6px; margin-top: 14px; }
-  .m21x .btn-gold { height: 52px; margin-top: 16px; }
+  .m21x-head { margin-top: 10px; }
+  .m21x-sub { margin-top: 8px; font-size: var(--fs-body); }
+  .m21x-rule { margin-top: 10px; }
+  .m21x-points { gap: 6px; margin-top: 12px; }
+  .m21x .btn-gold { height: 52px; margin-top: 14px; }
 }
 
-/* "See how it works": a white sheet from the bottom */
-.sheet.m21-how { max-height: calc(100dvh - var(--safe-top) - 24px); overflow-y: auto; background: var(--paper); color: var(--paper-ink); border-top: 0; }
-.m21-how .grab { display: block; width: 40px; height: 4px; margin: -8px auto 16px; border-radius: var(--r-full); background: var(--paper-line); }
-.m21-how h2 { margin: 0; font: italic 700 var(--fs-title)/1.1 var(--display); letter-spacing: var(--ls-display); }
-.m21-how .stages { margin: 12px 0 0; padding: 0; list-style: none; }
-.m21-how .stages li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px 0; border-top: 1px solid var(--paper-line); }
-.m21-how .stages li:first-child { border-top: 0; }
-.m21-how .stages small { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--paper-ink-2); }
-.m21-how .stages b { display: block; margin-top: 4px; font: italic 700 var(--fs-20)/1 var(--display); white-space: nowrap; }
-.m21-how .stages .say { font: 500 var(--fs-body)/1.4 var(--text); color: var(--paper-ink-2); }
-.m21-how .how-sub { margin: 8px 0 0; font: 500 var(--fs-body)/1.4 var(--text); color: var(--paper-ink-2); }
-/* short phones: tighter, so GOT IT stays on screen */
-@media (max-height: 720px) {
-  .m21-how .stages li { gap: 4px; padding: 8px 0; }
-  .m21-how .each { margin: 12px 0 8px; }
-  .m21-how .each-step { gap: 6px; }
-  .m21-how .each-step li { padding: 9px 16px; }
-  .m21-got { height: 48px; margin-top: 14px; }
+/* Kevin's video on the Mirror 21 page: full screen over it, in the MEET KEVIN style (.intro). The picture is nearly
+   square, so it sits sharp across the width in the middle and fades into the black above and below. */
+.film { z-index: 15; display: none; }
+.film.open { display: block; }
+.film-frame { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); aspect-ratio: 480 / 512; cursor: pointer; }
+.film-frame .intro-video {
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 78%, transparent 100%);
 }
-.m21-how .each { margin: 20px 0 10px; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
-.m21-how .each-step { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.m21-how .each-step li { display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--paper-line); border-radius: var(--r-md); }
-.m21-how .each-step svg { width: 18px; height: 18px; color: var(--gold-deep); }
-.m21-how .each-step b { font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); }
-.m21-how .each-step span { font: 500 var(--fs-small)/1.4 var(--text); }
-.m21-got { display: block; width: 100%; height: 52px; margin-top: 20px; border-radius: var(--r-full); border: 1.5px solid var(--paper-ink); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); color: var(--paper-ink); }
+.film .intro-play { top: 44%; }   /* on his chin */
+.film .intro-title .m21-mark { font-size: 1em; }
+/* LET'S FOLLOW THROUGH: a pop-up in the middle of the screen, over the paused video (the kit's centred pop-up) */
+.sheet.m21-pop.center {
+  top: 50%; bottom: auto; width: min(100% - 32px, 400px); padding: 26px 22px 18px; border-radius: 24px;
+  transform: translate(-50%, -50%) scale(.94); opacity: 0; pointer-events: none;
+  transition: transform .35s cubic-bezier(.2, .9, .25, 1.05), opacity .25s ease;
+}
+.sheet.m21-pop.center.open { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
 
 /* =====================================================================
    Add to home screen
@@ -749,11 +866,11 @@ html.is-light, html.is-light body { background: var(--paper); }
 .a2hs-row { display: flex; align-items: center; gap: 12px; }
 .a2hs-row img { width: 44px; height: 44px; border-radius: var(--r-sm); }
 .a2hs-row .body { flex: 1; min-width: 0; }
-.a2hs-row b { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--gold); }
+.a2hs-row b { display: block; font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-label); color: var(--ink-2); }
 .a2hs-row .body > span { display: block; margin-top: 6px; font: 500 var(--fs-body)/1.4 var(--text); color: var(--ink); }
 .a2hs-x { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; margin: -6px -6px 0 0; border-radius: 50%; color: var(--ink-2); align-self: flex-start; }
 .a2hs-x svg { width: 18px; height: 18px; }
-.a2hs-go { display: block; width: 100%; height: 44px; margin-top: 12px; border-radius: var(--r-full); border: 1px solid var(--gold-35); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); color: var(--ink); }
+.a2hs-go { display: block; width: 100%; height: 44px; margin-top: 12px; border-radius: var(--r-full); border: 1px solid rgba(255, 255, 255, .24); font: 700 var(--fs-small)/1 var(--text); letter-spacing: var(--ls-button); color: var(--ink); }
 .sheet.a2 h2 { margin: 8px 0 18px; font: italic 700 var(--fs-title)/1.1 var(--display); letter-spacing: 0; }
 .a2-steps { margin: 0 0 22px; padding: 0; list-style: none; }
 .a2-steps li { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); font: 500 var(--fs-body)/1.4 var(--text); }

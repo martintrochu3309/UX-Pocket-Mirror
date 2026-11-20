@@ -45,15 +45,17 @@ window.PM_CONTENT = {
 
   /* ------------------------------------------------------------- the 3 paths
    * deck     = which colour of nudge cards this path gives (white / black / gold)
-   * deckName = the deck's name on the 21 NUDGES tab
+   * deckName = the deck's name on the COLLECT tab
+   * ask      = the deck's question, shown above the cards on the COLLECT tab
+   * The COLLECT tab shows the decks in this order: white, black, gold.
    */
   PATHS: [
     { key: 'see',    num: '01', name: 'SEE IT',    deckName: 'AWARENESS',  plate: 'assets/images/plate-see.png',    deck: 'white',
-      line: 'Something’s off, and I can’t name it.' },
+      ask: 'CAN I SEE IT?',              line: 'Something’s off, and I can’t name it.' },
     { key: 'own',    num: '02', name: 'OWN IT',    deckName: 'ACCEPTANCE', plate: 'assets/images/plate-own.png',    deck: 'black',
-      line: 'I know what it is. I keep explaining it away.' },
+      ask: 'CAN I OWN IT?',              line: 'I know what it is. I keep explaining it away.' },
     { key: 'change', num: '03', name: 'CHANGE IT', deckName: 'ACTION',     plate: 'assets/images/plate-change.png', deck: 'gold',
-      line: 'I’m ready to stop talking and start doing.' }
+      ask: 'WHAT AM I GOING TO CHANGE?', line: 'I’m ready to stop talking and start doing.' }
   ],
 
   /* ------------------------------------------------------------- the 12 Mirrors
@@ -137,10 +139,17 @@ window.PM_CONTENT = {
   /* ------------------------------------------------------------- The Mirror podcast
    * audio: null = not uploaded yet, shows as "Coming soon".
    * card        = the nudge card this episode unlocks the first time it is finished (episodes 6, 8 and 10 unlock none).
+   * cassette    = the cassette picture on the EXPLORE tab and the episode player, one per episode and colour
+   *               (assets/images/cassettes/ep-01-white.webp, ep-01-grey, ep-01-black, ep-02-white…).
+   *               {colour} becomes white (you can listen to it), grey (heard) or black (locked); {n} the number (01, 02…).
+   * cassetteFallback = shown if a numbered cassette is missing (a plain one per colour, marked 01).
+   *               Still missing: ep-12-white.
    */
   PODCAST: {
     name: 'THE MIRROR',
     tagline: 'Turning knowing into doing.',
+    cassette: 'assets/images/cassettes/ep-{n}-{colour}.webp',
+    cassetteFallback: 'assets/images/cassettes/cassette-{colour}.webp',
     episodes: [
       { n: 1,  title: 'Look at yourself.',              audio: 'assets/podcast/audio/ep-01.mp3', cover: 'assets/podcast/covers/ep-01.jpg', duration: 243, card: 'where-your-feet-are' },
       { n: 2,  title: 'What are you waiting for?',      audio: 'assets/podcast/audio/ep-02.mp3', cover: 'assets/podcast/covers/ep-02.jpg', duration: 204, card: 'train-your-mind' },
@@ -196,10 +205,15 @@ window.PM_CONTENT = {
       { cards: 3,      title: '3 NUDGES IN.',         line: 'You’ve started something. Mirror 21 turns it into one real change.' }
     ],
     tagline: '21 steps. One change. Kevin with you every step.',
-    // The Mirror 21 page (white, one screen, no scrolling). "You said → In 21 steps" uses the Mirror they last listened to:
-    // its title, crossed out, then its `after` line, with the last word in gold.
+    // The Mirror 21 page (white, one screen, no scrolling): headline, line, the phones picture, the points,
+    // START MIRROR 21 (Kevin's video; at its end LET'S FOLLOW THROUGH rises over it → url).
+    kicker: 'IN 21 STEPS',                      // the big title on top ('' = none)
+    headline: ['SEE IT. OWN IT. CHANGE IT.'],   // under it, one line sized to fill the width (several items = one line each)
+    sub: 'Kevin with you, until one change sticks.',
+    visual: 'assets/images/mirror21-visuals.webp',   // a web copy of "assets/images/Mirror 21 visuals.png"
+    follow: { title: 'LET’S FOLLOW THROUGH.', line: '21 steps. One change. Kevin with you every step.', button: 'FOLLOW THROUGH' },
     photo: 'assets/images/kevin-mirror21.jpg',
-    // Kevin's video in place of the photo (tap to play, with sound). video: '' = show the photo instead.
+    // Kevin's video (START MIRROR 21 and "watch the introduction")
     video: 'assets/images/mirror21-video.mp4',
     videoPoster: 'assets/images/mirror21-video-poster.jpg',
     videoSeconds: 37,
@@ -550,5 +564,17 @@ window.PM_CONTENT = {
   },
 
   /* ------------------------------------------------------------- Kevin (unlock sheet) */
-  HOST: { name: 'KEVIN CRAGGS', company: 'Daily Xcellence', photo: 'assets/images/kevin.jpg' }
+  HOST: { name: 'KEVIN CRAGGS', company: 'Daily Xcellence', photo: 'assets/images/kevin.jpg' },
+
+  /* ------------------------------------------------------------- MEET KEVIN (the intro video)
+   * Plays full screen, in colour, the first time someone taps FIND MY MIRROR. Tap = pause (MEET KEVIN top left and the
+   * play button come back). SKIP (top right) = move on any time; at the end, WATCH AGAIN or LET'S BEGIN ("Which one is you?").
+   * video: '' = no intro. The file is a smaller web copy of "assets/Pocket Mirror Beginning (1).mp4".
+   */
+  INTRO: {
+    video: 'assets/video/meet-kevin.mp4',
+    poster: 'assets/video/meet-kevin.jpg',
+    title: 'MEET KEVIN',
+    begin: 'LET’S BEGIN'
+  }
 };

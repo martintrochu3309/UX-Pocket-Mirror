@@ -6,6 +6,7 @@
  *
  * Screens (hash routes):
  *   #/                 1 · Landing: swipe a path
+ *   #/intro            1b · MEET KEVIN: the intro video, the first time FIND MY MIRROR is tapped
  *   #/mirrors          2 · Which one is you? (all 12 Mirrors, the first 4 until "See all")
  *   #/mirror/<n>       3 · Kevin's voice. Pauses at CONFIG.previewSeconds until an email is given
  *   #/unlocked/<kind>/<n>  4 · Card unlocked (straight after a Mirror or episode is finished for the first time)
@@ -24,6 +25,7 @@
   var C = window.PM_CONTENT;
   var CONFIG = C.CONFIG, PATHS = C.PATHS, MIRRORS = C.MIRRORS, NUDGES = C.NUDGES, PODCAST = C.PODCAST, HOST = C.HOST;
   var TITLES = C.TITLES || {}, TABS = C.TABS || {}, M21 = C.MIRROR21 || null, CAPTIONS = C.CAPTIONS || {};
+  var INTRO = C.INTRO && C.INTRO.video ? C.INTRO : null;
   var app = document.getElementById('app');
   var toastEl = document.getElementById('toast');
 
@@ -49,6 +51,7 @@
     addSq: svg('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>', ' stroke-width="1.8"'),
     up: svg('<path d="M12 19V5M6 11l6-6 6 6"/>', ' stroke-width="2.2"'),
     close: svg('<path d="M6 6l12 12M18 6 6 18"/>', ' stroke-width="2"'),
+    cc: svg('<rect x="2.5" y="5" width="19" height="14" rx="3"/><text x="12" y="15.2" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-family="Arial">CC</text>', ' stroke-width="1.6"'),
     target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', ' stroke-width="1.8"'),
     checkCircle: svg('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>', ' stroke-width="1.8"'),
     pen: svg('<path d="M16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1 1-4Z"/>', ' stroke-width="1.8"'),
@@ -56,7 +59,8 @@
     video: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/>', ' stroke-width="1.8"'),
     chevUp: svg('<path d="m6 15 6-6 6 6"/>', ' stroke-width="2.2"'),
     repeat: svg('<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11V9.5a3.5 3.5 0 0 1 3.5-3.5h13.5"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 13v1.5a3.5 3.5 0 0 1-3.5 3.5H3.5"/>', ' stroke-width="1.8"'),
-    tabPodcast: svg('<circle cx="6.5" cy="16" r="3.5"/><circle cx="17.5" cy="16" r="3.5"/><path d="M10 16h4M3 16 5.5 6.5A2 2 0 0 1 9.5 7v6M21 16l-2.5-9.5a2 2 0 0 0-4 .5v6"/>', ' stroke-width="1.6"')
+    // EXPLORE: a cassette (from the icon you sent): rounded body, two reels joined by the tape, the trapezoid at the bottom
+    tabPodcast: svg('<rect x="2.5" y="5.5" width="19" height="13" rx="2.6"/><circle cx="8" cy="11" r="2"/><circle cx="16" cy="11" r="2"/><path d="M10 9.4h4M10 12.6h4M6.6 18.5l1.6-2.8h7.6l1.6 2.8"/>', ' stroke-width="1.6"')
   };
   var PLAYPAUSE = I.play + I.pause;
 
@@ -158,12 +162,18 @@
   function persist() { stampInstallURL(); if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
   function unlocked() { return !!S.email; }
 
-  /* ================================================================ big reflected titles (12 MIRRORS style) */
-  function markTitle(parts, label, goldLast) {
-    var g = parts[0] ? '<span class="g">' + esc(parts[0]) + '</span>' : '', w = esc(parts[1]);
-    var inner = goldLast ? w + g : g + w;
+  /* ================================================================ Home tab titles (LISTEN · COLLECT · EXPLORE) */
+  // tight Magistral, one line, no reflection (the logo above already has one). parts = TITLES.x, e.g. ['', 'LISTEN']
+  function markTitle(parts, label) {
     return '<h1 class="sr-only">' + esc(label) + '</h1>' +
-      '<div class="mark-title" aria-hidden="true" data-fit><p>' + inner + '</p><p>' + inner + '</p></div>';
+      '<p class="tab-title" aria-hidden="true" data-fit><span>' + esc(parts.join(' ').trim()) + '</span></p>';
+  }
+  // "12 OF 12 HEARD" + a white segmented bar, one segment per Mirror / card / episode
+  function tabProgress(count, total, word, label) {
+    var segs = '';
+    for (var i = 0; i < total; i++) segs += '<span' + (i < count ? ' class="on"' : '') + '></span>';
+    return '<div class="tab-progress"><span>' + count + ' OF ' + total + ' ' + word + '</span>' +
+      '<div class="segs" role="progressbar" aria-label="' + esc(label) + '" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + count + '">' + segs + '</div></div>';
   }
   // shrink a title only if it is wider than the screen
   function fitTitles() {
@@ -206,12 +216,16 @@
   }
 
   /* ================================================================ Mirror 21: visible to everyone after the email */
+  // The MIRROR 21 logotype: MIRROR in bold italic Magistral, 21 in gold. Used every time Mirror 21 is named
+  // (the one place gold stays in the app: it is the brand mark).
+  var M21_MARK = '<span class="m21-mark">MIRROR <b>21</b></span>';
   function m21Card(eyebrow, line, extra) {
+    // white card: grey label, the MIRROR 21 logotype, the line, one black button: SEE MIRROR 21
     return '<a class="m21-card' + (extra ? ' ' + extra : '') + '" href="#/mirror21" data-action="m21-open" data-from="' + (extra || 'card') + '" data-m21-card>' +
       '<span class="m21-eyebrow">' + esc(eyebrow || 'YOUR NEXT STEP') + '</span>' +
-      '<span class="m21-name">MIRROR<span class="g">21</span></span>' +
+      '<span class="m21-name">' + M21_MARK + '</span>' +
       '<span class="m21-line">' + esc(line || M21.tagline) + '</span>' +
-      '<span class="m21-foot"><span>' + esc(M21.price) + '</span><span class="m21-go">SEE HOW IT WORKS ' + I.arrow + '</span></span></a>';
+      '<span class="m21-cta">SEE ' + M21_MARK + '</span></a>';
   }
 
   /* ================================================================ add to home screen (after the email, once) */
@@ -243,13 +257,13 @@
   function a2hsSheetHTML() {
     return '<div class="dim" id="a2-dim" data-action="a2hs-close"></div>' +
       '<section class="sheet a2" id="a2" role="dialog" aria-modal="true" aria-labelledby="a2-title" inert>' +
-        '<p class="eyebrow gold">TWO QUICK STEPS</p>' +
+        '<p class="eyebrow">TWO QUICK STEPS</p>' +
         '<h2 id="a2-title">ADD IT TO YOUR HOME SCREEN</h2>' +
         '<ol class="a2-steps">' +
           '<li><span class="n">1</span><span class="t">Tap <b>Share</b><span class="sub">In Safari it can sit under •••</span></span><span class="ico">' + I.share + '</span></li>' +
           '<li><span class="n">2</span><span class="t">Tap <b>Add to Home Screen</b>, then <b>Add</b></span><span class="ico">' + I.addSq + '</span></li>' +
         '</ol>' +
-        '<button type="button" class="btn-gold" data-action="a2hs-close">GOT IT</button>' +
+        '<button type="button" class="btn-gold white" data-action="a2hs-close">GOT IT</button>' +
       '</section>';
   }
   // So the home-screen app opens already unlocked (iPhone gives it its own memory).
@@ -431,6 +445,7 @@
   var cleanup = null;
   var routes = [
     [/^#?\/?$/, landing],
+    [/^#\/intro$/, introScreen],
     [/^#\/mirrors$/, mirrorsScreen],
     [/^#\/path\/\w+$/, function () { go('#/mirrors'); return null; }], // old links
     [/^#\/mirror\/(\d+)$/, mirrorScreen],
@@ -486,6 +501,13 @@
       if (time) time.textContent = kind === 'episode' ? fmt(t) : fmt(t) + ' / ' + fmt(d);
       var prog = root.querySelector('[data-ring]');
       if (prog) prog.style.strokeDashoffset = (CIRC * (1 - Math.min(1, t / d))).toFixed(2);
+      // Mirror player bars (the player and the subtitles layer each have one)
+      var pct = (Math.min(1, t / d) * 100).toFixed(2) + '%';
+      app.querySelectorAll('[data-fill]').forEach(function (x) { x.style.width = pct; });
+      app.querySelectorAll('[data-sknob]').forEach(function (x) { x.style.left = pct; });
+      app.querySelectorAll('[data-elapsed]').forEach(function (x) { x.textContent = fmt(t); });
+      app.querySelectorAll('[data-total]').forEach(function (x) { x.textContent = fmt(d); });
+      app.querySelectorAll('[data-scrub]').forEach(function (x) { x.setAttribute('aria-valuenow', Math.round(t)); x.setAttribute('aria-valuetext', fmt(t) + ' of ' + fmt(d)); });
       if (kind === 'mirror') {
         var done = unlocked() && (S.heard[n] || (mine && t >= d - 0.6));
         var hint = root.querySelector('[data-hint]');
@@ -506,11 +528,6 @@
       if (dialEl) { dialEl.setAttribute('aria-valuenow', Math.round(t)); dialEl.setAttribute('aria-valuetext', fmt(d - t) + ' left'); }
       var nextLock = root.querySelector('[data-next-lock]');
       if (nextLock) nextLock.hidden = !!S.eps[n];
-    }
-    var remain = document.querySelector('[data-remaining]');
-    if (remain && now) {
-      var dur = (isFinite(audio.duration) && audio.duration) || (mirrorBy(now.n) || {}).duration || 0;
-      remain.textContent = fmt(dur - CONFIG.previewSeconds) + ' left';
     }
   }
 
@@ -545,19 +562,105 @@
     if (unlocked()) { go('#/home'); return null; }
     var html =
       '<section class="screen landing">' +
-        '<p class="wordmark">THE POCKET<br>MIRROR</p>' +
+        '<img class="logo" src="assets/images/pocket-mirror-logo.png" width="640" height="91" alt="The Pocket Mirror">' +
         '<div class="landing-mid">' +
-          '<h1>ONE MINUTE<br>WITH <span class="gold-text">YOURSELF.</span></h1>' +
+          '<h1><span class="lead">ONE MINUTE WITH</span> <span class="word">YOURSELF.</span></h1>' +
           '<div class="host"><img src="' + HOST.photo + '" alt=""><b>' + esc(HOST.name) + '</b></div>' +
         '</div>' +
         '<div class="landing-foot">' +
-          '<a class="pill" href="#/mirrors"><span>FIND MY MIRROR</span><span class="dot">' + I.arrow + '</span></a>' +
+          '<a class="btn-gold white" href="#/mirrors" data-action="find-mirror">FIND MY MIRROR</a>' +
           '<p class="fine">1-minute audio · free</p>' +
         '</div>' +
       '</section>';
     return {
       html: html,
       mount: function () { track('landing_view'); }
+    };
+  }
+
+  /* ================================================================ 1b · MEET KEVIN (the intro video, the first time only)
+     Full screen, in colour, a black fade over his hands. Playing: just Kevin, a thin progress line and a barely-there SKIP.
+     Tap = pause: MEET KEVIN (top left) and the play button (on his chin) come back.
+     At the end: WATCH AGAIN and LET'S BEGIN (on to "Which one is you?"). */
+  // one video element, made inside the FIND MY MIRROR tap so it can start with sound (phones allow sound from a tap)
+  var introVid = null;
+  function introVideo() {
+    if (introVid) return introVid;
+    var v = document.createElement('video');
+    v.className = 'intro-video';
+    v.src = INTRO.video;
+    if (INTRO.poster) v.poster = INTRO.poster;
+    v.preload = 'auto'; v.playsInline = true;
+    v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+    v.setAttribute('aria-label', 'Kevin introduces The Pocket Mirror');
+    introVid = v;
+    return v;
+  }
+  function toggleIntro() {
+    var v = introVid; if (!v) return;
+    if (v.paused || v.ended) { var p = v.play(); if (p && p.catch) p.catch(function () {}); track('intro_play'); }
+    else { v.pause(); track('intro_pause'); }
+  }
+  // leave the intro (how: skip · begin · end) and carry on to the Mirrors
+  function introDone(how) {
+    var v = introVid;
+    if (v) v.pause();
+    track('intro_' + how, { at: v ? Math.round(v.currentTime) : 0 });
+    introVid = null;
+    go('#/mirrors');
+  }
+  function introScreen() {
+    if (!INTRO || unlocked()) { go(unlocked() ? '#/home' : '#/mirrors'); return null; }
+    S.introSeen = true; persist();
+    var v = introVideo();
+    var html =
+      '<section class="intro paused" data-intro>' +
+        '<div class="intro-stage" data-intro-stage></div>' +
+        '<div class="intro-shade" aria-hidden="true"></div>' +   // black fades: top (behind the title), bottom (over his hands)
+        '<div class="intro-bar" aria-hidden="true"><span data-intro-fill></span></div>' +
+        '<button type="button" class="intro-skip" data-action="intro-done" data-how="skip">SKIP</button>' +
+        // top left: the time, then MEET KEVIN (here before it starts, when paused and at the end; away while Kevin talks)
+        '<div class="intro-head"><p class="intro-meta" data-intro-meta></p><h1 class="intro-title">' + esc(INTRO.title || 'MEET KEVIN') + '</h1></div>' +
+        // on his chin: play (before it starts and when paused)
+        '<button type="button" class="intro-play" data-action="intro-toggle" aria-label="Play"><span class="ring">' + I.play + '</span></button>' +
+        // at the end: watch again, or on to the Mirrors
+        '<div class="intro-end">' +
+          '<button type="button" class="intro-again" data-action="intro-again">' + I.repeat + 'WATCH AGAIN</button>' +
+          '<button type="button" class="btn-gold white intro-begin" data-action="intro-done" data-how="begin"><span>' + esc(INTRO.begin || 'LET’S BEGIN') + '</span>' + I.arrow + '</button>' +
+        '</div>' +
+      '</section>';
+    return {
+      html: html,
+      mount: function () {
+        var root = app.querySelector('[data-intro]'), stage = app.querySelector('[data-intro-stage]');
+        var fill = app.querySelector('[data-intro-fill]'), meta = app.querySelector('[data-intro-meta]');
+        stage.appendChild(v);
+        function sync() {
+          var playing = !v.paused && !v.ended, d = isFinite(v.duration) && v.duration ? v.duration : 55;
+          root.classList.toggle('paused', !playing && !v.ended);
+          root.classList.toggle('ended', v.ended);
+          fill.style.width = (100 * Math.min(1, v.currentTime / d)).toFixed(2) + '%';
+          meta.textContent = v.currentTime > 0.5 && !v.ended ? fmt(v.currentTime) + ' / ' + fmt(d) : fmt(d);
+        }
+        function onEnd() { sync(); track('intro_complete'); }
+        function onKey(e) {
+          if (e.key === ' ') { e.preventDefault(); toggleIntro(); }
+          else if (e.key === 'Escape') introDone('skip');
+        }
+        var evs = ['play', 'pause', 'timeupdate', 'loadedmetadata'];
+        evs.forEach(function (ev) { v.addEventListener(ev, sync); });
+        v.addEventListener('ended', onEnd);
+        stage.addEventListener('click', function () { if (!v.ended) toggleIntro(); }); // tap Kevin = pause / play
+        document.addEventListener('keydown', onKey);
+        track('intro_view');
+        sync();
+        return function () {
+          evs.forEach(function (ev) { v.removeEventListener(ev, sync); });
+          v.removeEventListener('ended', onEnd);
+          document.removeEventListener('keydown', onKey);
+          v.pause();
+        };
+      }
     };
   }
 
@@ -570,8 +673,9 @@
     }
     var heard = unlocked() && S.heard[m.n];
     var p = pathBy(m.path);
-    var meta = heard ? '<span class="meta gold">' + I.check + 'Heard</span>'
-      : '<span class="meta">' + I.phones + mins(m.duration) + ' · ' + (unlocked() ? esc(p.name) : 'best with sound') + '</span>';
+    // "best with sound" is said once in the page intro, so each card only shows its length (and its path after the email)
+    var meta = heard ? '<span class="meta">' + I.check + 'Heard</span>'
+      : '<span class="meta">' + mins(m.duration) + (unlocked() ? ' · ' + esc(p.name) : '') + '</span>';
     return '<li><button type="button" class="mirror-row" data-action="play-mirror" data-n="' + m.n + '">' +
       '<span class="num">' + pad2(m.n) + '</span>' +
       '<span class="body"><span class="t">' + esc(m.title) + '</span>' + meta + '</span>' +
@@ -580,18 +684,16 @@
 
   var FIRST_SHOWN = 4;
   function mirrorsScreen() {
-    var p = pathBy('see');
     var html =
       '<section class="screen path">' +
-        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back">' + I.back + '</a><p class="wordmark">THE POCKET MIRROR</p><span style="width:34px"></span></div>' +
-        '<h1 class="sr-only">' + esc(p.name) + '</h1>' +
-        '<div class="reflect ' + p.key + '" aria-hidden="true"><p>' + esc(p.name) + '</p><p>' + esc(p.name) + '</p></div>' +
-        '<p class="quote">“' + esc(p.line) + '”</p>' +
-        '<p class="section-label">WHICH ONE IS YOU?</p>' +
+        '<div class="topbar"><a class="icon-btn" href="#/" aria-label="Back">' + I.back + '</a>' +
+          '<img class="logo" src="assets/images/pocket-mirror-logo.png" width="640" height="91" alt="The Pocket Mirror">' +
+          '<span style="width:34px"></span></div>' +
+        '<h1 class="page-title" data-fit><span>WHICH ONE IS YOU?</span></h1>' +
         '<ul class="mirror-list">' + MIRRORS.map(function (m, i) {
           return mirrorRow(m).replace('<li>', i < FIRST_SHOWN ? '<li>' : '<li data-more hidden>');
         }).join('') + '</ul>' +
-        (MIRRORS.length > FIRST_SHOWN ? '<button type="button" class="link" data-all>See all ' + MIRRORS.length + ' Mirrors</button>' : '') +
+        (MIRRORS.length > FIRST_SHOWN ? '<button type="button" class="btn-outline" data-all>SEE ALL ' + MIRRORS.length + ' MIRRORS' + I.down + '</button>' : '') +
       '</section>';
     return {
       html: html,
@@ -607,48 +709,130 @@
     };
   }
 
-  /* ================================================================ 3 · MIRROR PLAYER + GATE */
+  /* ================================================================ 3 · MIRROR PLAYER + SUBTITLES + GATE (the episode player uses the same layout) */
+  // the bar you can drag (for a Mirror before the email, the free part 0:00 → previewSeconds is a lighter grey) and the two times under it
+  function scrubHTML(kind, item, freeShare) {
+    return '<div class="scrub" data-scrub role="slider" tabindex="0" aria-label="Position in the ' + (kind === 'mirror' ? 'Mirror' : 'episode') + '" aria-valuemin="0" aria-valuemax="' + Math.round(item.duration) + '" aria-valuenow="0">' +
+        '<div class="scrub-track">' +
+          (freeShare ? '<span class="scrub-free" style="width:' + (freeShare * 100).toFixed(2) + '%"></span>' : '') +
+          '<span class="scrub-fill" data-fill></span><span class="scrub-knob" data-sknob></span>' +
+        '</div></div>' +
+      '<div class="scrub-times"><span data-elapsed>0:00</span><span data-total>' + fmt(item.duration) + '</span></div>';
+  }
+  // back 15 · play/pause · forward 15 (a Mirror before the email: forward past the free part stops there and opens the gate, see timeupdate)
+  function transportHTML(kind, n) {
+    return '<div class="transport">' +
+        '<button type="button" class="skip" data-action="skip" data-by="-15" aria-label="Back 15 seconds">' + I.back15 + '</button>' +
+        '<button type="button" class="big-play" data-toggle data-action="toggle" data-kind="' + kind + '" data-n="' + n + '" aria-label="Play">' + PLAYPAUSE + '</button>' +
+        '<button type="button" class="skip" data-action="skip" data-by="15" aria-label="Forward 15 seconds">' + I.fwd15 + '</button>' +
+      '</div>';
+  }
+  // drag (or tap) the bar to move through the audio. A Mirror before the email stops at the end of the free part;
+  // letting go past it lands on previewSeconds, which pauses and opens the gate (see timeupdate).
+  function bindScrubs(kind, item) {
+    var gated = function () { return kind === 'mirror' && !unlocked(); };
+    var dur = function () { return (isFinite(audio.duration) && audio.duration) || item.duration; };
+    var mine = function () { return now && now.kind === kind && now.n === item.n; };
+    var limit = function () { return gated() ? CONFIG.previewSeconds - 0.3 : dur() - 0.25; };
+    app.querySelectorAll('[data-scrub]').forEach(function (bar) {
+      var dragging = false, over = false;
+      function seekTo(sec) {
+        if (!mine()) load(kind, item.n);
+        over = gated() && sec >= CONFIG.previewSeconds;
+        audio.currentTime = Math.max(0, Math.min(sec, limit()));
+        syncUI();
+      }
+      function at(ev) { var r = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * dur(); }
+      bar.addEventListener('pointerdown', function (ev) {
+        dragging = true; bar.classList.add('dragging');
+        try { bar.setPointerCapture(ev.pointerId); } catch (x) { /* ignore */ }
+        seekTo(at(ev));
+      });
+      bar.addEventListener('pointermove', function (ev) { if (dragging) seekTo(at(ev)); });
+      function end() {
+        if (!dragging) return;
+        dragging = false; bar.classList.remove('dragging');
+        track(kind + '_seek', kind === 'mirror' ? { mirror: item.n } : { episode: item.n });
+        if (over) audio.currentTime = CONFIG.previewSeconds;
+      }
+      bar.addEventListener('pointerup', end);
+      bar.addEventListener('pointercancel', end);
+      bar.addEventListener('keydown', function (ev) {
+        var by = ev.key === 'ArrowRight' || ev.key === 'ArrowUp' ? 5 : ev.key === 'ArrowLeft' || ev.key === 'ArrowDown' ? -5 : 0;
+        if (!by) return;
+        ev.preventDefault();
+        seekTo((mine() ? audio.currentTime : 0) + by);
+      });
+    });
+  }
+  function openSubs(instant) {
+    var el = document.getElementById('subs');
+    if (!el) return;
+    if (instant) el.classList.add('instant');
+    el.classList.add('open');
+    el.removeAttribute('inert');
+    if (instant) { void el.offsetWidth; el.classList.remove('instant'); }
+    else { var x = el.querySelector('.subs-x'); if (x) x.focus({ preventScroll: true }); }
+  }
+  function closeSubs() {
+    var el = document.getElementById('subs');
+    if (!el || !el.classList.contains('open')) return;
+    el.classList.remove('open');
+    el.setAttribute('inert', '');
+    var b = app.querySelector('.cc-btn'); if (b) b.focus({ preventScroll: true });
+  }
+
   function mirrorScreen(n) {
     var m = mirrorBy(n);
     if (!m || !m.audio) { go('#/'); return null; }
     var p = pathBy(m.path);
     load('mirror', m.n);
     var locked = !unlocked();
-    var f = CONFIG.previewSeconds / (m.duration || 60);
-    var markX = 125 + 115 * Math.cos(2 * Math.PI * f), markY = 125 + 115 * Math.sin(2 * Math.PI * f);
+    var f = Math.min(1, CONFIG.previewSeconds / (m.duration || 60));
     var others = Math.max(0, AVAILABLE.length - 1);
+    var hasSubs = (CAPTIONS[m.n] || []).length > 0;
 
     var html =
-      '<section class="screen player" data-player data-kind="mirror" data-n="' + m.n + '">' +
+      // Spotify-like: artwork, title, bar, controls, then Subtitles + Best with sound
+      '<section class="screen player mirror-player" data-player data-kind="mirror" data-n="' + m.n + '">' +
         '<div class="topbar"><a class="icon-btn" href="' + (locked ? '#/mirrors' : '#/home') + '" aria-label="Back">' + I.down + '</a>' +
-          '<p class="eyebrow">MIRROR ' + pad2(m.n) + ' · ' + esc(p.name) + '</p></div>' +
+          '<p class="eyebrow">MIRROR ' + pad2(m.n) + '</p></div>' +
+        '<div class="art" aria-hidden="true"><img src="assets/images/daily-xcellence-art.png" width="720" height="240" alt=""><p>it starts with you</p></div>' +
         '<h1>' + esc(m.title) + '</h1>' +
-        '<div class="ring-wrap">' +
-          '<svg class="ring" viewBox="0 0 250 250" aria-hidden="true"><circle class="track" cx="125" cy="125" r="115"/>' +
-            '<circle class="prog" data-ring cx="125" cy="125" r="115" stroke-dasharray="' + CIRC.toFixed(2) + '" stroke-dashoffset="' + CIRC.toFixed(2) + '"/>' +
-            (locked ? '<circle class="mark" cx="' + markX.toFixed(1) + '" cy="' + markY.toFixed(1) + '" r="4"/>' : '') + '</svg>' +
-          '<button type="button" class="big-play" data-toggle data-action="toggle" data-kind="mirror" data-n="' + m.n + '" aria-label="Play">' + PLAYPAUSE + '</button>' +
+        scrubHTML('mirror', m, locked ? f : 0) +
+        transportHTML('mirror', m.n) +
+        '<div class="player-foot">' +
+          (hasSubs ? '<button type="button" class="cc-btn" data-action="subs-open" aria-haspopup="dialog">' + I.cc + 'Subtitles</button>' : '<span></span>') +
+          '<p class="sound-hint" data-hint>' + I.phones + 'Best with sound</p>' +
         '</div>' +
-        '<p class="time" data-time>0:00 / ' + fmt(m.duration) + '</p>' +
-        ((CAPTIONS[m.n] || []).length ? '<p class="caption" data-caption aria-hidden="true"></p>' : '') +
-        '<div class="spacer"></div>' +
-        '<p class="sound-hint" data-hint>' + I.phones + 'Best with sound</p>' +
       '</section>' +
+      // subtitles: a full-screen layer over the player (outside .screen so position:fixed works). Kept on for the next Mirror (S.cc).
+      (hasSubs ?
+      '<section class="subs" id="subs" role="dialog" aria-modal="true" aria-labelledby="subs-title" inert>' +
+        '<div class="topbar"><span style="width:34px"></span><p class="eyebrow" id="subs-title">SUBTITLES</p>' +
+          '<button type="button" class="icon-btn subs-x" data-action="subs-close" aria-label="Close subtitles">' + I.close + '</button></div>' +
+        '<div class="subs-card">MIRROR ' + pad2(m.n) + ' · ' + esc(p.name) + '</div>' +
+        // the line just said (grey) above the line Kevin is saying (each word turns white as he says it)
+        '<div class="subs-lines" aria-hidden="true"><p class="subs-prev" data-caption-prev></p><p class="subs-now" data-caption></p></div>' +
+        '<div class="subs-controls">' + scrubHTML('mirror', m, locked ? f : 0) + transportHTML('mirror', m.n) +
+          '<button type="button" class="cc-on" data-action="subs-close" aria-label="Turn subtitles off">CC</button></div>' +
+      '</section>' : '') +
       // unlock sheet (outside .screen so position:fixed works)
       '<div class="dim" id="dim" data-action="close-gate"></div>' +
       '<section class="sheet" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" inert>' +
         '<div class="host"><img src="' + HOST.photo + '" alt="' + esc(HOST.name) + '"><span><b>' + esc(HOST.name) + '</b><small>' + esc(HOST.company) + '</small></span></div>' +
         '<h2 id="gate-title">HEAR THE REST.</h2>' +
         '<ul class="unlock-list">' +
-          '<li>' + I.lock + '<span class="grow">The rest of this Mirror</span><small data-remaining></small></li>' +
-          '<li>' + I.lock + '<span class="grow">Your nudge card</span><span class="mini-card ' + p.deck + '" aria-hidden="true"></span></li>' +
-          '<li>' + I.lock + '<span class="grow">' + (others ? others + ' more ' + (others === 1 ? 'Mirror' : 'Mirrors') + ' + ' : '') + EPISODES.length + ' podcast episodes</span></li>' +
+          // what the email gives: plain lines with white dots (no time left, no card icon, no locks)
+          '<li>The rest of this Mirror</li>' +
+          '<li>Your nudge card</li>' +
+          '<li>' + (others ? others + ' more ' + (others === 1 ? 'Mirror' : 'Mirrors') + ' + ' : '') + EPISODES.length + ' podcast episodes</li>' +
         '</ul>' +
         '<form data-gate-form novalidate>' +
           '<div class="email-row"><label class="sr-only" for="email">Your email</label>' +
-            '<input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Your email" required>' +
-            '<button type="submit" aria-label="Unlock">' + I.arrow + '</button></div>' +
+            '<input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Your email" required></div>' +
           '<p class="form-error" data-error role="alert"></p>' +
+          '<button type="submit" class="btn-gold white">KEEP LISTENING</button>' +
         '</form>' +
         '<p class="fine">' + esc(CONFIG.finePrint) + '</p>' +
         '<a class="link" href="#/mirrors" data-action="not-now">Not now, try another Mirror</a>' +
@@ -682,8 +866,12 @@
           toast('UNLOCKED · ALL MIRRORS');
         });
         input.addEventListener('input', function () { err.textContent = ''; form.querySelector('.email-row').classList.remove('error'); });
-        var onKey = function (e) { if (e.key === 'Escape' && gateOpen) closeGate(); };
+        var onKey = function (e) { if (e.key !== 'Escape') return; if (gateOpen) closeGate(); else closeSubs(); };
         document.addEventListener('keydown', onKey);
+
+        bindScrubs('mirror', m);
+
+        if (S.cc || (DEMO && QS.get('cc'))) openSubs(true);
         if (atPreviewLimit() || (DEMO_STATE === 'gate' && !unlocked())) openGate();
         return function () { document.removeEventListener('keydown', onKey); stopCaptions(); };
       }
@@ -692,7 +880,7 @@
 
   /* ================================================================ captions: words light up as Kevin says them */
   function captions(m) {
-    var el = app.querySelector('[data-caption]'), lines = CAPTIONS[m.n] || [];
+    var el = app.querySelector('[data-caption]'), prevEl = app.querySelector('[data-caption-prev]'), lines = CAPTIONS[m.n] || [];
     if (!el || !lines.length) return function () {};
     // the second each word starts, measured from the audio (js/caption-timing.js), when it matches the line's text
     var timing = (window.PM_CAPTION_TIMING || {})[m.n] || [];
@@ -724,6 +912,9 @@
       }
       el.innerHTML = words.map(function (w) { return '<span class="w">' + esc(w) + '</span>'; }).join(' ');
       spans = [].slice.call(el.children);
+      // the line just said moves up, in grey; the new one rises in
+      if (prevEl) prevEl.textContent = i > 0 ? lines[i - 1][2] : '';
+      el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
     }
     function tick() {
       var mine = now && now.kind === 'mirror' && now.n === m.n;
@@ -746,24 +937,165 @@
     if (audio.readyState >= 1) set(); else audio.addEventListener('loadedmetadata', set, { once: true });
   }
 
-  /* ================================================================ the collection (COLLECT tab) */
-  // One deck as a 3-across grid: collected cards face up, the rest face down saying how to unlock them.
-  function collectionHTML(deck) {
-    return '<ul class="collection">' + nudgesOf(deck).map(function (x) {
-      var s = sourceOf(x.id);
-      if (isCollected(x.id)) {
-        return '<li><button type="button" class="slot got" data-action="view-card" data-id="' + x.id + '" aria-label="' + esc(x.text) + '">' +
-            '<img src="' + cardSrc(x.id, deck) + '" alt="" loading="lazy" draggable="false"></button>' +
-          '<span class="cap">' + I.check + sourceName(s) + '</span></li>';
+  /* ================================================================ swipe decks (COLLECT cards · EXPLORE cassettes)
+     The items follow your finger: `pos` is a float, so the whole row moves with the drag, then glides and settles on one.
+     Tap a side item = bring it to the middle. Tap the middle one = o.tapMiddle(k). Arrow keys and Enter work too.
+     o.layout(el, offset, W) places one item (offset 0 = the middle); o.pick(k) runs when the middle item changes;
+     o.settle(k) after a glide; o.unit = how many px of drag move one item, as a share of the item's width. */
+  function swipeDeck(stage, els, startAt, o) {
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var last = els.length - 1, pos = startAt, target = startAt, picked = -1, raf = 0;
+    var width = function () { return (els[0] && els[0].offsetWidth) || 220; };
+    function place() { var W = width(); els.forEach(function (c, i) { o.layout(c, i - pos, W); }); }
+    function mark() {
+      var k = Math.max(0, Math.min(last, Math.round(pos)));
+      if (k === picked) return;
+      picked = k;
+      els.forEach(function (c, i) { c.setAttribute('aria-selected', String(i === k)); });
+      o.pick(k);
+    }
+    function done() { if (o.settle) o.settle(picked); }
+    function spin() {
+      cancelAnimationFrame(raf);
+      if (reduce) { pos = target; place(); mark(); done(); return; }
+      (function step() {
+        pos += (target - pos) * 0.18;
+        if (Math.abs(target - pos) < 0.002) { pos = target; place(); mark(); done(); return; }
+        place(); mark();
+        raf = requestAnimationFrame(step);
+      })();
+    }
+    function goTo(k) { target = Math.max(0, Math.min(last, k)); spin(); }
+
+    var grab = 0, grabPos = 0, turning = false, dragged = false, pressed = null;
+    stage.addEventListener('pointerdown', function (e) {
+      turning = true; dragged = false; grab = e.clientX; grabPos = pos;
+      var el = e.target; while (el && el !== stage && els.indexOf(el) < 0) el = el.parentNode;
+      pressed = els.indexOf(el) >= 0 ? el : null;
+      cancelAnimationFrame(raf);
+      stage.classList.add('dragging');
+      try { stage.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ }
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!turning) return;
+      var d = e.clientX - grab;
+      if (Math.abs(d) > 5) dragged = true;
+      pos = Math.max(-0.4, Math.min(last + 0.4, grabPos - d / (width() * (o.unit || 0.56))));
+      place(); mark();
+    });
+    function letGo(cancelled) {
+      if (!turning) return;
+      turning = false;
+      stage.classList.remove('dragging');
+      var tapped = !cancelled && !dragged ? pressed : null;
+      pressed = null;
+      if (tapped) {
+        var k = els.indexOf(tapped);
+        if (k === picked) o.tapMiddle(k); else goTo(k);
+      } else {
+        if (dragged && o.flicked) o.flicked(Math.max(0, Math.min(last, Math.round(pos))));
+        goTo(Math.round(pos));
       }
-      var soon = !s || !s.item.audio;
-      var how = !s ? '' : soon ? sourceName(s) + ' · COMING SOON' : 'LISTEN TO ' + sourceName(s);
-      var act = soon ? 'soon-card' : s.kind === 'mirror' ? 'play-mirror' : 'play-episode';
-      return '<li><button type="button" class="slot locked' + (soon ? ' soon' : '') + '" data-action="' + act + '"' + (s ? ' data-n="' + s.n + '"' : '') + ' aria-label="Locked card. ' + esc(how) + '">' +
-          '<img src="' + CARD_BACK + '" alt="" loading="lazy" draggable="false">' +
-          (s ? '<span class="how"><small>' + (soon ? 'Coming soon' : 'Listen to') + '</small><b>' + sourceName(s) + '</b></span>' : '') +
-        '</button><span class="cap"></span></li>';
-    }).join('') + '</ul>';
+    }
+    stage.addEventListener('pointerup', function () { letGo(false); });
+    stage.addEventListener('pointercancel', function () { letGo(true); });
+    stage.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); o.tapMiddle(picked); return; }
+      var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      goTo(Math.round(pos) + step);
+    });
+    var onResize = function () { place(); };
+    window.addEventListener('resize', onResize);
+    // first placement without the glide, so nothing flies in from the corner
+    stage.classList.add('dragging');
+    place(); mark();
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.remove('dragging'); }); });
+    return { goTo: goTo, stop: function () { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
+  }
+
+  /* ================================================================ COLLECT: the arc (from the first Pocket Mirror)
+     The cards stand in a fan: the middle one big and flat, its neighbours stepping out, turning towards you,
+     further back and fading. Tap the middle card = save it (yours) or hear what unlocks it (not yet). */
+  function arcLayout(c, o, W) {
+    var a = Math.abs(o), sgn = o < 0 ? -1 : 1;
+    if (a > 3.4) { c.style.opacity = 0; c.style.visibility = 'hidden'; return; }
+    var ax = Math.min(a, 3);
+    var x = sgn * W * (0.30 * ax + 0.25 * Math.min(ax, 1));   // the first neighbour steps out furthest, then the fan tightens
+    c.style.visibility = '';
+    c.style.transform = 'translate(-50%,-50%) translateX(' + x.toFixed(1) + 'px) translateZ(' + (-ax * 92).toFixed(1) + 'px) rotateY(' +
+      (-sgn * ax * 27).toFixed(2) + 'deg) scale(' + (1 - ax * 0.07).toFixed(3) + ')';
+    c.style.opacity = a < 1 ? 1 : Math.max(0.12, 1 - (a - 1) * 0.42);
+    c.style.zIndex = String(200 - Math.round(a * 10));
+  }
+  function mountArc(deck, startAt) {
+    var arcEl = app.querySelector('[data-arc]');
+    if (!arcEl) return function () {};
+    var els = [].slice.call(arcEl.querySelectorAll('.arc-card'));
+    var info = app.querySelector('[data-arc-info]'), ask = app.querySelector('[data-ask]');
+    var stageBtns = [].slice.call(app.querySelectorAll('[data-stage]'));
+    var segEls = [].slice.call(app.querySelectorAll('[data-seg]'));
+    var pathOf = function (x) { return PATHS.filter(function (p) { return p.deck === x.deck; })[0] || PATHS[0]; };
+
+    // the middle card changes: stage label, question, the light under the cards, the info line, the bar
+    function pick(k) {
+      var x = deck[k], p = pathOf(x), s = sourceOf(x.id), have = isCollected(x.id);
+      stageBtns.forEach(function (b) { b.setAttribute('aria-current', String(b.getAttribute('data-stage') === x.deck)); });
+      if (ask.textContent !== p.ask) { ask.textContent = p.ask || p.name; ask.classList.remove('swap'); void ask.offsetWidth; ask.classList.add('swap'); }
+      arcEl.setAttribute('data-tone', x.deck);
+      segEls.forEach(function (sg, i) { sg.classList.toggle('here', i === k); });
+      ['data-action', 'data-n', 'data-id', 'data-deck'].forEach(function (a) { info.removeAttribute(a); });
+      info.classList.toggle('locked', !have);
+      if (have) {
+        info.setAttribute('data-action', 'arc-save'); info.setAttribute('data-id', x.id); info.setAttribute('data-deck', x.deck);
+        info.innerHTML = I.check + '<span>' + (s ? sourceName(s) + ' · ' : '') + 'TAP TO SAVE</span>';
+      } else if (s && s.item.audio) {
+        info.setAttribute('data-action', s.kind === 'mirror' ? 'play-mirror' : 'play-episode'); info.setAttribute('data-n', s.n);
+        info.innerHTML = I.play + '<span>LISTEN TO ' + sourceName(s) + ' TO UNLOCK</span>';
+      } else {
+        info.setAttribute('data-action', 'soon-card');
+        info.innerHTML = I.lock + '<span>' + (s ? sourceName(s) + ' · ' : '') + 'COMING SOON</span>';
+      }
+    }
+    var swipe = swipeDeck(arcEl, els, startAt, {
+      layout: arcLayout, pick: pick,
+      tapMiddle: function () { info.click(); },
+      settle: function (k) { S.arcCard = deck[k].id; persist(); },
+      flicked: function (k) { track('nudges_flick', { to: deck[k].id }); }
+    });
+    stageBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = b.getAttribute('data-stage');
+        for (var i = 0; i < deck.length; i++) if (deck[i].deck === d) { swipe.goTo(i); break; }
+        track('deck_switch', { deck: d });
+      });
+    });
+    return swipe.stop;
+  }
+
+  /* ================================================================ EXPLORE: the cassettes
+     A row of cassettes: the middle one big, the ones beside it smaller, fading off the edges. No turning.
+     Colour = state: grey = heard, white = you can listen to it now, black = locked. Its number sits under it. */
+  function tapeLayout(c, o, W) {
+    var a = Math.abs(o), sgn = o < 0 ? -1 : 1;
+    if (a > 2.3) { c.style.opacity = 0; c.style.visibility = 'hidden'; return; }
+    var a1 = Math.min(a, 1), a2 = Math.max(0, a - 1);
+    var x = sgn * W * (0.84 * a1 + 0.5 * a2);   // the first neighbour sits just clear of the middle one, half off the screen
+    c.style.visibility = '';
+    c.style.transform = 'translate(-50%,-50%) translateX(' + x.toFixed(1) + 'px) scale(' + (1 - 0.38 * a1 - 0.12 * a2).toFixed(3) + ')';
+    c.style.opacity = a <= 1 ? 1 - 0.3 * a : Math.max(0, 0.7 - a2 * 0.7);
+    c.style.zIndex = String(100 - Math.round(a * 10));
+  }
+  // white = open (heard or not yet); locked = the grey one, frosted, with a lock on it (see .tape.locked)
+  function tapeColour(st) { return st === 'locked' ? 'grey' : 'white'; }
+  // an episode's cassette (PODCAST.cassette: {colour} and {n} are filled in); if that file is missing, the plain one of that colour
+  function cassetteImg(e, colour, extra) {
+    var fill = function (t) { return String(t).replace('{colour}', colour).replace('{n}', pad2(e.n)); };
+    var src = fill(PODCAST.cassette || 'assets/images/cassettes/ep-{n}-{colour}.webp');
+    var fallback = fill(PODCAST.cassetteFallback || 'assets/images/cassettes/cassette-{colour}.webp');
+    return '<img src="' + src + '" alt="" draggable="false"' + (extra || '') +
+      (fallback !== src ? ' onerror="this.onerror=null;this.src=\'' + fallback + '\'"' : '') + '>';
   }
 
   // A collected card, big: tap to flip to "IS THIS YOU?", then make it the lock screen.
@@ -780,10 +1112,10 @@
   function m21PopHTML(ms) {
     return '<div class="dim" id="m21p-dim" data-action="m21p-close"></div>' +
       '<section class="sheet m21-pop" id="m21p" role="dialog" aria-modal="true" aria-labelledby="m21p-title" inert>' +
-        '<p class="m21-pop-brand">MIRROR <span class="g">21</span></p>' +
+        '<p class="m21-pop-brand">' + M21_MARK + '</p>' +
         '<h2 id="m21p-title">' + esc(ms.title) + '</h2>' +
         '<p class="m21-pop-line">' + esc(ms.line) + '</p>' +
-        '<a class="btn-gold" href="#/mirror21" data-action="m21-open" data-from="milestone-' + milestoneKey(ms) + '">SEE MIRROR 21</a>' +
+        '<a class="btn-gold ink" href="#/mirror21" data-action="m21-open" data-from="milestone-' + milestoneKey(ms) + '">SEE ' + M21_MARK + '</a>' +
         '<button type="button" class="link" data-action="m21p-close">Not now</button>' +
       '</section>';
   }
@@ -881,12 +1213,12 @@
       '<section class="sheet ns" id="ns" role="dialog" aria-modal="true" aria-labelledby="ns-title" inert>' +
         '<div class="ns-row">' +
           '<div class="phone-mock" aria-hidden="true"><img data-ns-img alt=""><span class="pm-date" data-ns-date></span><span class="pm-time">9:41</span></div>' +
-          '<div class="ns-copy"><p class="eyebrow gold">IT’S YOU</p><h2 id="ns-title">MAKE IT YOUR LOCK SCREEN</h2>' +
+          '<div class="ns-copy"><p class="eyebrow">IT’S YOU</p><h2 id="ns-title">MAKE IT YOUR LOCK SCREEN</h2>' +
             '<p class="ns-sub">See it every time you pick up your phone.</p></div>' +
         '</div>' +
-        '<button type="button" class="btn-gold" data-action="ns-save">' + I.download + '<span>SAVE TO MY PHONE</span></button>' +
+        '<button type="button" class="btn-gold white" data-action="ns-save">' + I.download + '<span>SAVE TO MY PHONE</span></button>' +
         '<p class="ns-after" data-ns-after hidden>Saved. In Photos, tap Share, then <b>Use as Wallpaper</b>.</p>' +
-        (withM21 && M21 ? '<a class="ns-m21" data-ns-m21 hidden href="#/mirror21">' + esc((M21.cards || {}).afterNudge || 'Want Kevin with you for 21 steps?') + ' <b>MIRROR 21 ' + I.arrow + '</b></a>' : '') +
+        (withM21 && M21 ? '<a class="ns-m21" data-ns-m21 hidden href="#/mirror21">' + esc((M21.cards || {}).afterNudge || 'Want Kevin with you for 21 steps?') + ' <b>' + M21_MARK + ' ' + I.arrow + '</b></a>' : '') +
         '<button type="button" class="link" data-action="ns-close">Done</button>' +
       '</section>';
   }
@@ -915,20 +1247,19 @@
     var item = kind === 'mirror' ? mirrorBy(n) : episodeBy(n);
     var x = item && item.card && nudgeBy(item.card);
     if (!x || !unlocked() || !sourceDone(kind, item.n)) { go('#/home'); return null; }
-    var count = collectedCount(), total = NUDGES.length;
-    var segs = '';
-    for (var i = 0; i < total; i++) segs += '<span' + (i < count ? ' class="on' + (i === count - 1 ? ' new' : '') + '"' : '') + '></span>';
+    var count = collectedCount();
     // after a Mirror: into the app. After an episode, or a card that reaches a milestone: to the collection
     // (where the Mirror 21 pop-up for that milestone is waiting).
     var next = kind === 'mirror' && !milestonesDue().length
-      ? '<a class="pill wide" href="#/home"><span>ENTER THE POCKET MIRROR</span><span class="dot">' + I.arrow + '</span></a>'
-      : '<a class="pill wide" href="#/home/nudges" data-action="see-deck" data-deck="' + x.deck + '"><span>SEE MY COLLECTION</span><span class="dot">' + I.arrow + '</span></a>';
+      ? '<a class="btn-gold white" href="#/home">ENTER THE POCKET MIRROR</a>'
+      : '<a class="btn-gold white" href="#/home/nudges" data-action="see-deck" data-deck="' + x.deck + '" data-id="' + x.id + '">SEE MY COLLECTION</a>';
     var html =
       '<section class="screen reward">' +
-        '<p class="eyebrow">' + (kind === 'mirror' ? 'MIRROR ' : 'EPISODE ') + pad2(item.n) + ' · COMPLETE</p>' +
+        '<p class="done-chip">' + I.check + (kind === 'mirror' ? 'MIRROR ' : 'EPISODE ') + pad2(item.n) + ' DONE</p>' +
         '<h1>' + (count === 1 ? 'FIRST' : 'NEW') + ' CARD<br>UNLOCKED.</h1>' +
         '<div class="reward-stage">' +
-          '<div class="reward-card">' +
+          // the glow behind the card takes the card's colour (deck: white / black / gold)
+          '<div class="reward-card ' + x.deck + '">' +
             '<div class="rc-inner">' +
               '<img class="rc-face rc-front" src="' + cardSrc(x.id, x.deck) + '" alt="' + esc(x.text) + '">' +
               '<img class="rc-face rc-back" src="' + CARD_BACK + '" alt="">' +
@@ -936,9 +1267,7 @@
             '<span class="rc-sheen" aria-hidden="true"></span>' +
           '</div>' +
         '</div>' +
-        '<p class="collected">' + count + ' OF ' + total + ' COLLECTED</p>' +
-        '<div class="segs" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + count + '">' + segs + '</div>' +
-        '<div class="spacer"></div>' +
+        // no "13 OF 21 COLLECTED" here: COLLECT shows the count. The card sits centred between the title and the button.
         next +
       '</section>';
     return {
@@ -955,8 +1284,8 @@
     return '<nav class="tabbar" aria-label="The Pocket Mirror">' + t('mirrors', TABS.mirrors || 'LISTEN', I.tabMirrors) + t('nudges', TABS.nudges || 'COLLECT', I.tabNudges) + t('podcast', TABS.podcast || 'EXPLORE', I.tabPodcast) + '</nav>';
   }
   function homeTop() {
-    return '<div class="home-top"><p class="wordmark">THE POCKET<br>MIRROR</p>' +
-      (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-step training">MIRROR<span class="g">21</span></a>' : '') + '</div>';
+    return '<div class="home-top"><img class="logo" src="assets/images/pocket-mirror-logo.png" width="640" height="91" alt="The Pocket Mirror">' +
+      (M21 ? '<a class="m21-btn" href="#/mirror21" data-action="m21-open" data-from="top" aria-label="Mirror 21, the 21-step training">' + M21_MARK + '</a>' : '') + '</div>';
   }
   function allMirrorsHeard() { return AVAILABLE.length > 0 && AVAILABLE.every(function (m) { return S.heard[m.n]; }); }
 
@@ -970,7 +1299,7 @@
       body =
         homeTop() +
         markTitle(TITLES.mirrors || ['', 'LISTEN'], 'Listen: the 12 Mirrors') +
-        '<div class="progress"><span>' + heard + ' OF ' + CONFIG.totalMirrors + ' HEARD</span><span class="bar" role="progressbar" aria-label="Mirrors heard" aria-valuemin="0" aria-valuemax="' + CONFIG.totalMirrors + '" aria-valuenow="' + heard + '"><span style="width:' + (100 * heard / CONFIG.totalMirrors).toFixed(1) + '%"></span></span></div>' +
+        tabProgress(heard, CONFIG.totalMirrors, 'HEARD', 'Mirrors heard') +
         a2hsCardHTML() +
         (allMirrorsHeard() && M21 ? m21Card(((M21.cards || {}).allMirrors || [])[0], ((M21.cards || {}).allMirrors || [])[1]) : '') +
         '<ul class="mirror-list">' + MIRRORS.map(mirrorRow).join('') + '</ul>' +
@@ -980,19 +1309,47 @@
     }
 
     if (tab === 'nudges') {
-      var deckKey = S.deck || S.lastPath || 'change';
-      var got = collectedCount(), total = NUDGES.length;
+      // all 21 cards in one arc, deck by deck (white, black, gold: the order of PATHS)
+      var arc = [];
+      PATHS.forEach(function (p) { nudgesOf(p.deck).forEach(function (x) { arc.push(x); }); });
+      var got = collectedCount(), total = arc.length;
+      var want = (DEMO && QS.get('card')) || S.arcCard; // preview.html: ?card=<id> opens on that card
+      var startAt = Math.max(0, arc.map(function (x) { return x.id; }).indexOf(want));
+      if (!want || !nudgeBy(want)) { var firstGot = arc.filter(function (x) { return isCollected(x.id); })[0]; startAt = firstGot ? arc.indexOf(firstGot) : 0; }
+      // just unlocked (came from "SEE MY COLLECTION"): that card turns over from its back, once
+      var flipId = S.arcFlip && isCollected(S.arcFlip) ? S.arcFlip : '';
+      if (S.arcFlip) { S.arcFlip = ''; persist(); }
+      var segs = arc.map(function (x, i) {
+        var cls = (isCollected(x.id) ? 'on' : '') + (i && arc[i - 1].deck !== x.deck ? ' gap' : '');
+        return '<span data-seg' + (cls.trim() ? ' class="' + cls.trim() + '"' : '') + '></span>';
+      }).join('');
       body =
         homeTop() +
-        markTitle(TITLES.nudges || ['', 'COLLECT'], 'Collect: the ' + total + ' nudge cards') +
-        '<div class="progress"><span>' + got + ' OF ' + total + ' COLLECTED</span><span class="bar" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + got + '"><span style="width:' + (100 * got / total).toFixed(1) + '%"></span></span></div>' +
-        '<div class="deck-switch" role="group" aria-label="Choose a deck">' + PATHS.map(function (p) {
-          return '<button type="button" data-deck-key="' + p.key + '" aria-pressed="' + (p.key === deckKey) + '"><img src="' + p.plate + '" alt="">' + esc(p.deckName || p.name) +
-            '<small>' + collectedCount(p.deck) + '/' + nudgesOf(p.deck).length + '</small></button>';
+        '<h1 class="sr-only">Collect: the ' + total + ' nudge cards</h1>' +
+        // 13 OF 21 COLLECTED: the 21 segments in their three decks; the middle card's segment stands taller
+        '<div class="tab-progress arc-progress"><span>' + got + ' OF ' + total + ' COLLECTED</span>' +
+          '<div class="segs" role="progressbar" aria-label="Cards collected" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + got + '">' + segs + '</div></div>' +
+        // the three stages: they light up as you flick into each one; tap one to jump to its first card
+        '<div class="arc-stages" role="group" aria-label="Jump to a stage">' + PATHS.map(function (p) {
+          return '<button type="button" data-stage="' + p.deck + '">' + esc(p.deckName || p.name) + '</button>';
         }).join('') + '</div>' +
-        '<div data-collection></div>';
+        '<p class="arc-ask" data-ask aria-live="polite"></p>' +
+        '<div class="arc" data-arc tabindex="0" role="listbox" aria-label="Your nudge cards. Swipe or use the arrow keys.">' +
+          '<span class="arc-floor" aria-hidden="true"></span><span class="arc-glow" aria-hidden="true"></span>' +
+          // yours = the card's face; not yet = the card back (it turns over once you have it)
+          arc.map(function (x, i) {
+            var have = isCollected(x.id), lazy = Math.abs(i - startAt) > 4 ? ' loading="lazy"' : '';
+            return '<div class="arc-card ' + x.deck + (have ? '' : ' locked') + (x.id === flipId ? ' flip-in' : '') + '" role="option" data-i="' + i + '" aria-label="' + esc(have ? x.text : 'Card not collected yet') + '">' +
+              '<div class="arc-inner">' +
+                '<img class="arc-face" src="' + (have ? cardSrc(x.id, x.deck) : CARD_BACK) + '" alt="" draggable="false"' + lazy + '>' +
+                (x.id === flipId ? '<img class="arc-face arc-back" src="' + CARD_BACK + '" alt="" draggable="false">' : '') +
+              '</div></div>';
+          }).join('') +
+        '</div>' +
+        // what the middle card is: yours (tap to save it) or not yet (tap to hear what unlocks it)
+        '<button type="button" class="arc-info" data-arc-info></button>';
       var due = milestonesDue();
-      extra = viewerHTML() + nudgeSheetHTML(true) + (due.length ? m21PopHTML(due[0]) : '');
+      extra = nudgeSheetHTML(true) + (due.length ? m21PopHTML(due[0]) : '');
       mount = function () {
         track('nudges_view', { collected: got });
         // a collection milestone: the Mirror 21 pop-up rises a moment after the tab opens (once per milestone)
@@ -1003,18 +1360,8 @@
           sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21p-dim').classList.add('open');
           track('m21_milestone_view', { milestone: milestoneKey(due[0]) });
         }, 1200) : 0;
-        var wrap = app.querySelector('[data-collection]');
-        // each deck shows its 7 cards in the order they are listed in content.js
-        function build(key) { wrap.innerHTML = collectionHTML(pathBy(key).deck); }
-        app.querySelector('.deck-switch').addEventListener('click', function (e) {
-          var b = e.target.closest('[data-deck-key]'); if (!b) return;
-          S.deck = b.getAttribute('data-deck-key'); persist();
-          app.querySelectorAll('[data-deck-key]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-          build(S.deck);
-          track('deck_switch', { deck: S.deck });
-        });
-        build(deckKey);
-        return function () { clearTimeout(popT); }; // left before it rose: it waits for the next visit
+        var stopArc = mountArc(arc, startAt);
+        return function () { clearTimeout(popT); stopArc(); }; // left before the pop-up rose: it waits for the next visit
       };
     }
 
@@ -1024,80 +1371,67 @@
         if (!e.audio || !episodeOpen(e)) return 'locked';
         return S.eps[e.n] ? 'heard' : upNext && upNext.n === e.n ? 'next' : 'open';
       };
-      // a swipeable row of episode numbers (the middle one is big), a timeline of dots under them, and the chosen episode below
+      var stateWord = { heard: 'heard', next: 'up next', open: 'open', locked: 'locked' };
+      // a row of cassettes you swipe: white = listen now (it glows: tap it to play), grey = heard,
+      // frosted with a lock = not open yet. Under it: the middle one's title, length and what comes next.
       body =
         homeTop() +
         markTitle(TITLES.podcast || ['', 'EXPLORE'], 'Explore: ' + PODCAST.name + ' podcast') +
-        '<div class="progress white"><span>' + epsHeard + ' OF ' + epsTotal + ' HEARD</span><span class="bar" role="progressbar" aria-label="Episodes heard" aria-valuemin="0" aria-valuemax="' + epsTotal + '" aria-valuenow="' + epsHeard + '"><span style="width:' + (100 * epsHeard / epsTotal).toFixed(1) + '%"></span></span></div>' +
-        // the numbers, timeline and chosen episode sit centred in the space between the title and the tab bar
-        '<div class="ep-stage">' +
-        '<div class="ep-carousel" data-carousel role="listbox" aria-label="Episodes">' + all.map(function (e, i) {
-          return '<button type="button" class="ep-num ' + epState(e) + '" data-i="' + i + '" role="option" aria-label="Episode ' + pad2(e.n) + '">' +
-            '<span class="n">' + pad2(e.n) + '</span><span class="dot"></span>' + (i < all.length - 1 ? '<span class="seg"></span>' : '') + '</button>';
+        tabProgress(epsHeard, epsTotal, 'HEARD', 'Episodes heard') +
+        '<div class="tapes" data-tapes tabindex="0" role="listbox" aria-label="Episodes. Swipe or use the arrow keys; Enter plays the middle one.">' + all.map(function (e, i) {
+          var st = epState(e);
+          return '<div class="tape ' + st + '" data-i="' + i + '" role="option" aria-label="Episode ' + pad2(e.n) + ', ' + stateWord[st] + '">' +
+            '<div class="tape-pic">' + cassetteImg(e, tapeColour(st), i > 3 ? ' loading="lazy"' : '') +
+              (st === 'locked' ? '<span class="tape-lock" aria-hidden="true">' + I.lock + '</span>' : '') + '</div>' +
+            '<p class="tape-n"><span>' + pad2(e.n) + '</span>' +
+              (st === 'heard' ? '<i class="ic-done">' + I.check + '</i>' : st === 'next' ? '<i class="ic-dot"></i>' : '') + '</p>' +
+            (st === 'locked' ? '<p class="tape-locked">LOCKED</p>' : '') +
+          '</div>';
         }).join('') + '</div>' +
-        '<div class="ep-info" aria-live="polite">' +
-          '<p class="ep-label" data-ep-label></p><h2 class="ep-title" data-ep-title></h2><p class="ep-meta" data-ep-meta></p>' +
-          '<div data-ep-cta></div>' +
-        '</div>' +
+        '<div class="tape-info" aria-live="polite">' +
+          '<h2 class="tape-title" data-tape-title></h2><p class="tape-meta" data-tape-meta></p>' +
+          '<p class="tape-hint" data-tape-hint></p>' +
         '</div>';
       mount = function () {
         track('podcast_view');
-        var car = app.querySelector('[data-carousel]'), items = [].slice.call(car.children), cur = -1, raf = 0;
+        var stage = app.querySelector('[data-tapes]'), els = [].slice.call(stage.querySelectorAll('.tape')), cur = -1;
+        var hint = app.querySelector('[data-tape-hint]');
         var playingNow = function (e) { return now && now.kind === 'episode' && now.n === e.n && !audio.paused && !audio.ended; };
-        // the chosen episode, under the numbers
+        // the middle episode: title, length and one grey line (redrawn only when something changed: this also runs on every audio tick)
         var shown = '';
         function info(i) {
-          var e = all[i], st = epState(e), prev = all[i - 1];
+          var e = all[i], st = epState(e), nxt = all[i + 1];
           var key = i + st + playingNow(e);
-          if (key === shown) return; // only redraw when something changed (this runs on every audio tick)
-          shown = key;
-          var label = playingNow(e) ? 'NOW PLAYING' : st === 'heard' ? 'HEARD' : st === 'next' ? 'UP NEXT' : st === 'locked' ? 'LOCKED' : 'OPEN';
-          app.querySelector('[data-ep-label]').textContent = label + ' · EPISODE ' + pad2(e.n);
-          app.querySelector('[data-ep-label]').className = 'ep-label ' + (playingNow(e) ? 'next' : st);
-          app.querySelector('[data-ep-title]').textContent = e.title || 'Coming soon';
-          app.querySelector('[data-ep-meta]').textContent = e.audio ? mins(e.duration) : '';
-          var cta = playingNow(e) ? '<a class="ep-play-btn" href="#/episode/' + e.n + '">OPEN PLAYER</a>'
-            : st === 'locked' ? '<span class="ep-play-btn off">' + I.lock + (e.audio && prev ? esc(lockHint(e, true)) : 'Coming soon') + '</span>'
-            : '<button type="button" class="ep-play-btn" data-action="play-episode" data-n="' + e.n + '">' + I.play + (st === 'heard' ? 'PLAY AGAIN' : 'PLAY') + '</button>';
-          app.querySelector('[data-ep-cta]').innerHTML = cta;
+          if (key === shown) return;
+          shown = key; cur = i;
+          app.querySelector('[data-tape-title]').textContent = e.title || 'Coming soon';
+          app.querySelector('[data-tape-meta]').textContent = e.audio ? mins(e.duration) : '';
+          hint.textContent = playingNow(e) ? 'Now playing · tap to open'
+            : st === 'locked' ? (e.audio && all[i - 1] ? lockHint(e) : 'Coming soon')
+            : st === 'heard' ? 'Tap to listen again'
+            : nxt && epState(nxt) === 'locked' && nxt.audio ? 'Finish ' + pad2(e.n) + ' to unlock ' + pad2(nxt.n)
+            : 'Tap to listen';
         }
-        // sizes follow the scroll: the closer to the middle, the bigger and brighter
-        function measure() {
-          raf = 0;
-          var mid = car.scrollLeft + car.clientWidth / 2, best = 0, bestD = Infinity, w = items[0].offsetWidth;
-          items.forEach(function (el, i) {
-            var d = Math.abs(el.offsetLeft + w / 2 - mid), k = Math.min(1, d / w);
-            el.style.setProperty('--k', k.toFixed(3));
-            if (d < bestD) { bestD = d; best = i; }
-          });
-          if (best !== cur) {
-            if (cur >= 0) items[cur].classList.remove('on');
-            cur = best; items[cur].classList.add('on'); items[cur].setAttribute('aria-selected', 'true');
-            info(cur);
-          }
+        // tap the middle cassette: play it (playing: open the player; locked: say what opens it)
+        function useMiddle() {
+          var e = all[cur]; if (!e) return;
+          if (playingNow(e)) { go('#/episode/' + e.n); return; }
+          if (epState(e) === 'locked') { toast((e.audio && all[cur - 1] ? lockHint(e) : 'Coming soon').toUpperCase()); return; }
+          actions['play-episode']({ getAttribute: function () { return String(e.n); } });
         }
-        function goTo(i, smooth) {
-          var el = items[i];
-          car.scrollTo({ left: el.offsetLeft - (car.clientWidth - el.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
-          if (!smooth) measure();
-        }
-        car.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(measure); }, { passive: true });
-        car.addEventListener('click', function (ev) { var b = ev.target.closest('.ep-num'); if (b) goTo(+b.getAttribute('data-i'), true); });
-        car.addEventListener('keydown', function (ev) {
-          if (ev.key === 'ArrowRight' && cur < items.length - 1) { ev.preventDefault(); goTo(cur + 1, true); items[cur + 1].focus(); }
-          if (ev.key === 'ArrowLeft' && cur > 0) { ev.preventDefault(); goTo(cur - 1, true); items[cur - 1].focus(); }
+        // open on what is playing, otherwise on the next episode to hear (preview.html: ?ep=3 opens on episode 03)
+        var start = (DEMO && QS.get('ep') && episodeBy(+QS.get('ep'))) || (now && now.kind === 'episode' ? episodeBy(now.n) : upNext);
+        var swipe = swipeDeck(stage, els, Math.max(0, all.indexOf(start)), {
+          layout: tapeLayout, unit: 0.84, pick: info, tapMiddle: useMiddle
         });
-        // open on what is playing, otherwise on the next episode to hear
-        var start = now && now.kind === 'episode' ? episodeBy(now.n) : upNext;
-        goTo(Math.max(0, all.indexOf(start)), false);
         podcastSync = function () { if (cur >= 0) info(cur); }; // play / pause changes the button
-        return function () { podcastSync = null; cancelAnimationFrame(raf); };
+        return function () { podcastSync = null; swipe.stop(); };
       };
     }
 
     return {
       // no mini player: an episode keeps playing after you leave it (lock screen controls still work), with no bar on these tabs
-      html: '<section class="screen home">' + body + '</section>' + tabbar(tab) + extra,
+      html: '<section class="screen home' + (tab === 'nudges' ? ' collect' : tab === 'podcast' ? ' explore' : '') + '">' + body + '</section>' + tabbar(tab) + extra,
       mount: mount
     };
   }
@@ -1110,179 +1444,156 @@
     if (!episodeOpen(e)) { toast(lockHint(e).toUpperCase()); go('#/home/podcast'); return null; }
     load('episode', e.n);
     var nxt = EPISODES[EPISODES.indexOf(e) + 1];
+    // the same layout as the Mirror player: artwork (the episode's cassette), title, bar, controls, Best with sound.
+    // No subtitles and no free part. Under the controls: what opens next, and the Mirror 21 card once it is heard.
     var html =
-      '<section class="screen player podcast" data-player data-kind="episode" data-n="' + e.n + '">' +
+      '<section class="screen player mirror-player episode-player" data-player data-kind="episode" data-n="' + e.n + '">' +
         '<div class="topbar"><a class="icon-btn" href="#/home/podcast" aria-label="Back to the podcast">' + I.down + '</a>' +
-          '<p class="eyebrow">' + esc(PODCAST.name) + ' · EPISODE ' + pad2(e.n) + '</p></div>' +
+          '<p class="eyebrow">EPISODE ' + pad2(e.n) + '</p></div>' +
+        '<div class="art tape-art" aria-hidden="true">' + cassetteImg(e, 'white') + '</div>' +
         '<h1>' + esc(e.title) + '</h1>' +
-        // the ring fills as it plays; drag the ring (or its dot) to move through the episode
-        '<div class="dial" data-dial role="slider" tabindex="0" aria-label="Position in the episode" aria-valuemin="0" aria-valuemax="' + Math.round(e.duration) + '" aria-valuenow="0">' +
-          '<svg class="ring" viewBox="0 0 250 250" aria-hidden="true"><circle class="track" cx="125" cy="125" r="115"/>' +
-            '<circle class="prog" data-ring cx="125" cy="125" r="115" stroke-dasharray="' + CIRC.toFixed(2) + '" stroke-dashoffset="' + CIRC.toFixed(2) + '"/>' +
-            '<circle class="knob" data-knob cx="125" cy="10" r="9"/></svg>' +
-          '<div class="dial-time"><b data-left>' + fmt(e.duration) + '</b><small>LEFT</small></div>' +
-        '</div>' +
-        '<div class="transport">' +
-          '<button type="button" class="skip" data-action="skip" data-by="-15" aria-label="Back 15 seconds">' + I.back15 + '</button>' +
-          '<button type="button" class="big-play" data-toggle data-action="toggle" data-kind="episode" data-n="' + e.n + '" aria-label="Play">' + PLAYPAUSE + '</button>' +
-          '<button type="button" class="skip" data-action="skip" data-by="15" aria-label="Forward 15 seconds">' + I.fwd15 + '</button>' +
-        '</div>' +
+        scrubHTML('episode', e, 0) +
+        transportHTML('episode', e.n) +
         (nxt && !episodeOpen(nxt) ? '<p class="next-lock" data-next-lock>' + I.lock + 'Finish this one to open ' + pad2(nxt.n) + '</p>' : '') +
         // Mirror 21 card once the episode is heard; its ✕ hides it for this episode only
         (M21 ? '<div class="m21-end" data-m21-end hidden>' + m21Card(((M21.cards || {}).episodeEnd || [])[0] || 'READY FOR MORE?', ((M21.cards || {}).episodeEnd || [])[1], 'compact') +
           '<button type="button" class="m21-end-x" data-action="m21-end-close" data-n="' + e.n + '" aria-label="Close">' + I.close + '</button></div>' : '') +
+        '<div class="player-foot solo"><p class="sound-hint">' + I.phones + 'Best with sound</p></div>' +
       '</section>';
     return {
       html: html,
       mount: function () {
         track('episode_view', { episode: e.n });
-        var dial = app.querySelector('[data-dial]');
-        var dur = function () { return (isFinite(audio.duration) && audio.duration) || e.duration; };
-        var mine = function () { return now && now.kind === 'episode' && now.n === e.n; };
-        // where the finger is on the ring, as a share of the way round (0 at the top, clockwise)
-        var dragging = false, last = 0;
-        function fractionAt(ev) {
-          var r = dial.getBoundingClientRect();
-          var a = Math.atan2(ev.clientX - (r.left + r.width / 2), -(ev.clientY - (r.top + r.height / 2)));
-          var f = (a < 0 ? a + 2 * Math.PI : a) / (2 * Math.PI);
-          // no jumping across the top: past the end stays at the end, before the start stays at the start
-          if (last > 0.75 && f < 0.25) f = 1; else if (last < 0.25 && f > 0.75) f = 0;
-          return f;
-        }
-        function seek(f) {
-          if (!mine()) load('episode', e.n);
-          last = f;
-          audio.currentTime = Math.min(dur() - 0.25, f * dur());
-          syncUI();
-        }
-        dial.addEventListener('pointerdown', function (ev) {
-          var r = dial.getBoundingClientRect(), dx = ev.clientX - (r.left + r.width / 2), dy = ev.clientY - (r.top + r.height / 2);
-          if (Math.sqrt(dx * dx + dy * dy) < r.width * 0.32) return; // the middle (the countdown) is not the ring
-          dragging = true; last = mine() ? audio.currentTime / dur() : 0;
-          dial.classList.add('dragging');
-          try { dial.setPointerCapture(ev.pointerId); } catch (x) { /* ignore */ }
-          seek(fractionAt(ev));
-        });
-        dial.addEventListener('pointermove', function (ev) { if (dragging) seek(fractionAt(ev)); });
-        function end() { if (!dragging) return; dragging = false; dial.classList.remove('dragging'); track('episode_seek', { episode: e.n }); }
-        dial.addEventListener('pointerup', end);
-        dial.addEventListener('pointercancel', end);
-        dial.addEventListener('keydown', function (ev) {
-          var by = ev.key === 'ArrowRight' || ev.key === 'ArrowUp' ? 5 : ev.key === 'ArrowLeft' || ev.key === 'ArrowDown' ? -5 : 0;
-          if (!by) return;
-          ev.preventDefault();
-          seek(Math.max(0, Math.min(1, ((mine() ? audio.currentTime : 0) + by) / dur())));
-        });
+        bindScrubs('episode', e);
       }
     };
   }
 
-  /* ================================================================ 7 · MIRROR 21 (white) */
-  // Kevin's video in the phone's own full-screen player (Apple's on iPhone: ✕, AirPlay, volume, ±10s, scrubbing…)
-  function playVideo() {
-    var vid = app.querySelector('.m21x-video'); if (!vid) return;
-    var p = vid.play(); // inside the tap, so phones allow sound
-    if (p && p.catch) p.catch(function () {});
-    try {
-      if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();               // iPhone / iPad / Safari: Apple's player
-      else if (vid.requestFullscreen) vid.requestFullscreen().catch(inlineVideo); // Android, Chrome, Firefox
-      else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
-      else inlineVideo();
-    } catch (e) { inlineVideo(); }
+  /* ================================================================ 7 · MIRROR 21 (white)
+     One white screen, no scrolling: YOU KNOW. NOW DO., the line, the phones picture (the part that grows and shrinks
+     with the phone), the gold rule, the points, START MIRROR 21 and "watch the introduction".
+     START MIRROR 21 = Kevin's video; at its end (or SKIP) LET'S FOLLOW THROUGH rises in the middle, over the paused video
+     (FOLLOW THROUGH · $99 → the purchase link; Not now → back to the page). */
+  var filmMode = '';   // 'start' while Kevin's video is open
+  function filmEl() { return document.getElementById('film'); }
+  // open Kevin's video over the page and play it (called inside the tap, so it plays with sound)
+  function openFilm(mode) {
+    var el = filmEl(); if (!el) return;
+    var v = el.querySelector('video');
+    if (!audio.paused) audio.pause(); // never two voices at once
+    filmMode = mode;
+    try { v.currentTime = 0; } catch (x) { /* not loaded yet */ }
+    el.classList.add('open'); el.removeAttribute('inert');
+    var p = v.play(); if (p && p.catch) p.catch(function () {}); // blocked? the play button on his chin starts it
+    track('m21_video_play', { mode: mode });
   }
-  // no full screen possible: show the player right in the photo area instead
-  function inlineVideo() { var ph = app.querySelector('.m21x-photo'); if (ph) ph.classList.add('inline'); }
-  function exitVideo() {
-    var vid = app.querySelector('.m21x-video'); if (!vid) return;
-    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
-    else if (vid.webkitExitFullscreen) { try { vid.webkitExitFullscreen(); } catch (e) { /* not in full screen */ } }
-    stopVideo();
+  // the video ends (or SKIP): it pauses where it is and LET'S FOLLOW THROUGH rises in the middle, over it
+  function finishFilm(how) {
+    var el = filmEl(); if (!el || !el.classList.contains('open')) return;
+    el.querySelector('video').pause();
+    track(how === 'end' ? 'm21_video_end' : 'm21_video_skip');
+    openFollow();
   }
-  // back on the Mirror 21 page: stopped, rewound, the still and play button showing
-  function stopVideo() {
-    var vid = app.querySelector('.m21x-video'); if (!vid) return;
-    vid.pause();
-    try { vid.currentTime = 0; } catch (e) { /* not loaded yet */ }
-    var ph = app.querySelector('.m21x-photo'); if (ph) ph.classList.remove('inline');
+  // back to the page (Not now): the pop-up and the video both close
+  function closeFilm() {
+    var el = filmEl(); if (!el) return;
+    el.querySelector('video').pause();
+    el.classList.remove('open'); el.setAttribute('inert', '');
+    filmMode = '';
+  }
+  function openFollow() {
+    var sheet = document.getElementById('m21f'); if (!sheet) return;
+    sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21f-dim').classList.add('open');
+    track('m21_follow_view');
+  }
+  function closeFollow() {
+    var sheet = document.getElementById('m21f'); if (!sheet) return;
+    sheet.classList.remove('open'); sheet.setAttribute('inert', ''); document.getElementById('m21f-dim').classList.remove('open');
+    closeFilm();
   }
   function mirror21Screen() {
     if (!M21) { go('#/home'); return null; }
-    var heardList = Object.keys(S.heard).filter(function (k) { return S.heard[k]; }).map(Number);
-    var m = mirrorBy(S.lastMirror) || mirrorBy(heardList[heardList.length - 1]) || MIRRORS[0];
-    var after = (m.after || 'I did it.').toUpperCase();
-    // the promise, with its last word in gold
-    var cut = after.lastIndexOf(' ');
-    var promise = cut < 0 ? '<span class="g">' + esc(after) + '</span>'
-      : esc(after.slice(0, cut + 1)) + '<span class="g">' + esc(after.slice(cut + 1)) + '</span>';
     var close = unlocked() ? '#/home' : '#/';
+    var head = M21.headline || ['YOU KNOW.', 'NOW DO.'];
+    var follow = M21.follow || {};
+    var url = esc(M21.url || '#'), ext = M21.url ? ' target="_blank" rel="noopener"' : '';
     var html =
-      // one white screen, no scrolling: the photo is the part that grows and shrinks with the phone
       '<section class="screen m21x">' +
-        '<div class="m21x-top"><p class="m21x-brand">MIRROR<span class="g">21</span></p>' +
+        '<div class="m21x-top"><p class="m21x-brand">' + M21_MARK + '</p>' +
           '<a class="m21x-close" href="' + close + '" aria-label="Close">' + I.close + '</a></div>' +
-        (M21.video
-          // Kevin's video: a still with a play button; tapping opens the phone's own full-screen player
-          // (Apple's on iPhone). The video element stays hidden on the page.
-          ? '<div class="m21x-photo"><img src="' + esc(M21.videoPoster || M21.photo || HOST.photo) + '" alt="">' +
-              '<video class="m21x-video" src="' + esc(M21.video) + '" poster="' + esc(M21.videoPoster || '') + '" preload="metadata" playsinline controls></video>' +
-              '<button type="button" class="m21x-play" data-action="m21-video" aria-label="Play Kevin’s video">' +
-                '<span class="ring">' + I.play + '</span></button></div>'
-          : '<div class="m21x-photo" aria-hidden="true"><img src="' + esc(M21.photo || HOST.photo) + '" alt=""></div>') +
+        (M21.kicker ? '<p class="m21x-kicker">' + esc(M21.kicker) + '</p>' : '') +
+        (head.length === 1
+          // one line, as wide as the screen (data-fit shrinks it to fit)
+          ? '<h1 class="m21x-head one" data-fit><span>' + esc(head[0]) + '</span></h1>'
+          : '<h1 class="m21x-head" style="--lines:' + head.length + '">' + head.map(function (l) { return '<span>' + esc(l) + '</span>'; }).join(' ') + '</h1>') +
+        (M21.sub ? '<p class="m21x-sub">' + esc(M21.sub) + '</p>' : '') +
+        (M21.visual ? '<div class="m21x-visual"><img src="' + esc(M21.visual) + '" alt="Mirror 21 on a phone: Kevin’s video, the 21-step path and a writing step"></div>' : '<div class="m21x-visual"></div>') +
         '<div class="m21x-body">' +
-          '<p class="m21x-lbl">YOU SAID</p>' +
-          '<p class="m21x-said">“' + esc(m.title) + '”</p>' +
-          '<p class="m21x-in">IN 21 STEPS</p>' +
-          '<h1 class="m21x-after"><span class="g">“</span>' + promise + '<span class="g">”</span></h1>' +
+          '<hr class="m21x-rule">' +
           '<ul class="m21x-points">' + (M21.points || []).map(function (t, i) {
             return '<li>' + [I.target, I.checkCircle, I.repeat][i % 3] + '<span>' + esc(t) + '</span></li>';
           }).join('') + '</ul>' +
-          '<a class="btn-gold" data-action="m21-go" href="' + esc(M21.url || '#') + '"' + (M21.url ? ' target="_blank" rel="noopener"' : '') + '>START MIRROR 21 · ' + esc(M21.price) + '</a>' +
-          '<button type="button" class="m21x-how" data-action="m21-how">See how it works' + I.chevUp + '</button>' +
+          (M21.video
+            ? '<button type="button" class="btn-gold ink" data-action="m21-start">START ' + M21_MARK + '</button>'
+            : '<a class="btn-gold ink" data-action="m21-go" href="' + url + '"' + ext + '>START ' + M21_MARK + '</a>') +
         '</div>' +
       '</section>' +
-      '<div class="dim" id="m21h-dim" data-action="m21-how-close"></div>' +
-      '<section class="sheet m21-how" id="m21h" role="dialog" aria-modal="true" aria-labelledby="m21h-title" inert>' +
-        '<span class="grab" aria-hidden="true"></span>' +
-        '<h2 id="m21h-title">HOW MIRROR 21 WORKS</h2>' +
-        (M21.howSub ? '<p class="how-sub">' + esc(M21.howSub) + '</p>' : '') +
-        '<ul class="stages">' + (M21.stages || []).map(function (s, i) {
-          return '<li><span class="lab"><small>STEPS ' + esc(s.steps) + '</small><b' + (i === 2 ? ' class="g"' : '') + '>' + esc(s.name) + '</b></span><span class="say">' + esc(s.line) + '</span></li>';
-        }).join('') + '</ul>' +
-        '<p class="each">' + esc(M21.eachLabel || 'EACH STEP') + '</p>' +
-        '<ul class="each-step">' + (M21.eachStep || []).map(function (d, i) {
-          return '<li>' + [I.phones, I.video, I.bolt, I.checkCircle][i % 4] + '<b>' + esc(d[0]) + '</b><span>' + esc(d[1]) + '</span></li>';
-        }).join('') + '</ul>' +
-        '<button type="button" class="m21-got" data-action="m21-how-close">GOT IT</button>' +
+      // Kevin's video, full screen over the page: sharp across the width in the middle, fading into black
+      (M21.video ?
+      '<section class="intro film paused" id="film" role="dialog" aria-modal="true" aria-label="Kevin on Mirror 21" inert>' +
+        '<div class="film-frame" data-film-frame>' +
+          '<video class="intro-video" src="' + esc(M21.video) + '"' + (M21.videoPoster ? ' poster="' + esc(M21.videoPoster) + '"' : '') + ' preload="metadata" playsinline webkit-playsinline></video>' +
+          '<button type="button" class="intro-play" data-action="film-toggle" aria-label="Play"><span class="ring">' + I.play + '</span></button>' +
+        '</div>' +
+        '<div class="intro-bar" aria-hidden="true"><span data-film-fill></span></div>' +
+        '<button type="button" class="intro-skip" data-action="film-skip">SKIP</button>' +
+        '<div class="intro-head"><p class="intro-meta" data-film-meta></p><p class="intro-title">' + M21_MARK + '</p></div>' +
+      '</section>' : '') +
+      // at the end of the video (or SKIP): LET'S FOLLOW THROUGH, in the middle of the screen, over the paused video
+      '<div class="dim" id="m21f-dim" data-action="follow-close"></div>' +
+      '<section class="sheet m21-pop center" id="m21f" role="dialog" aria-modal="true" aria-labelledby="m21f-title" inert>' +
+        '<p class="m21-pop-brand">' + M21_MARK + '</p>' +
+        '<h2 id="m21f-title">' + esc(follow.title || 'LET’S FOLLOW THROUGH.') + '</h2>' +
+        '<p class="m21-pop-line">' + esc(follow.line || M21.tagline || '') + '</p>' +
+        '<a class="btn-gold ink" data-action="m21-go" href="' + url + '"' + ext + '>' + esc(follow.button || 'FOLLOW THROUGH') + ' · ' + esc(M21.price) + '</a>' +
+        '<button type="button" class="link" data-action="follow-close">Not now</button>' +
       '</section>';
     return {
       html: html,
       mount: function () {
-        track('m21_view', { mirror: m.n });
+        track('m21_view');
         var root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
         root.classList.add('is-light'); if (meta) meta.setAttribute('content', '#ffffff');
-        // size the photo so its fade (the bottom 30% is plain white) ends just above YOU SAID, on any phone
-        var photo = app.querySelector('.m21x-photo'), body = app.querySelector('.m21x-body');
-        function fitPhoto() {
-          var h = (body.offsetTop - 8 - photo.offsetTop) / 0.7;
-          photo.style.height = Math.max(0, Math.round(h)) + 'px';
-        }
-        fitPhoto();
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPhoto);
-        window.addEventListener('resize', fitPhoto);
-        // the phone's player: when it is closed (or the video ends), stop and rewind, back to the page
-        var vid = app.querySelector('.m21x-video');
-        var onFsChange = function () { if (!(document.fullscreenElement || document.webkitFullscreenElement)) stopVideo(); };
-        if (vid) {
-          vid.addEventListener('webkitendfullscreen', stopVideo); // iPhone: ✕ / Done in Apple's player
-          document.addEventListener('fullscreenchange', onFsChange);
-          document.addEventListener('webkitfullscreenchange', onFsChange);
-          vid.addEventListener('ended', function () { track('m21_video_end'); exitVideo(); });
+        var film = filmEl(), v = film && film.querySelector('video'), onKey = null;
+        if (v) {
+          var fill = film.querySelector('[data-film-fill]'), metaEl = film.querySelector('[data-film-meta]');
+          var sync = function () {
+            var d = isFinite(v.duration) && v.duration ? v.duration : (M21.videoSeconds || 37);
+            film.classList.toggle('paused', v.paused || v.ended);
+            fill.style.width = (100 * Math.min(1, v.currentTime / d)).toFixed(2) + '%';
+            metaEl.textContent = v.currentTime > 0.5 ? fmt(v.currentTime) + ' / ' + fmt(d) : fmt(d);
+          };
+          ['play', 'pause', 'timeupdate', 'loadedmetadata'].forEach(function (ev) { v.addEventListener(ev, sync); });
+          v.addEventListener('ended', function () { finishFilm('end'); });
+          // tap Kevin = pause / play
+          film.querySelector('[data-film-frame]').addEventListener('click', function (e) {
+            if (e.target.closest('.intro-play')) return;
+            if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
+          });
+          onKey = function (e) {
+            var popOpen = (document.getElementById('m21f') || {}).classList && document.getElementById('m21f').classList.contains('open');
+            if (popOpen) { if (e.key === 'Escape') closeFollow(); return; }
+            if (!film.classList.contains('open')) return;
+            if (e.key === ' ') { e.preventDefault(); if (v.paused) v.play(); else v.pause(); }
+            else if (e.key === 'Escape') finishFilm('skip');
+          };
+          document.addEventListener('keydown', onKey);
+          sync();
         }
         return function () {
-          window.removeEventListener('resize', fitPhoto);
-          document.removeEventListener('fullscreenchange', onFsChange);
-          document.removeEventListener('webkitfullscreenchange', onFsChange);
-          if (vid) vid.pause();
+          if (v) v.pause();
+          if (onKey) document.removeEventListener('keydown', onKey);
+          filmMode = '';
           root.classList.remove('is-light'); if (meta) meta.setAttribute('content', '#0a0a0a');
         };
       }
@@ -1316,6 +1627,31 @@
       if (!now || now.kind !== kind || now.n !== n) { load(kind, n); audio.currentTime = 0; }
       if (audio.paused || audio.ended) play(); else audio.pause();
     },
+    // FIND MY MIRROR: the first time, MEET KEVIN (started right here, inside the tap, so it plays with sound); after that, the Mirrors
+    'find-mirror': function (el, e) {
+      if (!INTRO || S.introSeen || unlocked()) return; // the link itself goes to the Mirrors
+      e.preventDefault();
+      var p = introVideo().play(); if (p && p.catch) p.catch(function () {}); // blocked? the banner's play button starts it
+      go('#/intro');
+    },
+    'intro-toggle': function () { toggleIntro(); },
+    'intro-again': function () {
+      if (!introVid) return;
+      try { introVid.currentTime = 0; } catch (x) { /* not loaded */ }
+      var p = introVid.play(); if (p && p.catch) p.catch(function () {});
+      track('intro_again');
+    },
+    'intro-done': function (el) { introDone(el.getAttribute('data-how') || 'skip'); },
+    'subs-open': function () {
+      S.cc = true; persist();
+      openSubs();
+      track('subtitles_on', { mirror: now && now.n });
+    },
+    'subs-close': function () {
+      S.cc = false; persist();
+      closeSubs();
+      track('subtitles_off', { mirror: now && now.n });
+    },
     'skip': function (el) {
       var d = (isFinite(audio.duration) && audio.duration) || 0;
       audio.currentTime = Math.max(0, Math.min(d || Infinity, audio.currentTime + (+el.getAttribute('data-by'))));
@@ -1338,20 +1674,14 @@
       var card = el.closest('[data-m21-end]'); if (card) card.hidden = true;
       track('m21_episode_card_close', { episode: +el.getAttribute('data-n') });
     },
-    'm21-video': function () {
-      if (!audio.paused) audio.pause(); // never two voices at once: a Mirror or episode playing in the background stops
-      playVideo();
-      track('m21_video_play');
+    // Mirror 21 page: START = Kevin's video then LET'S FOLLOW THROUGH; "watch the introduction" = the video only
+    'm21-start': function () { openFilm('start'); },
+    'film-toggle': function () {
+      var el = filmEl(), v = el && el.querySelector('video'); if (!v) return;
+      if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
     },
-    'm21-how': function () {
-      var sheet = document.getElementById('m21h'); if (!sheet) return;
-      sheet.removeAttribute('inert'); sheet.classList.add('open'); document.getElementById('m21h-dim').classList.add('open');
-      track('m21_how');
-    },
-    'm21-how-close': function () {
-      var sheet = document.getElementById('m21h'); if (!sheet) return;
-      sheet.classList.remove('open'); sheet.setAttribute('inert', ''); document.getElementById('m21h-dim').classList.remove('open');
-    },
+    'film-skip': function () { finishFilm('skip'); },
+    'follow-close': function () { closeFollow(); track('m21_follow_close'); },
     'm21p-close': function () {
       var sheet = document.getElementById('m21p'); if (!sheet) return;
       sheet.classList.remove('open'); sheet.setAttribute('inert', '');
@@ -1360,7 +1690,14 @@
     },
     'see-deck': function (el) {
       var p = PATHS.filter(function (x) { return x.deck === el.getAttribute('data-deck'); })[0];
-      if (p) { S.deck = p.key; persist(); }
+      if (p) S.deck = p.key;
+      if (el.getAttribute('data-id')) S.arcCard = S.arcFlip = el.getAttribute('data-id'); // COLLECT opens on the card just unlocked, and turns it over
+      persist();
+    },
+    // COLLECT: the middle card is yours → straight to "Make it your lock screen" (save / share)
+    'arc-save': function (el) {
+      openNudgeSheet(el.getAttribute('data-id'), el.getAttribute('data-deck'));
+      track('nudge_open', { nudge: el.getAttribute('data-id') });
     },
     'ns-save': function (el) {
       if (!nsCur) return;
@@ -1406,7 +1743,7 @@
     },
     'start-over': function () {
       audio.pause(); audio.removeAttribute('src'); now = null;
-      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.m21Shown = {}; S.m21EndHidden = {}; S.pending = []; S.deck = ''; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
+      S.email = ''; S.heard = {}; S.eps = {}; S.saved = {}; S.m21Shown = {}; S.m21EndHidden = {}; S.pending = []; S.deck = ''; S.arcCard = ''; S.arcFlip = ''; S.introSeen = false; S.lastPath = ''; S.joinedAt = 0; S.lastMirror = 0; S.a2hsDone = false;
       try { history.replaceState(null, '', location.pathname + location.hash); } catch (x) { /* ignore */ } // drop the home-screen unlock
       go('#/');
     },

@@ -26,17 +26,21 @@ pocket-mirror/
 | # | Screen | What happens |
 |---|---|---|
 | 1 | Landing | "The mirror never changes. You do." The 3 plates orbit an endless circle (SEE IT in the middle, OWN IT right, CHANGE IT left). They follow your finger and keep turning in either direction: the plate leaving one side swings round behind the middle one and comes back in on the other. The middle one glows and its line shows underneath ("Something's off, and I can't name it."). **Tap the plate to open it.** "TAP TO OPEN" appears each time a plate lands in the middle, then fades. |
+| 1b | Meet Kevin | **First time only**, tapping FIND MY MIRROR opens Kevin's intro video full screen, in colour, with sound, a black fade over his hands. Playing: just Kevin, a thin progress line and a barely visible SKIP. Tap to pause: **MEET KEVIN** (top left) and the play button (on his chin) come back. At the end: **WATCH AGAIN** or **LET'S BEGIN** (on to "Which one is you?"). The file is `assets/video/meet-kevin.mp4`, a smaller copy of `assets/Pocket Mirror Beginning (1).mp4`; set in `INTRO` in `content.js`. |
 | 2 | Which one is you? | The Mirrors for that path, as a list. "See all 12 Mirrors" shows everything. |
-| 3 | Kevin's voice | Ring timer, plus captions: one line at a time, the word Kevin is saying in bold white, upcoming words grey. Plays free until **0:40**, then pauses. |
+| 3 | Kevin's voice | Spotify-like player: Daily Xcellence artwork, the title, a bar you can drag (the free part is lighter before the email), back 15 · play · forward 15, then **Subtitles** and "Best with sound". **Subtitles** opens a full-screen layer: the line just said in grey, the line Kevin is saying with each word turning white as he says it. It stays on for the next Mirror. Plays free until **0:40**, then pauses (dragging or skipping past it does the same). |
 | 4 | Unlock | Sheet slides up: Kevin, "HEAR THE REST.", what unlocks, email field. "Not now" goes back to the list. |
 | 5 | Unlocked | Audio carries on from 0:40. Toast: "Unlocked · all Mirrors". |
 | 6 | Take one with you | 3 nudge cards matched to that Mirror, in the path's colour (See it = white, Own it = black, Change it = gold). "• TAP TO FLIP" shows for 2 seconds each time a card lands in the middle. The back says **IS THIS YOU?** and the 3 lines. Once flipped, "↑ SWIPE UP TO SAVE" shows for 2 seconds. **Swipe the card up** and it flies out of the deck, then the lock-screen sheet rises with **SAVE TO MY PHONE**; when you close it the card drops back with a gold glow and a tick. Tap = flip, sideways = next card, up = keep. |
-| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **21 NUDGES** (your collection: 3 decks of 7, each card unlocked by one Mirror or episode) · **12 EPISODES** (The Mirror podcast, opening one at a time; an episode keeps playing if you leave it, with no bar on the tabs). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
+| 7 | Home | Tabs: **12 MIRRORS** (with progress) · **COLLECT** (all 21 cards in one arc you flick through, white deck then black then gold; AWARENESS · ACCEPTANCE · ACTION light up as you go and jump to a deck; cards you don't have yet show dark and blurred with a lock, and tapping one plays the Mirror or episode that unlocks it; tapping one you have opens "Make it your lock screen") · **12 EPISODES** (The Mirror podcast, opening one at a time; an episode keeps playing if you leave it, with no bar on the tabs). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
 | 8 | Mirror 21 | The $99 21-day training, the only white screen (see below). |
 
 No tab bar before the email. Returning visitors who already gave their email go straight to Home.
 
 ## Podcast: 12 EPISODES
+
+On the **EXPLORE** tab the episodes are cassettes you swipe through: **grey** = heard, **white** = you can listen to it now, **black** = locked. The middle one shows its title, length and **LISTEN NOW**. The episode player uses the same layout as the Mirror player, with the cassette as the artwork.
+The cassette pictures are `assets/images/cassettes/ep-01-white.webp` (… `-grey`, `-black`, one set per episode), set by `PODCAST.cassette` in `content.js`. A missing one falls back to the plain cassette of that colour. Still missing: **ep-12-white**.
 
 Episode 1 is open after the email. Each next episode opens when the previous one is finished ("EPISODE 02 UNLOCKED").
 Locked episodes show their title, a lock, and "Finish Episode 01 to open". Missing episodes (like 07) are skipped.
@@ -52,16 +56,14 @@ Never before the email, so the free part feels like a gift. After the email it i
 4. **Line after saving a nudge** from the 21 NUDGES tab: "Want Kevin with you for 21 steps?"
 5. **Milestone pop-ups** on the 21 NUDGES tab (3, 7, 14, 21 cards and each finished deck): `MIRROR21.milestones`.
 
-The MIRROR 21 button and cards are **white**, the only white things in the dark app. They open the **Mirror 21 page**: one white screen that never scrolls, on any phone (the photo of Kevin shrinks on short phones so the rest always fits):
+The MIRROR 21 button and cards are **white**, the only white things in the dark app. They open the **Mirror 21 page**: one white screen that never scrolls, on any phone (the phones picture shrinks on short phones so the rest always fits):
 
-- **MIRROR 21** and a ✕ (back to Home), Kevin's photo (`photo`),
-- **YOU SAID** with the Mirror they last listened to, in gold and crossed out,
-- **IN 21 STEPS** and that Mirror's "after" line in big letters, its last word in gold ("I'M BACK IN CONTROL."),
-- three short points (`points`), the gold **START MIRROR 21 · $99** button, and **See how it works**,
-- which slides up a sheet: the three stages (`stages`: steps 01–07 SEE IT, 08–14 OWN IT, 15–21 CHANGE IT) and each step (`eachStep`: Listen, Learn, Act, Check).
+- **MIRROR 21** and a ✕ (back to Home),
+- **YOU KNOW. NOW DO.** (`headline`), "21 guided steps to put one change into practice." (`sub`),
+- the three phones (`visual`: a web copy of `assets/images/Mirror 21 visuals.png`), a gold rule, the three points (`points`),
+- the black **START MIRROR 21** button: Kevin's video (`video`) full screen. At its end (or on SKIP) the **LET'S FOLLOW THROUGH** pop-up (`follow`) rises in the middle, over the paused video, with **FOLLOW THROUGH · $99**, which opens `MIRROR21.url`. **Not now** closes it and the video, back to the page.
 
-Each Mirror's "after" line is `after` in `MIRRORS`. The rest of the page copy is in `MIRROR21`.
-Put your Mirror 21 page or Stripe checkout link in `MIRROR21.url`. Until then the button says "Link coming soon". The card wording is in `MIRROR21.cards`.
+Put your Mirror 21 page or Stripe checkout link in `MIRROR21.url`. Until then FOLLOW THROUGH shows "Link coming soon". The card wording is in `MIRROR21.cards`.
 Events: `pm_m21_open` (with where it was tapped), `pm_m21_view`, `pm_m21_click`. People who click are your A list.
 
 ## Captions (Mirrors 01–05)
