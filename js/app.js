@@ -12,7 +12,7 @@
  *   #/unlocked/<kind>/<n>  4 · Card unlocked (straight after a Mirror or episode is finished for the first time)
  *   #/home[/tab]       5 · Home after email: mirrors | nudges | podcast
  *   #/episode/<n>      6 · Podcast episode player
- *   #/mirror21         7 · Mirror 21, the $99 training (white)
+ *   #/mirror21         7 · Mirror 21, the $39.99 training (white)
  *
  * Deep links (for QR codes):
  *   ?src=london-talk   tags every email captured from that link
@@ -1001,15 +1001,18 @@
       o.pick(k);
     }
     function done() { if (o.settle) o.settle(picked); }
+    // glide to `target`: the same speed on every screen (60 or 120 frames a second), easing out at the end
     function spin() {
       cancelAnimationFrame(raf);
       if (reduce) { pos = target; place(); mark(); done(); return; }
-      (function step() {
-        pos += (target - pos) * 0.18;
+      var lastT = 0;
+      (function step(t) {
+        var dt = lastT ? Math.min(64, t - lastT) : 16.7; lastT = t;
+        pos += (target - pos) * (1 - Math.pow(0.82, dt / 16.7));
         if (Math.abs(target - pos) < 0.002) { pos = target; place(); mark(); done(); return; }
         place(); mark();
         raf = requestAnimationFrame(step);
-      })();
+      })(performance.now());
     }
     function goTo(k) { target = Math.max(0, Math.min(last, k)); spin(); }
 
@@ -1021,8 +1024,11 @@
       middleTap = false;
       o.tapMiddle(picked);
     });
+    // the last moments of the drag, to know how fast the finger was going when it let go (momentum)
+    var trail = [];
     stage.addEventListener('pointerdown', function (e) {
       turning = true; dragged = false; grab = e.clientX; grabPos = pos;
+      trail = [{ t: performance.now(), p: pos }];
       var el = e.target; while (el && el !== stage && els.indexOf(el) < 0) el = el.parentNode;
       pressed = els.indexOf(el) >= 0 ? el : null;
       cancelAnimationFrame(raf);
@@ -1037,6 +1043,9 @@
       var d = e.clientX - grab;
       if (Math.abs(d) > 5) dragged = true;
       pos = Math.max(-0.4, Math.min(last + 0.4, grabPos - d / (width() * (o.unit || 0.56))));
+      var t = performance.now();
+      trail.push({ t: t, p: pos });
+      while (trail.length > 2 && t - trail[0].t > 120) trail.shift();
       drawSoon();
     });
     function letGo(cancelled) {
@@ -1051,8 +1060,13 @@
         if (k === picked) { middleTap = true; setTimeout(function () { middleTap = false; }, 600); } // the click right after runs tapMiddle
         else goTo(k);
       } else {
-        if (dragged && o.flicked) o.flicked(Math.max(0, Math.min(last, Math.round(pos))));
-        goTo(Math.round(pos));
+        // momentum: a quick flick carries on a few items and glides to a stop; a slow drag settles on the nearest one
+        var tUp = performance.now(), first = trail[0], v = 0;
+        if (first && tUp - first.t > 8) v = (pos - first.p) / (tUp - first.t);   // items per ms
+        if (tUp - (trail.length ? trail[trail.length - 1].t : tUp) > 100) v = 0; // the finger stopped before letting go
+        var to = Math.round(pos + Math.max(-4, Math.min(4, v * 260)));
+        if (dragged && o.flicked) o.flicked(Math.max(0, Math.min(last, to)));
+        goTo(to);
       }
     }
     stage.addEventListener('pointerup', function () { letGo(false); });
@@ -1537,7 +1551,7 @@
      One white screen, no scrolling: YOU KNOW. NOW DO., the line, the phones picture (the part that grows and shrinks
      with the phone), the gold rule, the points, START MIRROR 21 and "watch the introduction".
      START MIRROR 21 = Kevin's video; at its end (or SKIP) LET'S FOLLOW THROUGH rises in the middle, over the paused video
-     (FOLLOW THROUGH · $99 → the purchase link; Not now → back to the page). */
+     (FOLLOW THROUGH · price → the purchase link; Not now → back to the page). */
   var filmMode = '';   // 'start' while Kevin's video is open
   function filmEl() { return document.getElementById('film'); }
   // open Kevin's video over the page and play it (called inside the tap, so it plays with sound)

@@ -33,7 +33,7 @@ pocket-mirror/
 | 5 | Unlocked | Audio carries on from 0:40. Toast: "Unlocked · all Mirrors". |
 | 6 | Take one with you | 3 nudge cards matched to that Mirror, in the path's colour (See it = white, Own it = black, Change it = gold). "• TAP TO FLIP" shows for 2 seconds each time a card lands in the middle. The back says **IS THIS YOU?** and the 3 lines. Once flipped, "↑ SWIPE UP TO SAVE" shows for 2 seconds. **Swipe the card up** and it flies out of the deck, then the lock-screen sheet rises with **SAVE TO MY PHONE**; when you close it the card drops back with a gold glow and a tick. Tap = flip, sideways = next card, up = keep. |
 | 7 | Home | Tabs: **12 MIRRORS** (with progress) · **COLLECT** (all 21 cards in one arc you flick through, white deck then black then gold; AWARENESS · ACCEPTANCE · ACTION light up as you go and jump to a deck; cards you don't have yet show dark and blurred with a lock, and tapping one plays the Mirror or episode that unlocks it; tapping one you have opens "Make it your lock screen") · **12 EPISODES** (The Mirror podcast, opening one at a time; an episode keeps playing if you leave it, with no bar on the tabs). White **MIRROR 21** button top right. After the first full Mirror, a one-time "Keep it on your phone" card. |
-| 8 | Mirror 21 | The $99 21-day training, the only white screen (see below). |
+| 8 | Mirror 21 | The $39.99 21-day training, the only white screen (see below). |
 
 No tab bar before the email. Returning visitors who already gave their email go straight to Home.
 
@@ -46,7 +46,7 @@ Episode 1 is open after the email. Each next episode opens when the previous one
 Locked episodes show their title, a lock, and "Finish Episode 01 to open". Missing episodes (like 07) are skipped.
 Prefer a weekly drip? Set `podcastUnlock: 'weekly'` (one new episode every `podcastEveryDays`, counted from sign-up), or `'all'` to open everything.
 
-## Mirror 21 (the $99 training)
+## Mirror 21 (the $39.99 training)
 
 Never before the email, so the free part feels like a gift. After the email it is always one tap away:
 
@@ -61,7 +61,7 @@ The MIRROR 21 button and cards are **white**, the only white things in the dark 
 - **MIRROR 21** and a ✕ (back to Home),
 - **YOU KNOW. NOW DO.** (`headline`), "21 guided steps to put one change into practice." (`sub`),
 - the three phones (`visual`: a web copy of `assets/images/Mirror 21 visuals.png`), a gold rule, the three points (`points`),
-- the black **START MIRROR 21** button: Kevin's video (`video`) full screen. At its end (or on SKIP) the **LET'S FOLLOW THROUGH** pop-up (`follow`) rises in the middle, over the paused video, with **FOLLOW THROUGH · $99**, which opens `MIRROR21.url`. **Not now** closes it and the video, back to the page.
+- the black **START MIRROR 21** button: Kevin's video (`video`) full screen. At its end (or on SKIP) the **LET'S FOLLOW THROUGH** pop-up (`follow`) rises in the middle, over the paused video, with **FOLLOW THROUGH · $39.99** (the price is `MIRROR21.price`), which opens `MIRROR21.url`. **Not now** closes it and the video, back to the page.
 
 Put your Mirror 21 page or Stripe checkout link in `MIRROR21.url`. Until then FOLLOW THROUGH shows "Link coming soon". The card wording is in `MIRROR21.cards`.
 Events: `pm_m21_open` (with where it was tapped), `pm_m21_view`, `pm_m21_click`. People who click are your A list.

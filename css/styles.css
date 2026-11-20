@@ -502,6 +502,7 @@ html.locked body { position: fixed; inset: 0; width: 100%; }
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
 }
 .arc.dragging { cursor: grabbing; }
+.arc, .tapes { contain: layout paint; }   /* what happens inside never makes the rest of the page redraw */
 .arc:focus-visible { outline-offset: -4px; }
 .arc { --card-h: min(84%, 340px, 88vw); --floor: calc(47% + var(--card-h) / 2 + 22px); }   /* the light sits just under the cards */
 /* moved frame by frame from app.js (swipeDeck): no CSS transition here, it would fight the glide and make cards lag and pile up */

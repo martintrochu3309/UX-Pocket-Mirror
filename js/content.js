@@ -176,7 +176,7 @@ window.PM_CONTENT = {
   },
   TABS: { mirrors: 'LISTEN', nudges: 'COLLECT', podcast: 'EXPLORE' },
 
-  /* ------------------------------------------------------------- Mirror 21 (the $99 course)
+  /* ------------------------------------------------------------- Mirror 21 (the $39.99 course)
    * Never before the email. After the email it is always one tap away:
    *   · the gold MIRROR 21 button, top right of every Home tab
    *   · a big card on 12 MIRRORS once every available Mirror has been heard
@@ -186,7 +186,7 @@ window.PM_CONTENT = {
   MIRROR21: {
     // Where "START MIRROR 21" goes: your Mirror 21 page or a Stripe checkout link. '' = "Link coming soon".
     url: '',
-    price: '$99',
+    price: '$39.99',
     cards: {
       allMirrors: ['YOU’VE LOOKED IN EVERY MIRROR', 'Now live it in 21 steps, with Kevin.'],
       episodeEnd: ['READY FOR MORE?', '21 steps. One change. Kevin with you every step.'],
