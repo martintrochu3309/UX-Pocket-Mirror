@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pocket Mirror Dashboard</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="../assets/images/icon-192.png?v=2">
+  <!--
+    THE POCKET MIRROR · dashboard
+    Sign in with an email + password from Supabase (project Mirro21). Only the emails listed in pocket.admins
+    get data: the database refuses everyone else (function public.pm_dashboard). The page itself holds no data.
+    Data: one call, pm_dashboard(days), for the chosen period. Charts: Chart.js. Login: supabase-js.
+  -->
+  <style>
+    @font-face { font-family: "Magistral"; src: url("../assets/fonts/magistral-bold-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-light.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+
+    :root {
+      color-scheme: dark;
+      --page: #0a0a0a;
+      --surface: #161616;          /* cards and charts */
+      --surface-2: #1f1f1f;
+      --line: rgba(255, 255, 255, .10);
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --ink: #f2f2ef;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --gold: #e0b84c;             /* the 21 of the MIRROR 21 logotype only */
+      --error: #e66767;
+      --good: #0ca30c;
+      --series-1: #3987e5;         /* validated on #161616, dark: blue · orange · aqua (+ yellow for 4-slice donuts) */
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --display: "Magistral", "Arial Narrow", Arial, sans-serif;
+      --text: "Neue Haas Display", "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--page); color: var(--ink); }
+    body { font: 500 14px/1.5 var(--text); -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+    :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+    .mark { font: italic 700 1em/1 var(--display); letter-spacing: -.01em; white-space: nowrap; margin-right: .12em; }
+    .mark b { font-weight: inherit; color: var(--gold); }
+
+    /* ---------- login ---------- */
+    .login { display: grid; place-items: center; min-height: 100dvh; padding: 24px 16px; }
+    .login-card { width: min(100%, 380px); }
+    .login-card img { display: block; width: 170px; height: auto; mix-blend-mode: screen; }
+    .login-card h1 { margin: 22px 0 0; font: italic 700 32px/1 var(--display); letter-spacing: -.03em; }
+    .login-card p.sub { margin: 8px 0 0; color: var(--ink-2); }
+    .field { display: block; margin-top: 16px; }
+    .field span { display: block; margin-bottom: 6px; font: 700 11px/1 var(--text); letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+    .field input { width: 100%; height: 50px; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); font-size: 16px; }
+    .field input:focus { outline: none; border-color: var(--ink); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 50px; padding: 0 22px; border: 0; border-radius: 999px;
+      background: var(--ink); color: var(--page); font: 700 12px/1 var(--text); letter-spacing: .14em; text-transform: uppercase; }
+    .btn.block { width: 100%; margin-top: 22px; }
+    .btn.ghost { height: 36px; padding: 0 14px; background: none; color: var(--ink); border: 1px solid var(--line); font-size: 11px; }
+    .btn[disabled] { opacity: .5; cursor: default; }
+    .link-btn { margin-top: 14px; padding: 6px 0; border: 0; background: none; color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; }
+    .msg { min-height: 20px; margin: 12px 0 0; color: var(--ink-2); }
+    .msg.err { color: var(--error); }
+
+    /* ---------- app ---------- */
+    .app { max-width: 1240px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 16px 48px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand img { width: 140px; height: auto; mix-blend-mode: screen; }
+    .brand span { font: 700 11px/1 var(--text); letter-spacing: .2em; color: var(--muted); }
+    .who { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+    .controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .chips { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+    .chips button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font: 700 11px/1 var(--text); letter-spacing: .1em; }
+    .chips button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+    .stamp { color: var(--muted); font-size: 12px; }
+    .tabs { display: flex; gap: 2px; margin-top: 18px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs button { flex: none; padding: 12px 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted);
+      font: italic 700 15px/1 var(--display); letter-spacing: -.01em; }
+    .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+    .panel { margin-top: 18px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+    .span-12 { grid-column: span 12; } .span-8 { grid-column: span 8; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; }
+    @media (max-width: 900px) { .span-8, .span-6, .span-4 { grid-column: span 12; } }
+    .card { position: relative; padding: 16px 18px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0; }
+    .card h2 { margin: 0; font: italic 700 18px/1.15 var(--display); letter-spacing: -.02em; }
+    .card .q { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .tbl-toggle { flex: none; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--ink-2); font: 700 10px/1 var(--text); letter-spacing: .14em; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; color: var(--ink-2); font-size: 12px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+    .chart { position: relative; height: 260px; margin-top: 12px; }
+    .chart.tall { height: 340px; }
+    /* a chart with its numbered key beside it (the funnel); the key drops under the chart on narrow screens */
+    .with-side { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 18px; align-items: start; }
+    .with-side .chart { height: 360px; }
+    .key { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 12px; }
+    .key li { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline; color: var(--ink-2); line-height: 1.25; }
+    .key b { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .key li > span:last-child { color: var(--ink); font-variant-numeric: tabular-nums; }
+    @media (max-width: 700px) { .with-side { grid-template-columns: 1fr; } .with-side .chart { height: 260px; } }
+    .empty { display: grid; place-items: center; height: 160px; color: var(--muted); font-style: italic; }
+
+    /* headline numbers */
+    .tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+    @media (max-width: 520px) {
+      .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .tile.hero { grid-column: span 2; }
+      .tiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+      .tiles.four .tile.hero { grid-column: auto; }
+      .tiles.four .tile { padding: 9px 8px 10px; }
+      .tiles.four .tile .label { font-size: 10px; }
+      .tiles.four .tile .value, .tiles.four .tile.hero .value { font-size: 19px; }
+      .tiles.four .tile .note { display: none; }
+      .tile.hero .value { font-size: 36px; }
+      .tile .value { font-size: 26px; }
+      .rows .row-l { grid-template-columns: 1fr; gap: 4px; }
+      .brand img { width: 120px; }
+      .top #who:not(.demo) { display: none; }
+    }
+    .tile { padding: 14px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+    .tile .label { color: var(--ink-2); font-size: 13px; }
+    .tile .value { margin-top: 6px; font: 700 30px/1 var(--text); letter-spacing: -.01em; }
+    .tile .note { margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .tile.hero .value { font-size: 48px; }
+    .tiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* always one row of four, also on a phone (smaller type there) */
+    @media (max-width: 900px) {
+      .tiles.four { gap: 8px; }
+      .tiles.four .tile { padding: 10px 10px 12px; border-radius: 14px; }
+      .tiles.four .tile .label { font-size: 11px; line-height: 1.25; }
+      .tiles.four .tile .value, .tiles.four .tile.hero .value { font-size: 22px; }
+      .tiles.four .tile .note { font-size: 10px; line-height: 1.3; }
+    }
+
+    /* HTML bar rows (funnels, rankings) */
+    .rows { margin-top: 14px; display: grid; gap: 10px; }
+    .row-l { display: grid; grid-template-columns: minmax(130px, 34%) 1fr; align-items: center; gap: 12px; }
+    .row-l .name { color: var(--ink-2); font-size: 13px; line-height: 1.25; }
+    .bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .bar { height: 18px; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--series-1); }
+    .bar-val { flex: none; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .bar-val small { color: var(--muted); font-size: 12px; margin-left: 6px; }
+
+    /* tables */
+    .tbl-wrap { margin-top: 12px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    th { color: var(--muted); font: 700 10px/1.2 var(--text); letter-spacing: .14em; text-transform: uppercase; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: rgba(255, 255, 255, .02); }
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); font-size: 11px; }
+    .pill.on { border-color: rgba(230, 103, 103, .5); color: #f0a3a3; }
+    .pill.good { border-color: rgba(12, 163, 12, .55); color: #7fd47f; }
+
+    .people-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .people-tools input { flex: 1 1 220px; height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+    .people-tools select { height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+    .count { color: var(--muted); font-size: 12px; }
+
+    .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 10, 10, .6); z-index: 5; color: var(--ink-2); }
+  </style>
+</head>
+<body>
+
+  <!-- ===== sign in ===== -->
+  <section class="login" id="login" hidden>
+    <form class="login-card" id="login-form" novalidate>
+      <img src="../assets/images/pocket-mirror-logo.png" alt="The Pocket Mirror">
+      <h1>DASHBOARD</h1>
+      <p class="sub">Sign in with your email and password.</p>
+      <label class="field"><span>Email</span><input id="email" type="email" autocomplete="username" required></label>
+      <label class="field"><span>Password</span><input id="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn block" type="submit" id="login-btn">Sign in</button>
+      <button class="link-btn" type="button" id="forgot">Forgot password?</button>
+      <p class="msg" id="login-msg" role="alert"></p>
+    </form>
+    <!-- after a password-reset email link -->
+    <form class="login-card" id="reset-form" novalidate hidden>
+      <img src="../assets/images/pocket-mirror-logo.png" alt="The Pocket Mirror">
+      <h1>NEW PASSWORD</h1>
+      <p class="sub">Choose a new password (12 characters or more).</p>
+      <label class="field"><span>New password</span><input id="new-password" type="password" autocomplete="new-password" minlength="12" required></label>
+      <button class="btn block" type="submit">Save password</button>
+      <p class="msg" id="reset-msg" role="alert"></p>
+    </form>
+  </section>
+
+  <!-- ===== dashboard ===== -->
+  <main class="app" id="app" hidden>
+    <div class="top">
+      <div class="brand"><img src="../assets/images/pocket-mirror-logo.png" alt="The Pocket Mirror"><span>DASHBOARD</span></div>
+      <div class="who"><span id="who"></span><button class="btn ghost" id="logout" type="button">Sign out</button></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Period" id="period">
+        <button type="button" data-days="7">7 DAYS</button>
+        <button type="button" data-days="30">30 DAYS</button>
+        <button type="button" data-days="90">90 DAYS</button>
+        <button type="button" data-days="0">ALL TIME</button>
+      </div>
+      <div class="who"><span class="stamp" id="stamp"></span><button class="btn ghost" id="refresh" type="button">Refresh</button></div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" type="button" data-tab="overview">Overview</button>
+      <button role="tab" type="button" data-tab="mirrors">Mirrors</button>
+      <button role="tab" type="button" data-tab="podcast">Podcast &amp; cards</button>
+      <button role="tab" type="button" data-tab="m21"><span class="mark">MIRROR <b>21</b></span></button>
+      <button role="tab" type="button" data-tab="links">Links</button>
+      <button role="tab" type="button" data-tab="people">People</button>
+    </nav>
+    <section class="panel" id="panel" role="tabpanel"></section>
+  </main>
+
+  <div class="overlay" id="loading" hidden>Loading…</div>
+
+  <script src="../js/content.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var CONFIG = (window.PM_CONTENT && window.PM_CONTENT.CONFIG) || {};
+    var $ = function (id) { return document.getElementById(id); };
+    // ?demo = made-up sample data, no sign-in, no call to Supabase (used by preview.html)
+    var DEMO = /[?&]demo\b/.test(location.search);
+    var sb = DEMO ? null : window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'pm-dashboard-auth' }
+    });
+
+    /* ---------------- small helpers ---------------- */
+    var css = getComputedStyle(document.documentElement);
+    var C = {
+      s1: css.getPropertyValue('--series-1').trim(), s2: css.getPropertyValue('--series-2').trim(),
+      s3: css.getPropertyValue('--series-3').trim(), s4: css.getPropertyValue('--series-4').trim(),
+      ink: css.getPropertyValue('--ink').trim(), ink2: css.getPropertyValue('--ink-2').trim(), muted: css.getPropertyValue('--muted').trim(),
+      grid: css.getPropertyValue('--grid').trim(), axis: css.getPropertyValue('--axis').trim(), surface: css.getPropertyValue('--surface').trim()
+    };
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function n(v) { return Number(v || 0); }
+    function fmt(v) { return n(v).toLocaleString('en-GB'); }
+    function pct(a, b) { return b ? Math.round(100 * a / b) + '%' : '–'; }
+    function pad2(v) { return String(v).padStart(2, '0'); }
+    // "Mirror 21" in text → the MIRROR 21 logotype (input already escaped)
+    function m21(html) { return String(html).replace(/MIRROR 21|Mirror 21/g, '<span class="mark">MIRROR <b>21</b></span>'); }
+    function money(cents, cur, whole) {
+      try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur || 'USD', minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(n(cents) / 100); }
+      catch (e) { return (n(cents) / 100).toFixed(2) + ' ' + (cur || ''); }
+    }
+    function dayLabel(d) { var x = new Date(d + 'T00:00:00'); return x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+    function when(ts) { if (!ts) return '–'; var x = new Date(ts); return x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + x.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+    function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+    /* ---------------- Chart.js look (thin marks, recessive grid, one axis) ---------------- */
+    Chart.defaults.font.family = '"Neue Haas Display", "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = C.muted;
+    Chart.defaults.borderColor = C.grid;
+    Chart.defaults.plugins.legend.display = false;          // our own HTML legend (text in ink, swatch beside it)
+    Chart.defaults.plugins.tooltip.backgroundColor = '#0d0d0d';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,.14)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.titleColor = C.ink;
+    Chart.defaults.plugins.tooltip.bodyColor = C.ink2;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.tooltip.boxPadding = 4;
+    Chart.defaults.maintainAspectRatio = false;
+
+    var charts = [];
+    function destroyCharts() { charts.forEach(function (c) { c.destroy(); }); charts = []; }
+
+    // one card: title, question, optional legend, the chart (or a table), and a Table toggle (every chart has a table view)
+    function cardHTML(id, span, title, q, opts) {
+      opts = opts || {};
+      return '<div class="card ' + span + '"><div class="card-head"><div><h2>' + m21(title) + '</h2>' + (q ? '<p class="q">' + m21(q) + '</p>' : '') + '</div>' +
+        (opts.noTable ? '' : '<button class="tbl-toggle" type="button" data-tbl="' + id + '">TABLE</button>') + '</div>' +
+        (opts.legend ? '<div class="legend">' + opts.legend.map(function (l) { return '<span><i style="background:' + l[1] + '"></i>' + m21(esc(l[0])) + '</span>'; }).join('') + '</div>' : '') +
+        (opts.side ? '<div class="with-side">' : '') +
+        '<div class="chart' + (opts.tall ? ' tall' : '') + '" id="c-' + id + '"><canvas aria-label="' + esc(title) + '" role="img"></canvas></div>' +
+        (opts.side ? opts.side + '</div>' : '') +
+        '<div class="tbl-wrap" id="t-' + id + '" hidden></div></div>';
+    }
+    var tables = {};  // id → {head, rows}
+    function bars(id, labels, series, o) {
+      o = o || {};
+      // o.names = full names for short axis labels (e.g. funnel step 3 → "Reached 0:40"): used in the tooltip and the table
+      tables[id] = { head: [o.xTitle || ''].concat(series.map(function (s) { return s.label; })), rows: labels.map(function (l, i) { return [o.names ? l + ' · ' + o.names[i] : l].concat(series.map(function (s) { return s.data[i]; })); }) };
+      var total = series.reduce(function (a, s) { return a + s.data.reduce(function (x, y) { return x + n(y); }, 0); }, 0);
+      var host = $('c-' + id);
+      if (!total) { host.innerHTML = '<div class="empty">No data for this period yet</div>'; return; }
+      var ctx = host.querySelector('canvas');
+      var c = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: series.map(function (s) {
+          return { label: s.label, data: s.data, backgroundColor: s.color, maxBarThickness: 24, borderRadius: { topLeft: 4, topRight: 4, bottomLeft: o.stacked ? 0 : 0, bottomRight: 0 },
+                   borderSkipped: 'start', borderWidth: o.stacked ? { top: 2 } : 0, borderColor: C.surface, type: s.type || 'bar',
+                   pointRadius: s.type === 'line' ? 4 : 0, pointBackgroundColor: s.color, pointBorderColor: C.surface, pointBorderWidth: 2, borderJoinStyle: 'round', tension: 0.25,
+                   order: s.type === 'line' ? 0 : 1, fill: false, categoryPercentage: 0.7, barPercentage: 0.9 };
+        }) },
+        options: {
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { stacked: !!o.stacked, grid: { display: false }, border: { color: C.axis }, ticks: { color: C.muted, maxRotation: 0, autoSkipPadding: 10 } },
+            y: { stacked: !!o.stacked, beginAtZero: true, grid: { color: C.grid, lineWidth: 1 }, border: { display: false },
+                 ticks: { color: C.muted, precision: 0, callback: o.money ? function (v) { return money(v * 100, o.currency, true); } : undefined } }
+          },
+          plugins: { tooltip: { callbacks: Object.assign({},
+            o.money ? { label: function (t) { return ' ' + t.dataset.label + ': ' + money(t.raw * 100, o.currency); } } : {},
+            o.names ? { title: function (t) { return t[0].label + ' · ' + o.names[t[0].dataIndex]; } } : {},
+            o.labelNote ? { afterLabel: function (t) { return o.labelNote(t.dataIndex); } } : {}) } }
+        }
+      });
+      // lines (e.g. new emails over the people columns) get their own line style
+      c.data.datasets.forEach(function (d) { if (d.type === 'line') { d.borderColor = d.backgroundColor; d.borderWidth = 2; } });
+      c.update('none');
+      charts.push(c);
+    }
+    function donut(id, labels, data, colors) {
+      tables[id] = { head: ['', 'Count', 'Share'], rows: labels.map(function (l, i) { var t = data.reduce(function (a, b) { return a + n(b); }, 0); return [l, data[i], pct(data[i], t)]; }) };
+      var host = $('c-' + id), total = data.reduce(function (a, b) { return a + n(b); }, 0);
+      if (!total) { host.innerHTML = '<div class="empty">No data for this period yet</div>'; return; }
+      charts.push(new Chart(host.querySelector('canvas'), {
+        type: 'doughnut',
+        data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderColor: C.surface, borderWidth: 2, hoverOffset: 4 }] },
+        options: { cutout: '62%', plugins: { tooltip: { callbacks: { label: function (t) { return ' ' + t.label + ': ' + fmt(t.raw) + ' (' + pct(t.raw, total) + ')'; } } } } }
+      }));
+    }
+    // HTML bar rows: each step with its count, the share of the first step, and the share kept from the previous step
+    // (left out where a step isn't a subset of the one above, e.g. the podcast branch after "Finished all 12")
+    function funnelRows(steps) {
+      var top = n(steps[0] && steps[0].people), max = Math.max.apply(null, steps.map(function (s) { return n(s.people); }).concat([1]));
+      return '<div class="rows">' + steps.map(function (s, i) {
+        var prev = i ? n(steps[i - 1].people) : 0, v = n(s.people);
+        var note = i ? (v <= prev ? pct(v, prev) + ' of previous · ' : '') + pct(v, top) + ' of all' : '';
+        return '<div class="row-l"><span class="name">' + m21(esc(s.step)) + '</span><span class="bar-wrap"><span class="bar" style="width:' + (100 * v / max).toFixed(1) + '%"></span>' +
+          '<span class="bar-val">' + fmt(v) + (note ? '<small>' + note + '</small>' : '') + '</span></span></div>';
+      }).join('') + '</div>';
+    }
+    function rankRows(items, label, value, note) {
+      var max = Math.max.apply(null, items.map(function (x) { return n(value(x)); }).concat([1]));
+      if (!items.length || !items.some(function (x) { return n(value(x)); })) return '<div class="empty">No data for this period yet</div>';
+      return '<div class="rows">' + items.map(function (x) {
+        return '<div class="row-l"><span class="name">' + m21(esc(label(x))) + '</span><span class="bar-wrap"><span class="bar" style="width:' + (100 * n(value(x)) / max).toFixed(1) + '%"></span>' +
+          '<span class="bar-val">' + fmt(value(x)) + (note ? '<small>' + esc(note(x)) + '</small>' : '') + '</span></span></div>';
+      }).join('') + '</div>';
+    }
+    function tableHTML(head, rows, numFrom) {
+      numFrom = numFrom == null ? 1 : numFrom;
+      return '<table><thead><tr>' + head.map(function (h, i) { return '<th' + (i >= numFrom ? ' class="num"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i >= numFrom ? ' class="num"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }
+    function tile(label, value, note, hero) {
+      return '<div class="tile' + (hero ? ' hero' : '') + '"><div class="label">' + label + '</div><div class="value">' + value + '</div>' + (note ? '<div class="note">' + note + '</div>' : '') + '</div>';
+    }
+
+    /* ---------------- state ---------------- */
+    var DATA = null;
+    var days = +(store('pm-dash-days') || 30);
+    var tab = store('pm-dash-tab') || 'overview';
+
+    /* ---------------- tabs ---------------- */
+    var R = {};
+
+    R.overview = function (d) {
+      var k = d.kpis;
+      var html =
+        // 1 · the four headline numbers  2 · day by day  3 · four more numbers  4 · new vs returning + funnel  5 · where people stop
+        // (purchases and revenue live on the MIRROR 21 tab)
+        '<div class="tiles four">' +
+          tile('People on the app', fmt(k.people), fmt(k.new_people) + ' new · ' + fmt(k.returning) + ' came back', true) +
+          tile('Reached 0:40', fmt(k.reached_0_40), 'the email ask') +
+          tile('New emails', fmt(k.new_emails), pct(k.new_emails, k.reached_0_40) + ' of those who reached 0:40') +
+          tile('Mirrors finished', fmt(k.mirrors_finished)) +
+        '</div>' +
+        '<div class="grid" style="margin-top:14px">' +
+          cardHTML('daily', 'span-12', 'People on the app, day by day', 'New and returning people; the line is new emails.', { legend: [['New', C.s1], ['Returning', C.s2], ['New emails', C.s3]] }) +
+        '</div>' +
+        '<div class="tiles four" style="margin-top:14px">' +
+          tile('Episodes finished', fmt(k.episodes_finished)) +
+          tile('Cards collected', fmt(k.cards)) +
+          tile('<span class="mark">MIRROR <b>21</b></span> visits', fmt(k.m21_visits)) +
+          tile('FOLLOW THROUGH taps', fmt(k.follow_taps)) +
+        '</div>' +
+        '<div class="grid" style="margin-top:14px">' +
+          cardHTML('newret', 'span-4', 'New vs returning', 'Who used the app in this period.', { legend: [['New', C.s1], ['Returning', C.s2]] }) +
+          cardHTML('funnel', 'span-8', 'The funnel', 'People at each step. The numbers under the columns match the list.', {
+            side: '<ol class="key">' + d.funnel.map(function (s, i) {
+              return '<li><b>' + (i + 1) + '</b><span>' + m21(esc(s.step)) + '</span><span>' + fmt(s.people) + '</span></li>';
+            }).join('') + '</ol>' }) +
+          '<div class="card span-12"><h2>Where people stop</h2><p class="q">Furthest step reached, for people inactive 48 hours or more.</p>' +
+            rankRows(d.stopped.filter(function (s) { return n(s.stopped); }), function (s) { return s.step.replace(/^\d+\s/, ''); }, function (s) { return s.stopped; },
+              function (s) { return 'of ' + fmt(s.everyone) + ' who got there'; }) + '</div>' +
+        '</div>';
+      $('panel').innerHTML = html;
+      var daily = d.daily || [];
+      bars('daily', daily.map(function (r) { return dayLabel(r.day); }), [
+        { label: 'New', data: daily.map(function (r) { return n(r.new_people); }), color: C.s1 },
+        { label: 'Returning', data: daily.map(function (r) { return n(r.returning); }), color: C.s2 },
+        { label: 'New emails', data: daily.map(function (r) { return n(r.new_emails); }), color: C.s3, type: 'line' }
+      ], { stacked: true, xTitle: 'Day' });
+      donut('newret', ['New', 'Returning'], [n(k.new_people), n(k.returning)], [C.s1, C.s2]);
+      var f = d.funnel || [], top = n(f[0] && f[0].people);
+      bars('funnel', f.map(function (s, i) { return String(i + 1); }), [{ label: 'People', data: f.map(function (s) { return n(s.people); }), color: C.s1 }], {
+        xTitle: 'Step', names: f.map(function (s) { return s.step; }),
+        labelNote: function (i) {
+          var v = n(f[i].people), prev = i ? n(f[i - 1].people) : 0;
+          return i ? ' ' + pct(v, top) + ' of all' + (v <= prev ? ' · ' + pct(v, prev) + ' of step ' + i : '') : '';
+        }
+      });
+    };
+
+    R.mirrors = function (d) {
+      var m = d.mirrors || [];
+      var first = m.slice().sort(function (a, b) { return n(b.first_for) - n(a.first_for); }).filter(function (x) { return n(x.first_for); });
+      $('panel').innerHTML =
+        '<div class="grid">' +
+          cardHTML('mirrors', 'span-12', 'Mirrors 01–12', 'Opened, reached 0:40 (the email ask), finished to the end.', { legend: [['Opened', C.s1], ['Reached 0:40', C.s2], ['Finished', C.s3]], tall: true }) +
+          '<div class="card span-6"><h2>First Mirror</h2><p class="q">The Mirror people open first.</p>' +
+            rankRows(first, function (x) { return 'Mirror ' + pad2(x.mirror); }, function (x) { return x.first_for; }) + '</div>' +
+          '<div class="card span-6"><h2>What comes next</h2><p class="q">The 10 most common moves from one Mirror to the next.</p>' +
+            rankRows(d.mirror_next || [], function (x) { return 'Mirror ' + pad2(x.from_mirror) + ' → ' + pad2(x.to_mirror); }, function (x) { return x.people; }) + '</div>' +
+          cardHTML('depthm', 'span-12', 'How many Mirrors people hear before they stop', 'People inactive 48 hours or more, by Mirrors finished (0–12).') +
+        '</div>';
+      bars('mirrors', m.map(function (x) { return pad2(x.mirror); }), [
+        { label: 'Opened', data: m.map(function (x) { return n(x.opened); }), color: C.s1 },
+        { label: 'Reached 0:40', data: m.map(function (x) { return n(x.reached_0_40); }), color: C.s2 },
+        { label: 'Finished', data: m.map(function (x) { return n(x.finished); }), color: C.s3 }
+      ], { xTitle: 'Mirror' });
+      var dm = (d.depth && d.depth.mirrors) || [];
+      bars('depthm', dm.map(function (x) { return String(x.heard); }), [{ label: 'People who stopped', data: dm.map(function (x) { return n(x.stopped); }), color: C.s1 }], { xTitle: 'Mirrors heard' });
+    };
+
+    R.podcast = function (d) {
+      var p = d.podcast || [], de = (d.depth && d.depth.episodes) || [], cards = d.cards || [];
+      $('panel').innerHTML =
+        '<div class="grid">' +
+          cardHTML('podcast', 'span-12', 'Podcast episodes 01–12', 'Started and finished, per episode.', { legend: [['Started', C.s1], ['Finished', C.s3]], tall: true }) +
+          cardHTML('depthe', 'span-6', 'Episodes heard before stopping', 'People inactive 48 hours or more, by episodes finished (0–12).') +
+          cardHTML('cards', 'span-6', 'Cards collected', 'How many people have 0, 1, 2 … 21 cards.') +
+        '</div>';
+      bars('podcast', p.map(function (x) { return pad2(x.episode); }), [
+        { label: 'Started', data: p.map(function (x) { return n(x.started); }), color: C.s1 },
+        { label: 'Finished', data: p.map(function (x) { return n(x.finished); }), color: C.s3 }
+      ], { xTitle: 'Episode' });
+      bars('depthe', de.map(function (x) { return String(x.heard); }), [{ label: 'People who stopped', data: de.map(function (x) { return n(x.stopped); }), color: C.s1 }], { xTitle: 'Episodes heard' });
+      bars('cards', cards.map(function (x) { return String(x.cards); }), [{ label: 'People', data: cards.map(function (x) { return n(x.people); }), color: C.s1 }], { xTitle: 'Cards' });
+    };
+
+    R.m21 = function (d) {
+      var prog = d.m21_progress || [], from = d.m21_from || [], daily = d.daily || [];
+      // where it was opened from: three groups (three colours is the most a donut can carry safely)
+      var groups = { 'Top button': 0, 'Mirror 21 card': 0, 'Milestone pop-up & other': 0 };
+      from.forEach(function (x) {
+        var s = x.source || '';
+        var g = s === 'top' ? 'Top button' : (s === 'card' || s === 'compact') ? 'Mirror 21 card' : 'Milestone pop-up & other';
+        groups[g] += n(x.opens);
+      });
+      var gl = Object.keys(groups);
+      $('panel').innerHTML =
+        '<div class="grid">' +
+          '<div class="card span-6"><h2><span class="mark">MIRROR <b>21</b></span> funnel</h2><p class="q">From the page to the purchase.</p>' + funnelRows(d.m21_funnel || []) + '</div>' +
+          cardHTML('m21from', 'span-6', 'Where Mirror 21 is opened from', 'Which door people use.', { legend: [['Top button', C.s1], ['Mirror 21 card', C.s2], ['Milestone pop-up & other', C.s3]] }) +
+          cardHTML('m21prog', 'span-12', 'When are people ready?', 'Mirror 21 visits and FOLLOW THROUGH taps, by how many Mirrors people had heard at the time.', { legend: [['Visits', C.s1], ['FOLLOW THROUGH taps', C.s2]] }) +
+          cardHTML('rev', 'span-6', 'Revenue, day by day', 'Mirror 21 purchases (live payments only).', { }) +
+          cardHTML('buys', 'span-6', 'Purchases, day by day', 'Number of Mirror 21 purchases.', { }) +
+        '</div>';
+      donut('m21from', gl, gl.map(function (g) { return groups[g]; }), [C.s1, C.s2, C.s3]);
+      bars('m21prog', prog.map(function (x) { return String(x.mirrors_heard); }), [
+        { label: 'Visits', data: prog.map(function (x) { return n(x.visits); }), color: C.s1 },
+        { label: 'FOLLOW THROUGH taps', data: prog.map(function (x) { return n(x.taps); }), color: C.s2 }
+      ], { xTitle: 'Mirrors heard' });
+      bars('rev', daily.map(function (r) { return dayLabel(r.day); }), [{ label: 'Revenue', data: daily.map(function (r) { return n(r.revenue) / 100; }), color: C.s1 }], { money: true, currency: d.currency, xTitle: 'Day' });
+      bars('buys', daily.map(function (r) { return dayLabel(r.day); }), [{ label: 'Purchases', data: daily.map(function (r) { return n(r.purchases); }), color: C.s1 }], { xTitle: 'Day' });
+    };
+
+    R.links = function (d) {
+      var l = d.links || [];
+      $('panel').innerHTML =
+        '<div class="grid">' +
+          cardHTML('links', 'span-12', 'Links and QR codes', 'People who came in through each link (?src=…, "direct" = no tag) and how many gave their email.', { legend: [['People', C.s1], ['Emails', C.s3]], tall: true }) +
+          '<div class="card span-12"><h2>Every link</h2><p class="q">Conversion = emails ÷ people.</p><div class="tbl-wrap">' +
+            (l.length ? tableHTML(['Link', 'People', 'Opened a Mirror', 'Reached 0:40', 'Emails', 'Conversion'],
+              l.map(function (x) { return [x.link, fmt(x.people), fmt(x.opened_mirror), fmt(x.reached_0_40), fmt(x.emails), pct(x.emails, x.people)]; })) : '<div class="empty">No data for this period yet</div>') +
+          '</div></div>' +
+        '</div>';
+      bars('links', l.map(function (x) { return x.link; }), [
+        { label: 'People', data: l.map(function (x) { return n(x.people); }), color: C.s1 },
+        { label: 'Emails', data: l.map(function (x) { return n(x.emails); }), color: C.s3 }
+      ], { xTitle: 'Link' });
+    };
+
+    var peopleFilter = 'all', peopleQuery = '';
+    R.people = function (d) {
+      $('panel').innerHTML =
+        '<div class="card"><h2>People</h2><p class="q">Everyone who gave their email and was active in this period. Times are your local time.</p>' +
+          '<div class="people-tools">' +
+            '<input type="search" id="pq" placeholder="Search email, link or step" value="' + esc(peopleQuery) + '">' +
+            '<select id="pf"><option value="all">Everyone</option><option value="inactive">Inactive 48h+</option><option value="remind">Reminder candidates</option><option value="almost">Almost bought</option><option value="bought">Bought</option></select>' +
+            '<button class="btn ghost" id="csv" type="button">Download CSV</button>' +
+            '<span class="count" id="pc"></span>' +
+          '</div><div class="tbl-wrap" id="ptable"></div></div>';
+      $('pf').value = peopleFilter;
+      var draw = function () {
+        var rows = peopleRows(d);
+        $('pc').textContent = fmt(rows.length) + ' people';
+        $('ptable').innerHTML = rows.length ? '<table><thead><tr><th>Email</th><th>Link</th><th>Furthest step</th><th class="num">Mirrors</th><th class="num">Episodes</th><th class="num">Cards</th><th class="num">M21 visits</th><th>Last active</th><th>Status</th><th>Suggested email</th></tr></thead><tbody>' +
+          rows.map(function (p) {
+            var status = p.bought_at ? '<span class="pill good">Bought</span>' : p.unsubscribed ? '<span class="pill">Unsubscribed</span>' : p.inactive_48h ? '<span class="pill on">Inactive ' + Math.floor(n(p.hours_inactive) / 24) + 'd</span>' : '<span class="pill">Active</span>';
+            return '<tr><td>' + esc(p.email) + '</td><td>' + esc(p.link) + '</td><td>' + m21(esc(String(p.furthest_step).replace(/^\d+\s/, ''))) + '</td>' +
+              '<td class="num">' + fmt(p.mirrors_heard) + '</td><td class="num">' + fmt(p.episodes_heard) + '</td><td class="num">' + fmt(p.cards) + '</td><td class="num">' + fmt(p.m21_visits) + '</td>' +
+              '<td>' + when(p.last_active) + '</td><td>' + status + '</td><td>' + esc(p.suggested_email || '') + '</td></tr>';
+          }).join('') + '</tbody></table>' : '<div class="empty">Nobody here for this period yet</div>';
+      };
+      $('pq').addEventListener('input', function () { peopleQuery = this.value; draw(); });
+      $('pf').addEventListener('change', function () { peopleFilter = this.value; draw(); });
+      $('csv').addEventListener('click', function () { downloadCSV(peopleRows(d)); });
+      draw();
+    };
+    function peopleRows(d) {
+      var q = peopleQuery.trim().toLowerCase();
+      return (d.people || []).filter(function (p) {
+        if (peopleFilter === 'inactive' && !p.inactive_48h) return false;
+        if (peopleFilter === 'remind' && !p.suggested_email) return false;
+        if (peopleFilter === 'almost' && !/^(09|10)/.test(p.furthest_step || '')) return false;
+        if (peopleFilter === 'bought' && !p.bought_at) return false;
+        if (!q) return true;
+        return [p.email, p.link, p.furthest_step, p.suggested_email].join(' ').toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    function downloadCSV(rows) {
+      var head = ['email', 'link', 'furthest_step', 'mirrors_heard', 'episodes_heard', 'cards', 'm21_visits', 'last_mirror', 'last_episode', 'first_seen', 'last_active', 'hours_inactive', 'inactive_48h', 'bought_at', 'unsubscribed', 'suggested_email'];
+      var cell = function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      var csv = [head.join(',')].concat(rows.map(function (p) { return head.map(function (h) { return cell(p[h]); }).join(','); })).join('\n');
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = 'pocket-mirror-people-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    }
+
+    function render() {
+      destroyCharts(); tables = {};
+      document.querySelectorAll('#tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-tab') === tab)); });
+      document.querySelectorAll('#period button').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-days') === days)); });
+      if (!DATA) return;
+      (R[tab] || R.overview)(DATA);
+      $('stamp').textContent = 'Updated ' + when(DATA.generated_at);
+    }
+
+    /* the Table toggle on each chart card */
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tbl]'); if (!b) return;
+      var id = b.getAttribute('data-tbl'), t = tables[id], box = $('t-' + id), chart = $('c-' + id);
+      if (!t || !box) return;
+      var show = box.hidden;
+      box.innerHTML = show ? tableHTML(t.head, t.rows.map(function (r) { return r.map(function (c, i) { return i ? (typeof c === 'number' ? fmt(c) : c) : c; }); })) : '';
+      box.hidden = !show; chart.hidden = show;
+      b.textContent = show ? 'CHART' : 'TABLE';
+    });
+
+    /* ---------------- sample data (?demo only: made up, the same every time) ---------------- */
+    function sample(p) {
+      var seed = 7; function r() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      var nd = p > 0 ? p : 120, sc = nd / 30, i, d0 = new Date(); d0.setDate(d0.getDate() - nd + 1);
+      var daily = [];
+      for (i = 0; i < nd; i++) {
+        var d = new Date(d0); d.setDate(d0.getDate() + i);
+        var np = Math.round(3 + 6 * r() + 8 * i / nd), rt = Math.round(1 + 5 * r() + 7 * i / nd), buy = r() < 0.12 ? 1 : 0;
+        daily.push({ day: d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()), people: np + rt, new_people: np, returning: rt,
+          new_emails: Math.round(np * (0.25 + 0.2 * r())), purchases: buy, revenue: buy * 3999 });
+      }
+      var sum = function (k) { return daily.reduce(function (a, x) { return a + x[k]; }, 0); };
+      var newp = sum('new_people'), ret = Math.round(sum('returning') * 0.45), people = newp + ret, emails = sum('new_emails'), buys = sum('purchases');
+      var reached = Math.round(emails / 0.38), m21v = Math.round(emails * 0.7), taps = Math.round(m21v * 0.4);
+      var fv = [people, Math.round(people * 0.78), reached, emails, Math.round(emails * 0.82), Math.round(emails * 0.45), Math.round(emails * 0.2),
+                Math.round(emails * 0.32), Math.round(emails * 0.24), Math.round(emails * 0.17), Math.round(emails * 0.15), taps, buys];
+      var fs = ['Opened the Pocket Mirror', 'Opened a Mirror', 'Reached 0:40 (email ask)', 'Gave their email', 'Finished a Mirror', 'Finished 3+ Mirrors', 'Finished 6+ Mirrors',
+                'Opened Mirror 21', 'Started the Mirror 21 video', 'Watched it to the end', 'Saw LET’S FOLLOW THROUGH', 'Tapped FOLLOW THROUGH', 'Bought Mirror 21'];
+      var ss = ['01 Opened the app', '02 Opened a Mirror', '03 Reached 0:40', '04 Gave their email', '05 Finished a Mirror', '06 Opened Mirror 21', '07 Started the Mirror 21 video',
+                '08 Watched the Mirror 21 video', '09 Saw LET’S FOLLOW THROUGH', '10 Tapped FOLLOW THROUGH', '11 Bought Mirror 21'];
+      var sv = [people - fv[1], fv[1] - reached, reached - emails, Math.round(emails * 0.3), Math.round(emails * 0.25), Math.round(emails * 0.06), Math.round(emails * 0.04), Math.round(emails * 0.03), Math.round(emails * 0.03), Math.round(taps * 0.5), 0];
+      var mirrors = [], podcast = [], cards = [], dm = [], de = [];
+      for (i = 1; i <= 12; i++) {
+        var o = Math.round(fv[1] * 0.55 / Math.pow(i, 0.8));
+        mirrors.push({ mirror: i, opened: o, reached_0_40: Math.round(o * 0.72), finished: Math.round(o * (i <= 5 ? 0.5 : 0.42)), first_for: i <= 4 ? Math.round(fv[1] * [0.34, 0.27, 0.22, 0.17][i - 1]) : 0 });
+        podcast.push({ episode: i, started: Math.round(fv[7] * 1.6 / Math.pow(i, 0.9)), finished: Math.round(fv[7] * 1.1 / Math.pow(i, 0.95)) });
+      }
+      for (i = 0; i <= 21; i++) cards.push({ cards: i, people: Math.max(0, Math.round(emails * 0.22 * Math.exp(-i / 5))) });
+      for (i = 0; i <= 12; i++) { dm.push({ heard: i, stopped: Math.round(emails * 0.5 * Math.exp(-i / 2.4)), everyone: 0 }); de.push({ heard: i, stopped: Math.round(emails * 0.6 * Math.exp(-i / 1.6)), everyone: 0 }); }
+      var names = ['alex', 'sam', 'jordan', 'chris', 'taylor', 'morgan', 'jamie', 'casey', 'riley', 'drew', 'pat', 'robin', 'lee', 'kim', 'max', 'charlie', 'frankie', 'jo'];
+      var links = ['direct', 'qr-event', 'instagram', 'newsletter'], list = [];
+      for (i = 0; i < Math.min(emails, 60); i++) {
+        var h = Math.round(Math.pow(r(), 1.6) * 24 * Math.min(nd, 30)), mh = Math.floor(r() * 13), step = ss[Math.min(10, 3 + Math.floor(Math.pow(r(), 1.5) * 8))];
+        var bought = step.indexOf('11') === 0, inactive = h >= 48 && !bought;
+        list.push({ email: names[i % names.length] + (i >= names.length ? i : '') + '@example.com', link: links[Math.floor(r() * 4)], furthest_step: step,
+          mirrors_heard: mh, episodes_heard: Math.floor(r() * 6), cards: Math.min(21, mh + Math.floor(r() * 6)), m21_visits: step >= '06' ? 1 + Math.floor(r() * 3) : 0,
+          last_mirror: mh || 1, last_episode: null, first_seen: new Date(Date.now() - (h + 86400000 / 3600000 * 24 * r()) * 3600000).toISOString(),
+          last_active: new Date(Date.now() - h * 3600000).toISOString(), hours_inactive: h, inactive_48h: h >= 48, bought_at: bought ? new Date(Date.now() - h * 3600000).toISOString() : null,
+          unsubscribed: false, suggested_email: !inactive ? null : /^(09|10)/.test(step) ? 'almost: saw LET’S FOLLOW THROUGH, didn’t tap' : mh >= 12 ? 'congrats: all 12 Mirrors (podcast next)' : 'come back: Mirror ' + pad2(mh || 1) });
+      }
+      list.sort(function (a, b) { return a.hours_inactive - b.hours_inactive; });
+      return {
+        generated_at: new Date().toISOString(), days: p, currency: 'USD',
+        kpis: { people: people, new_people: newp, returning: ret, reached_0_40: reached, new_emails: emails, mirrors_finished: Math.round(emails * 2.6),
+                episodes_finished: Math.round(emails * 1.1), cards: Math.round(emails * 5.5), m21_visits: m21v, follow_taps: taps, purchases: buys, revenue: buys * 3999 },
+        daily: daily,
+        funnel: fs.map(function (s, j) { return { step: s, people: fv[j] }; }),
+        stopped: ss.map(function (s, j) { return { step: s, stopped: sv[j], everyone: fv[[0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12][j]] }; }),
+        mirrors: mirrors,
+        mirror_next: [[1, 2, .3], [2, 3, .22], [1, 4, .14], [3, 4, .12], [4, 5, .1], [2, 1, .08], [5, 6, .07], [1, 3, .06], [6, 7, .05], [7, 8, .04]].map(function (x) { return { from_mirror: x[0], to_mirror: x[1], people: Math.round(fv[1] * x[2]) }; }),
+        depth: { mirrors: dm, episodes: de }, podcast: podcast, cards: cards,
+        m21_funnel: ['Opened Mirror 21', 'Started the video', 'Watched it to the end', 'Saw LET’S FOLLOW THROUGH', 'Tapped FOLLOW THROUGH', 'Bought'].map(function (s, j) { return { step: s, people: [fv[7], fv[8], fv[9], fv[10], taps, buys][j] }; }),
+        m21_progress: [0, 1, 2, 3, 4, 5, 6, 8, 10, 12].map(function (m) { return { mirrors_heard: m, visits: Math.round(m21v * (0.06 + 0.1 * Math.exp(-Math.abs(m - 3) / 3))), taps: Math.round(taps * (0.03 + m / 60)), bought: m >= 4 ? Math.round(buys * m / 60) : 0 }; }),
+        m21_from: [{ source: 'top', opens: Math.round(m21v * .45) }, { source: 'card', opens: Math.round(m21v * .3) }, { source: 'milestone-3', opens: Math.round(m21v * .2) }, { source: 'compact', opens: Math.round(m21v * .05) }],
+        links: links.map(function (l, j) { var pp = Math.round(people * [0.46, 0.27, 0.19, 0.08][j]); return { link: l, people: pp, opened_mirror: Math.round(pp * 0.78), reached_0_40: Math.round(pp * [0.45, 0.52, 0.3, 0.6][j]), emails: Math.round(pp * [0.17, 0.22, 0.09, 0.3][j]) }; }),
+        people: list
+      };
+    }
+
+    /* ---------------- data ---------------- */
+    function load() {
+      if (DEMO) { DATA = sample(days); render(); return Promise.resolve(); }
+      $('loading').hidden = false;
+      return sb.rpc('pm_dashboard', { p_days: days }).then(function (res) {
+        $('loading').hidden = true;
+        if (res.error) {
+          if (res.error.code === '42501' || /not allowed|permission/i.test(res.error.message || '')) {
+            return signOut('This account doesn’t have access to the dashboard.');
+          }
+          $('panel').innerHTML = '<div class="card"><p class="msg err">Couldn’t load the data: ' + esc(res.error.message) + '</p></div>';
+          return;
+        }
+        DATA = res.data;
+        render();
+      });
+    }
+
+    /* ---------------- sign in / out ---------------- */
+    function showLogin(msg, err) {
+      $('app').hidden = true; $('login').hidden = false;
+      $('login-form').hidden = false; $('reset-form').hidden = true;
+      $('login-msg').textContent = msg || ''; $('login-msg').classList.toggle('err', !!err);
+    }
+    function showApp(session) {
+      $('login').hidden = true; $('app').hidden = false;
+      $('who').textContent = session.user.email;
+      render();
+      load();
+    }
+    function signOut(msg) { DATA = null; return sb.auth.signOut().then(function () { showLogin(msg, !!msg); }); }
+
+    $('login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = $('email').value.trim(), pass = $('password').value;
+      if (!email || !pass) { $('login-msg').textContent = 'Enter your email and password.'; $('login-msg').classList.add('err'); return; }
+      $('login-btn').disabled = true; $('login-msg').textContent = '';
+      sb.auth.signInWithPassword({ email: email, password: pass }).then(function (res) {
+        $('login-btn').disabled = false;
+        if (res.error) { $('login-msg').textContent = 'Wrong email or password.'; $('login-msg').classList.add('err'); return; }
+        $('password').value = '';
+        showApp(res.data.session);
+      });
+    });
+    $('forgot').addEventListener('click', function () {
+      var email = $('email').value.trim();
+      if (!email) { $('login-msg').textContent = 'Type your email first, then tap Forgot password.'; $('login-msg').classList.add('err'); return; }
+      sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }).then(function () {
+        $('login-msg').classList.remove('err');
+        $('login-msg').textContent = 'If that email has an account, a link to set a new password is on its way.';
+      });
+    });
+    $('reset-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var p = $('new-password').value;
+      if (p.length < 12) { $('reset-msg').textContent = 'Use 12 characters or more.'; $('reset-msg').classList.add('err'); return; }
+      sb.auth.updateUser({ password: p }).then(function (res) {
+        if (res.error) { $('reset-msg').textContent = res.error.message; $('reset-msg').classList.add('err'); return; }
+        $('new-password').value = '';
+        history.replaceState(null, '', location.pathname);
+        sb.auth.getSession().then(function (s) { if (s.data.session) showApp(s.data.session); else showLogin('Password saved. Sign in.'); });
+      });
+    });
+    $('logout').addEventListener('click', function () { signOut(); });
+    $('refresh').addEventListener('click', load);
+    $('period').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-days]'); if (!b) return;
+      days = +b.getAttribute('data-days'); store('pm-dash-days', String(days)); render(); load();
+    });
+    $('tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tab]'); if (!b) return;
+      tab = b.getAttribute('data-tab'); store('pm-dash-tab', tab); render();
+    });
+
+    // a password-reset link: show "new password"; otherwise the saved session or the sign-in form
+    if (DEMO) {
+      $('logout').hidden = true;
+      $('who').innerHTML = '<span class="pill">SAMPLE DATA · not real people</span>'; $('who').classList.add('demo');
+      $('login').hidden = true; $('app').hidden = false;
+      render(); load();
+      return;
+    }
+    var recovering = /type=recovery/.test(location.hash);
+    sb.auth.onAuthStateChange(function (event) {
+      if (event === 'PASSWORD_RECOVERY') { recovering = true; $('app').hidden = true; $('login').hidden = false; $('login-form').hidden = true; $('reset-form').hidden = false; }
+    });
+    sb.auth.getSession().then(function (res) {
+      if (recovering) return;
+      if (res.data.session) showApp(res.data.session); else showLogin();
+    });
+  })();
+  </script>
+</body>
+</html>

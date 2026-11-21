@@ -11,3 +11,12 @@
   for = "/*.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# The dashboard: never in search results, never cached, never framed by another site (preview.html may show it).
+[[headers]]
+  for = "/dashboard/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "same-origin"

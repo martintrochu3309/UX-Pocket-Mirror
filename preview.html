@@ -36,6 +36,17 @@
     .size { display: flex; gap: 8px; margin-top: 18px; }
     .size button { padding: 8px 14px; border-radius: 20px; border: 1px solid #333; background: none; color: #ccc; font: 700 11px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .14em; cursor: pointer; }
     .size button[aria-pressed="true"] { border-color: #e0b84c; color: #fff; }
+    .size .sep { width: 1px; margin: 4px 6px; background: #333; }
+    [hidden] { display: none !important; }
+    /* the dashboard view: the page as on a computer, then on a phone */
+    .browser { max-width: 1200px; margin: 0 auto; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px #2a2a2a, 0 20px 40px rgba(0, 0, 0, .6); background: #0a0a0a; }
+    .browser .bar { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; background: #161616; border-bottom: 1px solid #262626; color: #6f6f6c; font-size: 12px; }
+    .browser .bar i { width: 10px; height: 10px; border-radius: 50%; background: #2e2e2e; }
+    .browser .bar span { margin-left: 10px; }
+    .browser iframe { display: block; width: 100%; height: min(860px, 82vh); border: 0; }
+    .dash-note { max-width: 1200px; margin: 14px auto 0; display: flex; justify-content: space-between; gap: 10px; color: #9a9a96; font-size: 13px; }
+    .dash-note a { color: #9a9a96; }
+    .dash-note a:hover { color: #e0b84c; }
   </style>
 </head>
 <body>
@@ -47,14 +58,35 @@
       <button type="button" data-s=".5">SMALL</button>
       <button type="button" data-s=".62" aria-pressed="true">MEDIUM</button>
       <button type="button" data-s=".8">LARGE</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" data-view="dashboard">DASHBOARD</button>
     </div>
   </header>
 
-  <h2>BEFORE THE EMAIL</h2>
-  <div class="row" data-group="before"></div>
+  <div id="screens">
+    <h2>BEFORE THE EMAIL</h2>
+    <div class="row" data-group="before"></div>
 
-  <h2>AFTER THE EMAIL</h2>
-  <div class="row" data-group="after"></div>
+    <h2>AFTER THE EMAIL</h2>
+    <div class="row" data-group="after"></div>
+  </div>
+
+  <!-- the dashboard with made-up sample data (dashboard/?demo): no sign-in, no real people -->
+  <div id="dashboard" hidden>
+    <h2>DASHBOARD · ON A COMPUTER</h2>
+    <div class="browser">
+      <div class="bar"><i></i><i></i><i></i><span>thepocketmirror.netlify.app/dashboard</span></div>
+      <iframe data-src="dashboard/?demo" title="Dashboard on a computer"></iframe>
+    </div>
+    <p class="dash-note"><span>Sample data, made up: the real dashboard asks you to sign in and shows the live numbers.</span>
+      <span><a href="dashboard/?demo" target="_blank" rel="noopener">Open sample ↗</a> · <a href="dashboard/" target="_blank" rel="noopener">Open the real one ↗</a></span></p>
+
+    <h2>ON A PHONE</h2>
+    <div class="row">
+      <figure><div class="phone"><iframe data-src="dashboard/?demo" title="Dashboard on a phone"></iframe></div>
+        <figcaption><b>Dashboard</b><a href="dashboard/?demo" target="_blank" rel="noopener">Open ↗</a></figcaption></figure>
+    </div>
+  </div>
 
   <script>
     var SCREENS = {
@@ -84,11 +116,20 @@
           '<figcaption><b><i>' + s[0] + '</i>' + s[1] + '</b><a href="' + url + '" target="_blank" rel="noopener">Open ↗</a></figcaption></figure>';
       }).join('');
     });
-    document.querySelector('.size').addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      document.documentElement.style.setProperty('--s', b.getAttribute('data-s'));
+    // SMALL / MEDIUM / LARGE = the phones at that size; DASHBOARD = the dashboard (also opens with preview.html#dashboard)
+    function show(b) {
+      var dash = b.getAttribute('data-view') === 'dashboard';
+      if (!dash) document.documentElement.style.setProperty('--s', b.getAttribute('data-s'));
+      document.getElementById('screens').hidden = dash;
+      document.getElementById('dashboard').hidden = !dash;
+      if (dash) document.querySelectorAll('#dashboard iframe[data-src]').forEach(function (f) { if (!f.src) f.src = f.getAttribute('data-src'); });
+      history.replaceState(null, '', dash ? '#dashboard' : location.pathname + location.search);
       document.querySelectorAll('.size button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    }
+    document.querySelector('.size').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (b) show(b);
     });
+    if (location.hash === '#dashboard') show(document.querySelector('[data-view="dashboard"]'));
   </script>
 </body>
 </html>

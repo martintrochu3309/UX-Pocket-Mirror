@@ -180,6 +180,23 @@ Every email and every step people take is saved in Supabase, project **Mirro21**
 
 The raw data is in `pocket.people` (one per email), `pocket.devices` (one per phone) and `pocket.events` (one per step, with `props` like `{"mirror": 3}`). `people.unsubscribed_at` is ready for the reminder emails (step two, with Resend).
 
+## The dashboard (`/dashboard`)
+
+**https://thepocketmirror.netlify.app/dashboard/** shows the same reports as charts, live from Supabase each time it opens (or when you tap Refresh).
+
+- **Who can see it:** the emails in `pocket.admins` (today the two of you). Sign in with the email and password of your Supabase account. It is the **same account as the Mirror 21 course**, so changing the password changes it for both. The database checks the email on every call (function `public.pm_dashboard`), so anyone else who signs in sees nothing. To add someone: `insert into pocket.admins (email) values ('name@example.com');`. They need a Supabase account with that email too.
+- **Forgot password:** type your email and tap *Forgot password?*. The email link opens the dashboard on a *New password* screen. This needs `https://thepocketmirror.netlify.app/dashboard/` in Supabase → Authentication → URL Configuration → Redirect URLs.
+- **Period:** 7 / 30 / 90 days or all time.
+- **Tabs:**
+  - **Overview:** headline numbers, people day by day, new vs returning, the funnel, where people stop.
+  - **Mirrors:** opened / reached 0:40 / finished per Mirror, first Mirror, what comes next, how many Mirrors before stopping.
+  - **Podcast & cards:** episodes started and finished, episodes before stopping, cards collected.
+  - **Mirror 21:** its funnel, where it is opened from, visits by Mirrors heard, revenue and purchases (live payments only).
+  - **Links:** people and emails per link / QR code.
+  - **People:** everyone with an email, with search, filters (inactive 48h+, reminder candidates, almost bought, bought) and **Download CSV**.
+- **Table view:** every chart has a *Table* button that shows its numbers.
+- Search engines are kept out (`noindex` in the page and in `netlify.toml`).
+
 ## Measuring the funnel
 
 Every step pushes an event to `window.dataLayer` (Google Tag Manager / GA4 pick these up) and to Plausible if its script is on the page:
