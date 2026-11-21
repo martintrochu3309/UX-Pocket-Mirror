@@ -148,6 +148,38 @@ They combine: `?m=1&src=leeds-oct`.
 - **Small print under the email:** `finePrint`.
 - **Big titles:** `TITLES` (`['21', 'NUDGES']` = gold part, white part). They're text, so they stay sharp and are easy to change.
 
+## The journey in Supabase
+
+Every email and every step people take is saved in Supabase, project **Mirro21**, in its own section (schema **`pocket`**, separate from the Mirror 21 course tables). It is set in `CONFIG.supabaseUrl` / `supabaseKey` in `content.js` (the key is the public one: it can only add data, never read it).
+
+- **Before the email**, a phone is anonymous (a random id kept on the phone). When the email is given, everything that phone did is linked to it. The home-screen app keeps the same id, so it is the same journey.
+- Nothing is sent in demo mode, from a file opened on your computer, or from `localhost`, so testing doesn't count as real people. Offline phones keep their events and send them on the next visit.
+- Netlify Forms still receives each email too, as a safety net.
+
+**The reports** (Supabase → Table Editor → schema `pocket`, or SQL `select * from pocket.funnel;`):
+
+| View | Shows |
+|---|---|
+| `pocket.funnel` | The whole funnel, top to bottom: opened the app → opened a Mirror → reached 0:40 → gave their email → finished 1 / 3+ / 6+ Mirrors → opened Mirror 21 → started the video → watched it → saw LET'S FOLLOW THROUGH → tapped it → **bought** (matched with `paid_users`) |
+| `pocket.status` | Everyone (people and anonymous phones): furthest step reached, Mirrors / episodes / cards, Mirror 21 visits, last thing they did, last Mirror and episode, hours since last active, **inactive 48h+** |
+| `pocket.stopped_at` | Where people stopped: how many inactive 48h+ at each furthest step |
+| `pocket.heard_before_stopping` | How far people got before stopping: Mirrors heard 0–12 and episodes heard 0–12 |
+| `pocket.journey` | One row per email: first Mirror, the order they opened them (03 → 01 → 07), Mirrors and episodes finished, last episode, cards, each Mirror 21 step, bought, last active |
+| `pocket.m21_visits` | Every Mirror 21 visit (1st, 2nd, 3rd…): where they tapped from, what they'd heard by then (Mirrors, episodes, cards), started / watched the video, saw / tapped FOLLOW THROUGH, bought after |
+| `pocket.m21_by_progress` | Mirror 21 visits, video starts, taps and purchases grouped by how many Mirrors people had heard at the time |
+| `pocket.mirrors` | Each Mirror: opened, reached 0:40, finished, and how many people started with it |
+| `pocket.mirror_next` | Which Mirror people open next (from → to, most common first) |
+| `pocket.podcast` | Each episode: started, finished |
+| `pocket.cards` | How many cards people have, and how many people have that many |
+| `pocket.daily` | Day by day: active, opened a Mirror, reached 0:40, new emails, Mirrors / episodes finished, cards, Mirror 21 visits, FOLLOW THROUGH taps, purchases |
+| `pocket.daily_people` | Day by day: people on the app, of which new and returning, and new emails |
+| `pocket.daily_who` | Day by day, **who** was on the app: their email (or "anonymous" before they gave one), new or returning, the link they came from, first and last time seen that day, Mirrors and episodes finished that day, cards, Mirror 21 visits, tapped FOLLOW THROUGH |
+| `pocket.daily_by_link` | Day by day and per link / QR code (`?src=…`, "direct" = no tag): people who came in, opened a Mirror, gave their email |
+| `pocket.links` | Each link / QR code since the start: people, emails, first and last day |
+| `pocket.reminder_candidates` | People who gave their email, inactive 48h+, not unsubscribed, not bought, with a suggested email (almost bought → congratulations → come back to Mirror 07 / Episode 04), the "almost bought" first |
+
+The raw data is in `pocket.people` (one per email), `pocket.devices` (one per phone) and `pocket.events` (one per step, with `props` like `{"mirror": 3}`). `people.unsubscribed_at` is ready for the reminder emails (step two, with Resend).
+
 ## Measuring the funnel
 
 Every step pushes an event to `window.dataLayer` (Google Tag Manager / GA4 pick these up) and to Plausible if its script is on the page:

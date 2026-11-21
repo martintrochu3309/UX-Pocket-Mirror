@@ -35,6 +35,12 @@ window.PM_CONTENT = {
     // 2. Optional webhook (Zapier, Make, Mailchimp/ConvertKit endpoint...). Leave '' to skip.
     //    Receives JSON: { email, mirror, path, source, createdAt, page }
     webhookUrl: '',
+    // 3. Supabase (project "Mirro21", schema "pocket"): the email AND the whole journey (every Mirror, episode, card,
+    //    Mirror 21 step), for the reports and, later, the reminder emails. See README > "The journey in Supabase".
+    //    The key below is the PUBLIC (publishable) key: it can only add events and emails, never read them.
+    //    Leave supabaseUrl '' to switch it off.
+    supabaseUrl: 'https://xcabmwcfvzgavhsjsmxu.supabase.co',
+    supabaseKey: 'sb_publishable_cnebBpuPfYBtYScwpwvZww_jV4lNGkE',
 
     // Small print under the email field on the unlock sheet.
     finePrint: 'One email a week. Leave anytime.',

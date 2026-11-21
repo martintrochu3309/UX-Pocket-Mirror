@@ -135,7 +135,7 @@
   // someone shared after giving their own email, so it must NOT unlock anything: it is ignored and removed.
   var IS_HOME_APP = navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   if (QS.get('pm') === '1' && !IS_HOME_APP) {
-    ['pm', 'h', 'e', 's', 'l', 'j'].forEach(function (k) { QS.delete(k); });
+    ['pm', 'h', 'e', 's', 'l', 'j', 'd'].forEach(function (k) { QS.delete(k); });
     try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS.toString() : '') + location.hash); } catch (x) { /* ignore */ }
   }
   // People who opened such a shared link before this fix were saved as "email given" with no real email
@@ -155,8 +155,15 @@
       if (lm && !S.lastPath) S.lastPath = lm.path;
     }
     if (+QS.get('j') && !S.joinedAt) S.joinedAt = +QS.get('j') * 864e5;
+    if (/^[A-Za-z0-9-]{8,64}$/.test(QS.get('d') || '')) S.did = QS.get('d'); // same phone id as in Safari: one journey in Supabase
     S.a2hsDone = true;
     try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (x) { /* ignore */ }
+    try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  }
+  // a random id for this phone: its journey in Supabase is anonymous until the email is given, then linked to it
+  if (!S.did) {
+    S.did = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : 'd' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
     try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
   }
   function persist() { stampInstallURL(); if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
@@ -275,10 +282,10 @@
     var e = Object.keys(S.eps).filter(function (k) { return S.eps[k]; }).join(',');
     var s = Object.keys(S.m21Shown).filter(function (k) { return S.m21Shown[k]; }).join(',');
     // h = Mirrors heard, e = episodes heard (the collection follows from both), l = last Mirror played,
-    // s = Mirror 21 pop-ups already seen, j = sign-up day
+    // s = Mirror 21 pop-ups already seen, j = sign-up day, d = this phone's id (so the home-screen app keeps the same journey)
     var url = location.pathname + '?pm=1' + (h ? '&h=' + h : '') + (e ? '&e=' + e : '') +
       (S.lastMirror ? '&l=' + S.lastMirror : '') + (s ? '&s=' + s : '') + (S.joinedAt ? '&j=' + Math.floor(S.joinedAt / 864e5) : '') +
-      location.hash;
+      (S.did ? '&d=' + S.did : '') + location.hash;
     if (url === location.pathname + location.search + location.hash) return;
     try { history.replaceState(null, '', url); } catch (x) { /* ignore */ }
   }
@@ -288,15 +295,48 @@
     if (c) { c.classList.add('gone'); setTimeout(function () { if (c.parentNode) c.parentNode.removeChild(c); }, 350); }
   }
 
+  /* ================================================================ Supabase: the journey (project Mirro21, schema "pocket")
+   * Two write-only calls: pm_track (one event) and pm_identify (the email, which links this phone's journey to it).
+   * Not sent in demo mode, from a file on your computer, or from localhost (so testing doesn't count as real people).
+   * If the phone is offline, events wait on the phone (up to 100) and are sent on the next visit.
+   */
+  var SB = !!(CONFIG.supabaseUrl && CONFIG.supabaseKey) && !DEMO && /^https?:$/.test(location.protocol) &&
+    !/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname);
+  function sbCall(fn, body) {
+    return fetch(CONFIG.supabaseUrl + '/rest/v1/rpc/' + fn, {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+  function sbKeep(ev) {
+    S.evq = (S.evq || []).concat([ev]).slice(-100);
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  }
+  function sbEvent(event, props) {
+    if (!SB) return;
+    var ev = { p_device: S.did, p_event: event, p_props: props || {}, p_source: S.source || 'direct', p_client_at: new Date().toISOString() };
+    sbCall('pm_track', ev).then(function (ok) { if (!ok) sbKeep(ev); });
+  }
+  function sbFlush() {
+    if (!SB || !S.evq || !S.evq.length) return;
+    var q = S.evq; S.evq = [];
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+    q.reduce(function (p, ev) {
+      return p.then(function () { return sbCall('pm_track', ev).then(function (ok) { if (!ok) sbKeep(ev); }); });
+    }, Promise.resolve());
+  }
+
   /* ================================================================ funnel tracking
-   * Every step pushes an event to window.dataLayer (Google Tag Manager / GA4 pick it up)
-   * and to Plausible if its script is on the page. Set CONFIG.debug = true to see them in the console.
+   * Every step pushes an event to window.dataLayer (Google Tag Manager / GA4 pick it up),
+   * to Plausible if its script is on the page, and to Supabase (the journey). CONFIG.debug = true shows them in the console.
    */
   function track(event, props) {
     props = props || {};
     var payload = Object.assign({ event: 'pm_' + event, pm_unlocked: unlocked(), pm_source: S.source || 'direct' }, props);
     (window.dataLayer = window.dataLayer || []).push(payload);
     if (typeof window.plausible === 'function') window.plausible('pm_' + event, { props: props });
+    sbEvent(event, props);
     if (CONFIG.debug) console.log('[pocket-mirror]', payload);
   }
 
@@ -438,20 +478,26 @@
     };
     next();
   }
+  // each place the email goes is marked done once it worked (lead.nf / lead.wh / lead.sb), so a retry only resends what failed
   function sendLead(lead) {
     var jobs = [];
-    if (CONFIG.netlifyForms && /^https?:/.test(location.protocol)) {
+    if (CONFIG.netlifyForms && /^https?:/.test(location.protocol) && !lead.nf) {
       var body = new URLSearchParams({
         'form-name': CONFIG.netlifyFormName, email: lead.email, mirror: String(lead.mirror || ''),
         path: lead.path || '', source: lead.source, page: lead.page
       }).toString();
       jobs.push(fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
-        .then(function (r) { return r.ok; }).catch(function () { return false; }));
+        .then(function (r) { if (r.ok) lead.nf = true; return r.ok; }).catch(function () { return false; }));
     }
-    if (CONFIG.webhookUrl) {
+    if (CONFIG.webhookUrl && !lead.wh) {
       // text/plain + no-cors avoids a CORS preflight, so it works with Zapier / Make style hooks.
       jobs.push(fetch(CONFIG.webhookUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(lead) })
-        .then(function () { return true; }).catch(function () { return false; }));
+        .then(function () { lead.wh = true; return true; }).catch(function () { return false; }));
+    }
+    // Supabase: the person, and this phone's journey so far linked to them
+    if (SB && !lead.sb) {
+      jobs.push(sbCall('pm_identify', { p_device: S.did, p_email: lead.email, p_source: lead.source || null, p_mirror: lead.mirror || null, p_path: lead.path || null })
+        .then(function (ok) { if (ok) lead.sb = true; return ok; }));
     }
     if (!jobs.length) return Promise.resolve(true);
     return Promise.all(jobs).then(function (r) { return r.every(Boolean); });
@@ -1839,7 +1885,8 @@
   // Handy for debugging in the browser console: PocketMirror.state, PocketMirror.audio
   window.PocketMirror = { state: S, audio: audio, go: go, track: track, demo: DEMO };
 
-  window.addEventListener('online', flushLeads);
+  window.addEventListener('online', function () { flushLeads(); sbFlush(); });
   flushLeads();
+  sbFlush(); // events that waited on the phone (it was offline)
   render();
 })();
