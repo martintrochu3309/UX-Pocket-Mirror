@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leave the emails · The Pocket Mirror</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="../assets/images/icon-192.png?v=2">
+  <!--
+    "Leave anytime" in every reminder email opens this page (?u=<the person's key>).
+    One tap on the button stops the emails (public.pm_unsubscribe). The tap is needed on purpose: some email
+    security tools open every link in an email, and that must not unsubscribe anyone by itself.
+  -->
+  <style>
+    @font-face { font-family: "Magistral"; src: url("../assets/fonts/magistral-bold-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; --page: #f3f3f1; --card: #ffffff; --ink: #111111; --ink-2: #555555; --muted: #8a8a86; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--page); color: var(--ink); }
+    body { min-height: 100dvh; display: grid; place-items: center; padding: 28px 16px; font: 500 17px/1.5 "Neue Haas Display", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    main { width: min(100%, 520px); text-align: center; }
+    .logo { display: block; width: 200px; height: auto; margin: 0 auto 22px; }
+    .card { background: var(--card); border-radius: 22px; padding: 40px 32px; }
+    h1 { margin: 0 0 22px; font: italic 700 30px/1.05 "Magistral", "Arial Black", Arial, sans-serif; letter-spacing: -.5px; }
+    p { margin: 0 0 18px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; margin: 8px 0 22px; padding: 0 30px; border: 0; border-radius: 999px;
+      background: var(--ink); color: #fff; font: 700 13px/1 "Neue Haas Display", Helvetica, Arial, sans-serif; letter-spacing: 2px; text-decoration: none; cursor: pointer; }
+    .btn img { width: 150px; height: auto; }
+    .btn[disabled] { opacity: .5; cursor: default; }
+    .soft { color: var(--ink-2); font-size: 16px; }
+    .sign { margin: 0; font: italic 700 22px/1.2 "Magistral", "Arial Black", Arial, sans-serif; }
+    .foot { margin-top: 26px; color: var(--muted); font-size: 12px; }
+    .foot img { display: block; width: 96px; height: auto; margin: 0 auto 14px; opacity: .85; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="../assets/email/pocket-mirror-logo.png" alt="POCKET MIRROR">
+
+    <!-- 1 · ask -->
+    <section class="card" id="ask">
+      <h1>LEAVE THE&nbsp;EMAILS?</h1>
+      <p>One tap and they stop. No more emails from me.</p>
+      <button class="btn" type="button" id="leave">YES, NO MORE EMAILS</button>
+      <p class="soft">Changed your mind? Just close this page.</p>
+      <p class="sign">Kevin Craggs</p>
+    </section>
+
+    <!-- 2 · done -->
+    <section class="card" id="done" hidden>
+      <h1>YOU’VE&nbsp;LEFT.</h1>
+      <p>No more emails from me.</p>
+      <p>Your Mirrors are still yours. Whenever you need one minute with yourself, they’re right where you left them.</p>
+      <a class="btn" href="/">OPEN <img src="../assets/email/pocket-mirror-logo-white.png" alt="POCKET MIRROR"></a>
+      <p class="sign">Kevin Craggs</p>
+    </section>
+
+    <!-- link without a valid key, or the database said no -->
+    <section class="card" id="oops" hidden>
+      <h1>THAT LINK DIDN’T&nbsp;WORK.</h1>
+      <p id="oops-line">Please use the “Leave anytime” link at the bottom of one of my emails.</p>
+      <p class="sign">Kevin Craggs</p>
+    </section>
+
+    <div class="foot"><img src="../assets/email/daily-xcellence-logo.png" alt="DAILY XCELLENCE">The Pocket Mirror · Daily Xcellence</div>
+  </main>
+
+  <script src="../js/content.js"></script>
+  <script>
+  (function () {
+    var CONFIG = (window.PM_CONTENT && window.PM_CONTENT.CONFIG) || {};
+    var key = new URLSearchParams(location.search).get('u') || '';
+    var valid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+    function show(id) { ['ask', 'done', 'oops'].forEach(function (s) { document.getElementById(s).hidden = s !== id; }); }
+    if (!valid) { show('oops'); return; }
+    document.getElementById('leave').addEventListener('click', function () {
+      var b = this; b.disabled = true;
+      fetch(CONFIG.supabaseUrl + '/rest/v1/rpc/pm_unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: CONFIG.supabaseKey },
+        body: JSON.stringify({ p_token: key })
+      }).then(function (r) { return r.ok ? r.json() : false; }).then(function (ok) {
+        if (ok === true) show('done');
+        else { b.disabled = false; show('oops'); }
+      }).catch(function () {
+        b.disabled = false;
+        document.getElementById('oops-line').textContent = 'No connection right now. Please try again in a moment.';
+        show('oops');
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

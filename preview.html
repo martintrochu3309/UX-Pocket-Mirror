@@ -37,6 +37,8 @@
     .size button { padding: 8px 14px; border-radius: 20px; border: 1px solid #333; background: none; color: #ccc; font: 700 11px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .14em; cursor: pointer; }
     .size button[aria-pressed="true"] { border-color: #e0b84c; color: #fff; }
     .size .sep { width: 1px; margin: 4px 6px; background: #333; }
+    .size .size-link { padding: 8px 14px; border-radius: 20px; border: 1px solid #333; color: #ccc; font: 700 11px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .14em; text-decoration: none; }
+    .size .size-link:hover { color: #fff; border-color: #666; }
     [hidden] { display: none !important; }
     /* the dashboard view: the page as on a computer, then on a phone */
     .browser { max-width: 1200px; margin: 0 auto; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px #2a2a2a, 0 20px 40px rgba(0, 0, 0, .6); background: #0a0a0a; }
@@ -60,6 +62,7 @@
       <button type="button" data-s=".8">LARGE</button>
       <span class="sep" aria-hidden="true"></span>
       <button type="button" data-view="dashboard">DASHBOARD</button>
+      <a class="size-link" href="emails/preview.html">EMAILS ↗</a>
     </div>
   </header>
 
@@ -75,7 +78,7 @@
   <div id="dashboard" hidden>
     <h2>DASHBOARD · ON A COMPUTER</h2>
     <div class="browser">
-      <div class="bar"><i></i><i></i><i></i><span>thepocketmirror.netlify.app/dashboard</span></div>
+      <div class="bar"><i></i><i></i><i></i><span>thepocketmirror.com/dashboard</span></div>
       <iframe data-src="dashboard/?demo" title="Dashboard on a computer"></iframe>
     </div>
     <p class="dash-note"><span>Sample data, made up: the real dashboard asks you to sign in and shows the live numbers.</span>

@@ -124,6 +124,8 @@ To test the unlock again: add `?reset` to the address (or refresh, if demo mode 
 3. Emails arrive in **Forms → pocket-mirror** with: email, mirror (number), path, source (QR tag), page.
    Add a notification (Forms → Form notifications) or connect Mailchimp / ConvertKit through Zapier.
 
+**The address is https://thepocketmirror.com** (Netlify → Domain management: `thepocketmirror.com` is the primary domain, `www.` and the old `thepocketmirror.netlify.app` redirect to it, so old links and QR codes still work).
+
 Not on Netlify? Set `netlifyForms: false` and put a Zapier/Make webhook in `webhookUrl` (both in `js/content.js`).
 If a submission fails (offline, wrong host), the email is kept on the phone and sent again on the next visit.
 
@@ -131,9 +133,9 @@ If a submission fails (offline, wrong host), the email is kept on the phone and 
 
 | Link | Does |
 |---|---|
-| `yoursite.com/?src=leeds-oct` | Normal journey; every email from it is tagged `leeds-oct` (one QR per event) |
-| `yoursite.com/?m=1` | Opens Mirror 01 directly (for a printed card or a talk about that topic) |
-| `yoursite.com/?path=own` | Opens the OWN IT list directly |
+| `thepocketmirror.com/?src=leeds-oct` | Normal journey; every email from it is tagged `leeds-oct` (one QR per event) |
+| `thepocketmirror.com/?m=1` | Opens Mirror 01 directly (for a printed card or a talk about that topic) |
+| `thepocketmirror.com/?path=own` | Opens the OWN IT list directly |
 
 They combine: `?m=1&src=leeds-oct`.
 
@@ -182,10 +184,10 @@ The raw data is in `pocket.people` (one per email), `pocket.devices` (one per ph
 
 ## The dashboard (`/dashboard`)
 
-**https://thepocketmirror.netlify.app/dashboard/** shows the same reports as charts, live from Supabase each time it opens (or when you tap Refresh).
+**https://thepocketmirror.com/dashboard/** shows the same reports as charts, live from Supabase each time it opens (or when you tap Refresh).
 
 - **Who can see it:** the emails in `pocket.admins` (today the two of you). Sign in with the email and password of your Supabase account. It is the **same account as the Mirror 21 course**, so changing the password changes it for both. The database checks the email on every call (function `public.pm_dashboard`), so anyone else who signs in sees nothing. To add someone: `insert into pocket.admins (email) values ('name@example.com');`. They need a Supabase account with that email too.
-- **Forgot password:** type your email and tap *Forgot password?*. The email link opens the dashboard on a *New password* screen. This needs `https://thepocketmirror.netlify.app/dashboard/` in Supabase → Authentication → URL Configuration → Redirect URLs.
+- **Forgot password:** type your email and tap *Forgot password?*. The email link opens the dashboard on a *New password* screen. This needs `https://thepocketmirror.com/dashboard/` in Supabase → Authentication → URL Configuration → Redirect URLs.
 - **Period:** 7 / 30 / 90 days or all time.
 - **Tabs:**
   - **Overview:** headline numbers, people day by day, new vs returning, the funnel, where people stop.
@@ -196,6 +198,37 @@ The raw data is in `pocket.people` (one per email), `pocket.devices` (one per ph
   - **People:** everyone with an email, with search, filters (inactive 48h+, reminder candidates, almost bought, bought) and **Download CSV**.
 - **Table view:** every chart has a *Table* button that shows its numbers.
 - Search engines are kept out (`noindex` in the page and in `netlify.toml`).
+
+## The reminder emails (Resend)
+
+Kevin's 6 emails go out from **Kevin Craggs <kevin@thepocketmirror.com>** through Resend (domain thepocketmirror.com).
+See them all at **/emails/preview.html**. Text and design live in one file, [emails/templates.js](emails/templates.js).
+
+| # | Email | Who gets it |
+|---|---|---|
+| 1 | You did something most people don’t. | Right after they give their email (checked every 15 minutes) |
+| 2 | Most people stop at one. | Heard 2–3 Mirrors, then quiet 48h+ |
+| 3 | You’re further than you think. | Heard 4–5 Mirrors, or some episodes, then quiet 48h+ |
+| 4 | One minute. Whenever you’re ready. | Away 7+ days, when nothing else applies |
+| 5 | You’re one of the very few. | Heard 6+ Mirrors (once) |
+| 6 | Still thinking about it? | Opened the MIRROR 21 page, didn’t buy (once) |
+
+**Rules:** never after they buy or leave. At most one reminder every 7 days (the app promises "One email a week"), and at most 3 in a row while they stay away; it starts again when they come back. If several fit, the order is 6 → 5 → 3 → 2 → 4. Reminders go out once a day at 09:00 UTC.
+
+**How it works**
+- **The sender:** Supabase edge function `pm-emails` ([supabase/functions/pm-emails](supabase/functions/pm-emails)). Its `templates.js` is a copy of `emails/templates.js`: change the email there, copy it over, redeploy the function.
+- **The Resend key:** Supabase → Edge Functions → Secrets → `POCKET_MIRROR_REMINDERS`.
+- **The timer:** `pg_cron` jobs `pm-emails-welcome` (every 15 min) and `pm-emails-reminders` (daily). They call the function with a secret kept in the Vault (`pm_emails_secret`).
+- **Every email is logged:** `pocket.email_log`, with sent / failed and Resend's id. That log is how nobody gets the same email twice.
+- **Who gets what right now:** `select * from pocket.emails_due('reminders');`
+- **Email buttons** open the app already unlocked: `?k=<the person's key>&em=<which email>`. The tap is recorded as `email_click`.
+- **Leave anytime** opens `/unsubscribe/?u=<key>`. One tap stops the emails. The "Unsubscribe" button in Gmail and Apple Mail works too.
+
+**Test mode:** `pocket.email_settings.live = false`. While it's false, only the addresses in `test_emails` get anything.
+- Go live: `update pocket.email_settings set live = true, live_since = now();`
+  - The Welcome then goes to people who join from that moment.
+  - Reminders go to everyone who qualifies.
+- Back to test mode: `update pocket.email_settings set live = false;`
 
 ## Measuring the funnel
 

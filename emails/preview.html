@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pocket Mirror Emails</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="../assets/images/icon-192.png">
+  <!-- The 6 reminder emails, exactly as they are sent (emails/templates.js), with sample numbers. Nothing is sent from here. -->
+  <style>
+    @font-face { font-family: "Magistral"; src: url("../assets/fonts/magistral-bold-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Neue Haas Display"; src: url("../assets/fonts/nhd-bold.woff2") format("woff2"); font-weight: 700; }
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 40px 32px 60px; background: #050505; color: #fff; font: 500 15px/1.45 "Neue Haas Display", Arial, sans-serif; }
+    header, .list { max-width: 1260px; margin: 0 auto; }
+    h1 { margin: 0; font: italic 700 34px/1 "Magistral", Arial, sans-serif; letter-spacing: .02em; }
+    header p { margin: 12px 0 0; max-width: 760px; color: #9a9a96; }
+    .size { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+    .size button, .size a { padding: 8px 14px; border-radius: 20px; border: 1px solid #333; background: none; color: #ccc; font: 700 11px/1 "Neue Haas Display", Arial, sans-serif; letter-spacing: .14em; cursor: pointer; text-decoration: none; }
+    .size button[aria-pressed="true"] { border-color: #fff; color: #fff; }
+    .list { display: flex; flex-wrap: wrap; gap: 36px; margin-top: 36px; }
+    .mail { width: var(--w, 390px); }
+    .head { display: flex; gap: 10px; align-items: baseline; }
+    .head b { font: italic 700 18px/1.2 "Magistral", Arial, sans-serif; }
+    .head i { font-style: normal; color: #6f6f6c; }
+    .when { margin: 4px 0 12px; color: #9a9a96; font-size: 13px; }
+    /* how it looks in the inbox list */
+    .inbox { display: flex; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #fff; color: #111; margin-bottom: 10px; }
+    .inbox .av { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #111; color: #fff; display: grid; place-items: center; font: italic 700 15px/1 "Magistral", Arial, sans-serif; }
+    .inbox .t { min-width: 0; font-size: 13px; line-height: 1.35; }
+    .inbox .from { font-weight: 700; }
+    .inbox .sub { font-weight: 700; }
+    .inbox .pre { color: #6b6b67; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .frame { border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px #2a2a2a; background: #f3f3f1; }
+    .frame iframe { display: block; width: 100%; border: 0; height: 760px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>THE POCKET MIRROR · EMAILS</h1>
+    <p>The 6 reminder emails, as people will get them: first the line in their inbox, then the email. The numbers are examples;
+      each person sees their own. Nothing is sent from this page.</p>
+    <div class="size" role="group" aria-label="Width">
+      <button type="button" data-w="390px" aria-pressed="true">PHONE</button>
+      <button type="button" data-w="600px">COMPUTER</button>
+      <a href="../preview.html">ALL SCREENS ↗</a>
+    </div>
+  </header>
+
+  <div class="list" id="list"></div>
+
+  <script src="templates.js"></script>
+  <script>
+    (function () {
+      var E = window.PM_EMAILS;
+      var SAMPLE = {   // example numbers for each email
+        welcome: {}, started: { mirrors: 2, cards: 2 }, further: { mirrors: 5, episodes: 2, cards: 9 },
+        week: {}, few: { mirrors: 7, episodes: 2, cards: 11 }, thinking: {}
+      };
+      var base = new URL('..', location.href).href.replace(/\/$/, '');
+      var list = document.getElementById('list');
+      E.EMAILS.forEach(function (e) {
+        var v = SAMPLE[e.id] || {};
+        var box = document.createElement('section');
+        box.className = 'mail';
+        box.innerHTML =
+          '<div class="head"><i>' + e.n + '</i><b>' + e.name + '</b></div>' +
+          '<div class="when">' + e.when + '</div>' +
+          '<div class="inbox"><div class="av">K</div><div class="t"><div class="from">Kevin Craggs</div>' +
+            '<div class="sub"></div><div class="pre"></div></div></div>' +
+          '<div class="frame"><iframe title="' + e.name + '"></iframe></div>';
+        box.querySelector('.sub').textContent = E.subject(e.id, v);
+        box.querySelector('.pre').textContent = E.preview(e.id, v);
+        var f = box.querySelector('iframe');
+        f.srcdoc = E.render(e.id, v, { base: base, url: '#', unsubscribe: '#' });
+        f.addEventListener('load', function () { fit(f); setTimeout(function () { fit(f); }, 400); });
+        list.appendChild(box);
+      });
+      function fit(f) { try { f.style.height = '10px'; f.style.height = (f.contentDocument.documentElement.scrollHeight + 2) + 'px'; } catch (x) {} }
+      document.querySelector('.size').addEventListener('click', function (ev) {
+        var b = ev.target.closest('button'); if (!b) return;
+        document.documentElement.style.setProperty('--w', b.getAttribute('data-w'));
+        document.querySelectorAll('.size button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        document.querySelectorAll('iframe').forEach(function (f) { setTimeout(function () { fit(f); }, 50); });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -166,6 +166,19 @@
       : 'd' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
     try { if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
   }
+  // Opened from a button in one of Kevin's emails (?k=<that person's key>&em=<which email>): they gave their email
+  // already, so the app opens unlocked, even in a browser that has never seen them (Gmail's, Mail's…). At start the
+  // key links this phone to their journey in Supabase and records the tap (pm_email_link). Removed from the address.
+  var EMAIL_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(QS.get('k') || '') ? QS.get('k') : '';
+  var EMAIL_KIND = (QS.get('em') || '').replace(/[^a-z]/g, '').slice(0, 20);
+  if (QS.has('k') || QS.has('em')) {
+    QS.delete('k'); QS.delete('em');
+    try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS.toString() : '') + location.hash); } catch (x) { /* ignore */ }
+  }
+  if (EMAIL_KEY && !DEMO && !S.email) {
+    S.email = 'email-link'; S.joinedAt = S.joinedAt || Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  }
   function persist() { stampInstallURL(); if (DEMO) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
   function unlocked() { return !!S.email; }
 
@@ -1887,6 +1900,7 @@
 
   window.addEventListener('online', function () { flushLeads(); sbFlush(); });
   flushLeads();
+  if (EMAIL_KEY && SB) sbCall('pm_email_link', { p_device: S.did, p_token: EMAIL_KEY, p_kind: EMAIL_KIND || null });
   sbFlush(); // events that waited on the phone (it was offline)
   render();
 })();
